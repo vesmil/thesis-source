@@ -1,0 +1,31 @@
+image: ubuntu:latest
+
+before_script:
+  - apt-get update
+  - apt-get install -y clang cmake
+  - mkdir build
+  - cd build
+
+format:
+  stage: test
+  script:
+    - clang-format -i ../src/*.cpp ../include/*.h
+    - git diff --exit-code
+
+build:
+  stage: build
+  script:
+    - cmake ../
+    - make
+
+test:
+  stage: test
+  script:
+    - ctest
+
+store_artifact:
+  stage: deploy
+  script:
+  artifacts:
+    paths:
+      - build

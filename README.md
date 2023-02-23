@@ -4,14 +4,15 @@
 
 ## Setup
 
-Install `libFuse`...
+...
 
 ## TODO
 
 - [ ] Project setup
-  - [ ] Empty CMake project
+  - [X] Empty CMake project
   - [ ] Empty unit tests
   - [ ] Setup pipelines (build, test, clang-format, clang-tidy, ...)
+  - [ ] Look into [vcpkg](https://github.com/microsoft/vcpkg) for dependencies
 - [ ] Functioning VFS
   - [ ] *According to FS functions I suppose*
   - [ ] ...

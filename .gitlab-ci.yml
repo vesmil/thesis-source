@@ -23,9 +23,9 @@ test:
   script:
     - ctest
 
-store_artifact:
-  stage: deploy
-  script:
-  artifacts:
-    paths:
-      - build
+# store_artifact:
+#   stage: deploy
+#   script:
+#   artifacts:
+#     paths:
+#       - build

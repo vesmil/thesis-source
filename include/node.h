@@ -39,6 +39,6 @@ public:
     virtual bool isFile() const override;
 
     // ...
-}
+};
 
 #endif //SRC_NODE_H

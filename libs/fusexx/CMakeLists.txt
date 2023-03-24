@@ -9,7 +9,3 @@ target_include_directories(fuse++ PUBLIC include/)
 
 # Link against FUSE libraries
 target_link_libraries(fuse++ PRIVATE ${FUSE_LIBRARIES})
-
-# Add example executable
-add_executable(example example.cpp)
-target_link_libraries(example PRIVATE fuse++ customvfs_lib)

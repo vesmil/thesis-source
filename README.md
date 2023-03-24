@@ -14,7 +14,7 @@
   - [ ] Setup pipelines (build, test, clang-format, clang-tidy, ...)
   - [ ] Look into [vcpkg](https://github.com/microsoft/vcpkg) for dependencies
 - [ ] Functioning VFS
-  - [ ] *According to FS functions I suppose*
+  - [ ] *According to CustomVFS functions I suppose*
   - [ ] ...
 - [ ] Versioning features
   - [ ] Logging file changes 

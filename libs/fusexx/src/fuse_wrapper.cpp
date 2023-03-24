@@ -381,7 +381,7 @@ int FuseWrapper::write_buf(const std::string &pathname, struct fuse_bufvec *bufv
   while (bufvec->idx < bufvec->count) {
     struct fuse_buf &buf = bufvec->buf[bufvec->idx];
     size_t &bufoff = bufvec->off;
-    int subsize = buf.size - bufoff;
+    int subsize = static_cast<int>(buf.size - bufoff);
     int subtotal;
     if (buf.flags & FUSE_BUF_IS_FD) {
       return -ENOSYS;
@@ -418,7 +418,8 @@ int FuseWrapper::read_buf(const std::string &pathname, struct fuse_bufvec **bufp
   bufvec.buf[0].size = amount;
   bufvec.off = amount;
   bufvec.buf[0].pos = amount;
-  return amount;
+
+  return static_cast<int>(amount);
 }
 
 int FuseWrapper::flock(const std::string &, struct fuse_file_info *, int) {
@@ -530,4 +531,4 @@ int FuseWrapper::main(int argc, char *argv[]) {
       return ret;
 }
 
-FuseWrapper::~FuseWrapper() {}
+FuseWrapper::~FuseWrapper() = default;

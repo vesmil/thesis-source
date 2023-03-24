@@ -1,3 +1,6 @@
+#ifndef FUSE_WRAPPER_H
+#define FUSE_WRAPPER_H
+
 #include <cstddef>
 #include <cstdint>
 #include <sys/stat.h>
@@ -576,3 +579,5 @@ private:
   class detail;
   friend class detail;
 };
+
+#endif

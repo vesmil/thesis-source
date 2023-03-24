@@ -1,9 +1,7 @@
-#include <iostream>
-
-#include "fuse_wrapper.h"
+#include "CustomVFS.h"
 
 int main(int argc, char* argv[]) {
-    FuseWrapper fuseWrapper;
+    CustomVFS fuseWrapper;
     fuseWrapper.main(argc, argv);
 
     return 0;

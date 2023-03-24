@@ -1,12 +1,11 @@
 #ifndef SRC_CUSTOMVFS_H
 #define SRC_CUSTOMVFS_H
 
-#include "fuse_wrapper.h"
-
 #include <cerrno>
 #include <cstring>
 #include <iostream>
 #include <map>
+#include <queue>
 #include <utility>
 #include <vector>
 
@@ -14,7 +13,6 @@
 
 class CustomVFS : public FuseWrapper {
    public:
-
     struct File {
         std::string name;
         mode_t mode{};
@@ -29,19 +27,17 @@ class CustomVFS : public FuseWrapper {
 
     std::map<std::string, File> files;
 
-    std::vector<std::string> subfiles(std::string const &pathname) {
+    [[nodiscard]] std::vector<std::string> subfiles(const std::string &pathname) const {
         std::vector<std::string> result;
-        size_t pathsize = pathname[pathname.size() - 1] == '/'
-                              ? pathname.size()
-                              : pathname.size() + 1;
+        size_t pathsize =
+            pathname.back() == '/' ? pathname.size() : pathname.size() + 1;
 
-        for (auto & it : files) {
-            std::string const &filepath = it.first;
-            File &file = it.second;
+        for (const auto &item : files) {
+            const std::string &filepath = item.first;
+            const File &file = item.second;
 
             if (file.name.size() + pathsize == filepath.size() &&
-                0 == filepath.compare(0, pathname.size(), pathname)) {
-                // path in dir
+                filepath.compare(0, pathname.size(), pathname) == 0) {
                 result.push_back(filepath);
             }
         }
@@ -51,43 +47,43 @@ class CustomVFS : public FuseWrapper {
     void init() override {
         files.clear();
         files["/"] = File("root", S_IFDIR | (0777 ^ umask));
-        files["/helloworld.txt"] = File("helloworld.txt", S_IFREG | (0666 ^ umask), "Hello, world.\n");
+        files["/helloworld.txt"] =
+            File("helloworld.txt", S_IFREG | (0666 ^ umask), "Hello, world.\n");
 
         // add directory
         files["/dir"] = File("dir", S_IFDIR | (0777 ^ umask));
-        files["/dir/helloworld.txt"] = File("helloworld.txt", S_IFREG | (0666 ^ umask), "Hello, world.\n");
+        files["/dir/helloworld.txt"] =
+            File("helloworld.txt", S_IFREG | (0666 ^ umask), "Hello, world.\n");
     }
 
     void destroy() override {}
-
-    /* reading functions */
 
     int getattr(const std::string &pathname, struct stat *st) override {
         memset(st, 0, sizeof(*st));
         st->st_uid = uid;
         st->st_gid = gid;
         if (files.count(pathname)) {
-            File &file = files[pathname];
+            const File &file = files.at(pathname);
             st->st_mode = file.mode;
-            st->st_size = file.content.size();
+            st->st_size = static_cast<long>(file.content.size());
             return 0;
         } else {
             return -ENOENT;
         }
     }
 
-    int readdir(const std::string &pathname, off_t off, struct fuse_file_info *fi,
-                readdir_flags flags) override {
-        struct stat st{};
+    int readdir(const std::string &pathname, off_t off,
+                struct fuse_file_info *fi, readdir_flags flags) override {
+        struct stat st {};
         (void)off;
         (void)fi;
         (void)flags;
 
         std::vector<std::string> path_files = subfiles(pathname);
 
-        for (auto & file : path_files) {
+        for (const auto &file : path_files) {
             getattr(file, &st);
-            fill_dir(this->files[file].name, &st);
+            fill_dir(files.at(file).name, &st);
         }
 
         return 0;
@@ -95,10 +91,10 @@ class CustomVFS : public FuseWrapper {
 
     int read(const std::string &pathname, char *buf, size_t count, off_t offset,
              struct fuse_file_info *fi) override {
-        std::string &content = files[pathname].content;
+        const std::string &content = files.at(pathname).content;
         (void)fi;
         if (count + offset > content.size()) {
-            if ((size_t)offset > content.size()) {
+            if (static_cast<size_t>(offset) > content.size()) {
                 count = 0;
             } else {
                 count = content.size() - offset;
@@ -107,9 +103,6 @@ class CustomVFS : public FuseWrapper {
         memcpy(buf, content.data() + offset, count);
         return static_cast<int>(count);
     }
-
-    /* writing functions */
-
     int chmod(const std::string &pathname, mode_t mode) override {
         if (files.count(pathname)) {
             files[pathname].mode = mode;
@@ -166,28 +159,40 @@ class CustomVFS : public FuseWrapper {
 
     int rename(const std::string &oldpath, const std::string &newpath,
                unsigned int flags) override {
-        int result = 0;
-        size_t idx;
+        if (oldpath == newpath) {
+            return 0;
+        }
 
-        std::vector<std::string> subfiles = this->subfiles(oldpath);
-        for (idx = 0; idx < subfiles.size() && 0 == result; ++idx) {
-            result = rename(subfiles[idx],
-                            newpath + subfiles[idx].substr(oldpath.size()), flags);
-        }
-        if (result != 0) {
-            while (idx > 0) {
-                --idx;
-                rename(newpath + subfiles[idx].substr(oldpath.size()), subfiles[idx],
-                       flags);
+        std::queue<std::pair<std::string, std::string>> path_pairs;
+        path_pairs.push({oldpath, newpath});
+
+        while (!path_pairs.empty()) {
+            std::string cur_oldpath = path_pairs.front().first;
+            std::string cur_newpath = path_pairs.front().second;
+            path_pairs.pop();
+
+            if (!files.count(cur_oldpath)) {
+                return -ENOENT;
             }
-        } else {
-            File file = files[oldpath];
-            files.erase(oldpath);
-            file.name = newpath.substr(newpath.rfind('/') + 1, newpath.size());
-            files[newpath] = file;
+
+            if (files.count(cur_newpath)) {
+                return -EEXIST;
+            }
+
+            std::vector<std::string> subfiles_list = subfiles(cur_oldpath);
+            for (const auto &subfile : subfiles_list) {
+                std::string new_subpath = cur_newpath + subfile.substr(cur_oldpath.size());
+                path_pairs.push({subfile, new_subpath});
+            }
+
+            File file = files[cur_oldpath];
+            files.erase(cur_oldpath);
+            file.name = cur_newpath.substr(cur_newpath.rfind('/') + 1);
+            files[cur_newpath] = file;
         }
-        return result;
+
+        return 0;
     }
 };
 
-#endif  // SRC_CUSTOMVFS_H
+#endif

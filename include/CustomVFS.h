@@ -12,7 +12,7 @@
 #include "fuse_wrapper.h"
 
 class CustomVFS : public FuseWrapper {
-   public:
+public:
     struct File {
         std::string name;
         mode_t mode{};
@@ -27,7 +27,8 @@ class CustomVFS : public FuseWrapper {
 
     std::map<std::string, File> files;
 
-    [[nodiscard]] std::vector<std::string> subfiles(const std::string &pathname) const {
+    [[nodiscard]] std::vector<std::string> subfiles(
+        const std::string &pathname) const {
         std::vector<std::string> result;
         size_t pathsize =
             pathname.back() == '/' ? pathname.size() : pathname.size() + 1;
@@ -181,7 +182,8 @@ class CustomVFS : public FuseWrapper {
 
             std::vector<std::string> subfiles_list = subfiles(cur_oldpath);
             for (const auto &subfile : subfiles_list) {
-                std::string new_subpath = cur_newpath + subfile.substr(cur_oldpath.size());
+                std::string new_subpath =
+                    cur_newpath + subfile.substr(cur_oldpath.size());
                 path_pairs.push({subfile, new_subpath});
             }
 

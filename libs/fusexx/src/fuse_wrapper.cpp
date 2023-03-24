@@ -1,4 +1,4 @@
-#include <fuse++>
+#include <fuse_wrapper.h>
 
 #include <cerrno>
 #include <cstdlib>
@@ -17,11 +17,11 @@
 
 #include <fuse.h>
 
-class fuse::detail {
+class FuseWrapper::detail {
 public:
-  static class fuse &fuse() {
+  static class FuseWrapper &fuse() {
     struct fuse_context *ctx = fuse_get_context();
-    class fuse *fuseptr = static_cast<class fuse *>(ctx->private_data);
+    auto *fuseptr = static_cast<class FuseWrapper *>(ctx->private_data);
     if (fuseptr->pid == 0) {
       fuseptr->uid = ctx->uid;
       fuseptr->gid = ctx->gid;
@@ -61,7 +61,7 @@ public:
   }
 #if FUSE_VERSION < 30
   static int rename(const char *oldpath, const char *newpath) {
-    return fuse().rename(oldpath, newpath);
+    return fuse().rename(oldpath, newpath,0);
   }
 #else // FUSE_VERSION < 30
   static int rename(const char *oldpath, const char *newpath,
@@ -162,7 +162,7 @@ public:
 #endif
     detail::filler_handle = buf;
     detail::filler = filler;
-    return fuse().readdir(pathname, off, fi, (fuse::readdir_flags)flags);
+    return fuse().readdir(pathname, off, fi, static_cast<FuseWrapper::readdir_flags>(flags));
   }
 
   static int releasedir(const char *pathname, struct fuse_file_info *fi) {
@@ -181,14 +181,14 @@ public:
   static void *init(struct fuse_conn_info *conn, struct fuse_config *cfg) {
 #warning init fuse config unimplemented
 #endif
-    class fuse *fuseptr = &fuse();
+    class FuseWrapper *fuseptr = &fuse();
     (void)conn;
     (void)cfg;
     fuseptr->init();
     return fuseptr;
   }
   static void destroy(void *private_data) {
-    class fuse *fuseptr = static_cast<class fuse *>(private_data);
+    auto *fuseptr = static_cast<class FuseWrapper *>(private_data);
     fuseptr->destroy();
   }
 #else  // FUSE_VERSION > 22
@@ -266,68 +266,67 @@ public:
 #endif // FUSE_VERSION >= 26
 };
 
-thread_local void *fuse::detail::filler_handle;
+thread_local void *FuseWrapper::detail::filler_handle;
 #if FUSE_VERSION > 22
-thread_local fuse_fill_dir_t fuse::detail::filler;
+thread_local fuse_fill_dir_t FuseWrapper::detail::filler;
 #else
 thread_local fuse_dirfil_t fuse::detail::filler;
 #endif
 
-int fuse::getattr(const std::string &, struct stat *) { return -ENOSYS; }
-int fuse::readlink(const std::string &, char *, size_t) { return -ENOSYS; }
-int fuse::mknod(const std::string &, mode_t, dev_t) { return -ENOSYS; }
-int fuse::mkdir(const std::string &, mode_t) { return -ENOSYS; }
-int fuse::unlink(const std::string &) { return -ENOSYS; }
-int fuse::rmdir(const std::string &) { return -ENOSYS; }
-int fuse::symlink(const std::string &, const std::string &) { return -ENOSYS; }
-int fuse::rename(const std::string &, const std::string &, unsigned int) {
+int FuseWrapper::getattr(const std::string &, struct stat *) { return -ENOSYS; }
+int FuseWrapper::readlink(const std::string &, char *, size_t) { return -ENOSYS; }
+int FuseWrapper::mknod(const std::string &, mode_t, dev_t) { return -ENOSYS; }
+int FuseWrapper::mkdir(const std::string &, mode_t) { return -ENOSYS; }
+int FuseWrapper::unlink(const std::string &) { return -ENOSYS; }
+int FuseWrapper::rmdir(const std::string &) { return -ENOSYS; }
+int FuseWrapper::symlink(const std::string &, const std::string &) { return -ENOSYS; }
+int FuseWrapper::rename(const std::string &, const std::string &, unsigned int) {
   return -ENOSYS;
 }
-int fuse::link(const std::string &, const std::string &) { return -ENOSYS; }
-int fuse::chmod(const std::string &, mode_t) { return -ENOSYS; }
-int fuse::chown(const std::string &, uid_t, gid_t) { return -ENOSYS; }
-int fuse::truncate(const std::string &, off_t) { return -ENOSYS; }
-int fuse::open(const std::string &, struct fuse_file_info *) { return 0; }
-int fuse::read(const std::string &, char *, size_t, off_t,
+int FuseWrapper::link(const std::string &, const std::string &) { return -ENOSYS; }
+int FuseWrapper::chmod(const std::string &, mode_t) { return -ENOSYS; }
+int FuseWrapper::chown(const std::string &, uid_t, gid_t) { return -ENOSYS; }
+int FuseWrapper::truncate(const std::string &, off_t) { return -ENOSYS; }
+int FuseWrapper::open(const std::string &, struct fuse_file_info *) { return 0; }
+int FuseWrapper::read(const std::string &, char *, size_t, off_t,
                struct fuse_file_info *) {
   return -ENOSYS;
 }
-int fuse::write(const std::string &, const char *, size_t, off_t,
+int FuseWrapper::write(const std::string &, const char *, size_t, off_t,
                 struct fuse_file_info *) {
   return -ENOSYS;
 }
-int fuse::statfs(const std::string &, struct statvfs *) { return 0; }
-int fuse::flush(const std::string &, struct fuse_file_info *) {
+int FuseWrapper::statfs(const std::string &, struct statvfs *) { return 0; }
+int FuseWrapper::flush(const std::string &, struct fuse_file_info *) {
   return -ENOSYS;
 }
-int fuse::release(const std::string &, struct fuse_file_info *) { return 0; }
+int FuseWrapper::release(const std::string &, struct fuse_file_info *) { return 0; }
 
 #if FUSE_VERSION > 21
-int fuse::fsync(const std::string &, int, struct fuse_file_info *) {
+int FuseWrapper::fsync(const std::string &, int, struct fuse_file_info *) {
   return -ENOSYS;
 }
-int fuse::setxattr(const std::string &, const std::string &,
+int FuseWrapper::setxattr(const std::string &, const std::string &,
                    const std::string &, size_t, int) {
   return -ENOSYS;
 }
-int fuse::getxattr(const std::string &, const std::string &, char *, size_t) {
+int FuseWrapper::getxattr(const std::string &, const std::string &, char *, size_t) {
   return -ENOSYS;
 }
-int fuse::listxattr(const std::string &, char *, size_t) { return -ENOSYS; }
-int fuse::removexattr(const std::string &, const std::string &) {
+int FuseWrapper::listxattr(const std::string &, char *, size_t) { return -ENOSYS; }
+int FuseWrapper::removexattr(const std::string &, const std::string &) {
   return -ENOSYS;
 }
 #endif // FUSE_VERSION > 21
 
 #if FUSE_VERSION > 22
-int fuse::opendir(const std::string &, struct fuse_file_info *) { return 0; }
-int fuse::readdir(const std::string &, off_t, struct fuse_file_info *,
-                  fuse::readdir_flags) {
+int FuseWrapper::opendir(const std::string &, struct fuse_file_info *) { return 0; }
+int FuseWrapper::readdir(const std::string &, off_t, struct fuse_file_info *,
+                         FuseWrapper::readdir_flags) {
   return -ENOSYS;
 }
 
-int fuse::fill_dir(const std::string &name, const struct stat *stbuf, off_t off,
-                   fuse::fill_dir_flags flags) {
+int FuseWrapper::fill_dir(const std::string &name, const struct stat *stbuf, off_t off, FuseWrapper::fill_dir_flags flags) {
 #if FUSE_VERSION < 30
   (void)flags;
   return detail::filler(detail::filler_handle, name.c_str(), stbuf, off);
@@ -337,12 +336,12 @@ int fuse::fill_dir(const std::string &name, const struct stat *stbuf, off_t off,
 #endif
 }
 
-int fuse::releasedir(const std::string &, struct fuse_file_info *) { return 0; }
-int fuse::fsyncdir(const std::string &, int, struct fuse_file_info *) {
+int FuseWrapper::releasedir(const std::string &, struct fuse_file_info *) { return 0; }
+int FuseWrapper::fsyncdir(const std::string &, int, struct fuse_file_info *) {
   return -ENOSYS;
 }
-void fuse::init() {}
-void fuse::destroy() {}
+void FuseWrapper::init() {}
+void FuseWrapper::destroy() {}
 #else
 int fuse::fill_dir(const std::string &name, const struct stat *stbuf,
                    off_t off) {
@@ -352,31 +351,31 @@ int fuse::fill_dir(const std::string &name, const struct stat *stbuf,
 #endif // FUSE_VERSION > 22
 
 #if FUSE_VERSION >= 25
-int fuse::access(const std::string &, int) { return -ENOSYS; }
-int fuse::create(const std::string &, mode_t, struct fuse_file_info *) {
+int FuseWrapper::access(const std::string &, int) { return -ENOSYS; }
+int FuseWrapper::create(const std::string &, mode_t, struct fuse_file_info *) {
   return -ENOSYS;
 }
 #endif // FUSE_VERSION >= 25
 
 #if FUSE_VERSION >= 26
-int fuse::lock(const std::string &, struct fuse_file_info *, int,
+int FuseWrapper::lock(const std::string &, struct fuse_file_info *, int,
                struct flock *) {
   return -ENOSYS;
 }
-int fuse::utimens(const std::string &, const struct timespec[2]) {
+int FuseWrapper::utimens(const std::string &, const struct timespec[2]) {
   return -ENOSYS;
 }
-int fuse::bmap(const std::string &, size_t, uint64_t *) { return -ENOSYS; }
-int fuse::ioctl(const std::string &, int, void *, struct fuse_file_info *,
+int FuseWrapper::bmap(const std::string &, size_t, uint64_t *) { return -ENOSYS; }
+int FuseWrapper::ioctl(const std::string &, int, void *, struct fuse_file_info *,
                 unsigned int, void *) {
   return -ENOSYS;
 }
-int fuse::poll(const std::string &, struct fuse_file_info *,
+int FuseWrapper::poll(const std::string &, struct fuse_file_info *,
                struct fuse_pollhandle *, unsigned *) {
   return -ENOSYS;
 }
 
-int fuse::write_buf(const std::string &pathname, struct fuse_bufvec *bufvec,
+int FuseWrapper::write_buf(const std::string &pathname, struct fuse_bufvec *bufvec,
                     off_t off, struct fuse_file_info *fi) {
   int total = 0;
   while (bufvec->idx < bufvec->count) {
@@ -403,7 +402,7 @@ int fuse::write_buf(const std::string &pathname, struct fuse_bufvec *bufvec,
   return 0;
 }
 
-int fuse::read_buf(const std::string &pathname, struct fuse_bufvec **bufp,
+int FuseWrapper::read_buf(const std::string &pathname, struct fuse_bufvec **bufp,
                    size_t size, off_t off, struct fuse_file_info *fi) {
   *bufp = (struct fuse_bufvec *)malloc(sizeof(**bufp));
   struct fuse_bufvec &bufvec = **bufp;
@@ -422,79 +421,79 @@ int fuse::read_buf(const std::string &pathname, struct fuse_bufvec **bufp,
   return amount;
 }
 
-int fuse::flock(const std::string &, struct fuse_file_info *, int) {
+int FuseWrapper::flock(const std::string &, struct fuse_file_info *, int) {
   return -ENOSYS;
 }
-int fuse::fallocate(const std::string &, int, off_t, off_t,
+int FuseWrapper::fallocate(const std::string &, int, off_t, off_t,
                     struct fuse_file_info *) {
   return -ENOSYS;
 }
 #endif // FUSE_VERSION >= 26
 
-fuse::fuse() : uid(0), gid(0), pid(0), umask(022) {}
+FuseWrapper::FuseWrapper() : uid(0), gid(0), pid(0), umask(022) {}
 
-int fuse::main(int argc, char *argv[]) {
+int FuseWrapper::main(int argc, char *argv[]) {
   int ret;
   static struct fuse_operations ops = {
-    .getattr = fuse::detail::getattr,
-    .readlink = fuse::detail::readlink,
+    .getattr = FuseWrapper::detail::getattr,
+    .readlink = FuseWrapper::detail::readlink,
 #if FUSE_VERSION < 30
 #if FUSE_VERSION > 22
-    .getdir = 0,
+    .getdir = nullptr,
 #else
     .getdir = fuse::detail::getdir,
 #endif // FUSE_VERSION > 22
 #endif // FUSE_VERSION < 30
-    .mknod = fuse::detail::mknod,
-    .mkdir = fuse::detail::mkdir,
-    .unlink = fuse::detail::unlink,
-    .rmdir = fuse::detail::rmdir,
-    .symlink = fuse::detail::symlink,
-    .rename = fuse::detail::rename,
-    .link = fuse::detail::link,
-    .chmod = fuse::detail::chmod,
-    .chown = fuse::detail::chown,
-    .truncate = fuse::detail::truncate,
+    .mknod = FuseWrapper::detail::mknod,
+    .mkdir = FuseWrapper::detail::mkdir,
+    .unlink = FuseWrapper::detail::unlink,
+    .rmdir = FuseWrapper::detail::rmdir,
+    .symlink = FuseWrapper::detail::symlink,
+    .rename = FuseWrapper::detail::rename,
+    .link = FuseWrapper::detail::link,
+    .chmod = FuseWrapper::detail::chmod,
+    .chown = FuseWrapper::detail::chown,
+    .truncate = FuseWrapper::detail::truncate,
 #if FUSE_VERSION < 30
 #if FUSE_VERSION >= 26
-    .utime = 0,
+    .utime = nullptr,
 #else
     .utime = fuse::detail::utime,
 #endif // FUSE_VERSION >= 26
 #endif // FUSE_VERSION < 30
-    .open = fuse::detail::open,
-    .read = fuse::detail::read,
-    .write = fuse::detail::write,
-    .statfs = fuse::detail::statfs,
-    .flush = fuse::detail::flush,
-    .release = fuse::detail::release,
+    .open = FuseWrapper::detail::open,
+    .read = FuseWrapper::detail::read,
+    .write = FuseWrapper::detail::write,
+    .statfs = FuseWrapper::detail::statfs,
+    .flush = FuseWrapper::detail::flush,
+    .release = FuseWrapper::detail::release,
 #if FUSE_VERSION > 21
-    .fsync = fuse::detail::fsync,
-    .setxattr = fuse::detail::setxattr,
-    .getxattr = fuse::detail::getxattr,
-    .listxattr = fuse::detail::listxattr,
-    .removexattr = fuse::detail::removexattr,
+    .fsync = FuseWrapper::detail::fsync,
+    .setxattr = FuseWrapper::detail::setxattr,
+    .getxattr = FuseWrapper::detail::getxattr,
+    .listxattr = FuseWrapper::detail::listxattr,
+    .removexattr = FuseWrapper::detail::removexattr,
 #endif // FUSE_VERSION > 21
 #if FUSE_VERSION > 22
-    .opendir = fuse::detail::opendir,
-    .readdir = fuse::detail::readdir,
-    .releasedir = fuse::detail::releasedir,
-    .fsyncdir = fuse::detail::fsyncdir,
-    .init = fuse::detail::init,
-    .destroy = fuse::detail::destroy,
+    .opendir = FuseWrapper::detail::opendir,
+    .readdir = FuseWrapper::detail::readdir,
+    .releasedir = FuseWrapper::detail::releasedir,
+    .fsyncdir = FuseWrapper::detail::fsyncdir,
+    .init = FuseWrapper::detail::init,
+    .destroy = FuseWrapper::detail::destroy,
 #endif // FUSE_VERSION > 22
 #if FUSE_VERSION >= 25
-    .access = fuse::detail::access,
-    .create = fuse::detail::create,
+    .access = FuseWrapper::detail::access,
+    .create = FuseWrapper::detail::create,
 #if FUSE_VERSION < 30
-    .ftruncate = 0,
-    .fgetattr = 0,
+    .ftruncate = nullptr,
+    .fgetattr = nullptr,
 #endif // FUSE_VERSION < 30
 #endif // FUSE_VERSION >= 25
 #if FUSE_VERSION >= 26
-    .lock = fuse::detail::lock,
-    .utimens = fuse::detail::utimens,
-    .bmap = fuse::detail::bmap,
+    .lock = FuseWrapper::detail::lock,
+    .utimens = FuseWrapper::detail::utimens,
+    .bmap = FuseWrapper::detail::bmap,
 
 #if FUSE_VERSION < 30
     // these flags are in struct fuse_config for fuse 3.x
@@ -509,12 +508,12 @@ int fuse::main(int argc, char *argv[]) {
     .flag_reserved = 0,
 #endif // FUSE_VERSION < 30
 
-    .ioctl = fuse::detail::ioctl,
-    .poll = fuse::detail::poll,
-    .write_buf = 0, // fuse::detail::write_buf,
-    .read_buf = 0,  // fuse::detail::read_buf,
-    .flock = fuse::detail::flock,
-    .fallocate = fuse::detail::fallocate,
+    .ioctl = FuseWrapper::detail::ioctl,
+    .poll = FuseWrapper::detail::poll,
+    .write_buf = nullptr, // fuse::detail::write_buf,
+    .read_buf = nullptr,  // fuse::detail::read_buf,
+    .flock = FuseWrapper::detail::flock,
+    .fallocate = FuseWrapper::detail::fallocate,
 #endif
   };
 
@@ -531,4 +530,4 @@ int fuse::main(int argc, char *argv[]) {
       return ret;
 }
 
-fuse::~fuse() {}
+FuseWrapper::~FuseWrapper() {}

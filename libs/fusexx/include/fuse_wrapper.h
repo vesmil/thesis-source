@@ -1,21 +1,14 @@
 #include <cstddef>
-#include <stdint.h>
+#include <cstdint>
 #include <sys/stat.h>
 #include <sys/types.h>
 
 #include <string>
 
-#include "fuse++_lowlevel"
-
-/**
- * High level interface to FUSE.
- *
- * This is for the lazy.
- */
-class fuse {
+class FuseWrapper {
 public:
-  fuse();
-  ~fuse();
+ FuseWrapper();
+  ~FuseWrapper();
 
   /**
    * Main function of FUSE.
@@ -120,7 +113,7 @@ protected:
    */
   virtual int readdir(const std::string &pathname, off_t off,
                       struct fuse_file_info *fi,
-                      readdir_flags flags = (readdir_flags)0);
+                      readdir_flags flags);
 
   enum fill_dir_flags {
     /**
@@ -173,7 +166,7 @@ protected:
 
   /** Rename a file */
   virtual int rename(const std::string &oldpath, const std::string &newpath,
-                     unsigned int flags = 0);
+                     unsigned int flags);
 
   /** Create a hard link to a file */
   virtual int link(const std::string &oldpath, const std::string &newpath);

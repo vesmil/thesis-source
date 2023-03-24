@@ -1,12 +1,13 @@
 #include <iostream>
 
-#include "file_system.h"
-#include "fuse_wrapper.h"
-
-int main() {
+int main(int argc, char* argv[]) {
     std::cout << "Hello, World!" << std::endl;
 
-    return FuseWrapper::instance().run();
+    FuseWrapper fuseWrapper;
+
+
+
+    fuseWrapper.main(argc, argv);
 
     return 0;
 }

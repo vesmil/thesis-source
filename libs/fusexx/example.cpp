@@ -1,16 +1,16 @@
-#include "fuse++"
-
 #include <cerrno>
 #include <cstring>
 #include <iostream>
 #include <map>
 #include <vector>
 
+#include "fuse_wrapper.h"
+
 #if __cplusplus < 201103L
 #define override
 #endif
 
-class FS : public fuse {
+class FS : public FuseWrapper {
 public:
   struct File {
     std::string name;
@@ -27,6 +27,7 @@ public:
       return *this;
     }
   };
+
   std::map<std::string, File> files;
 
   // files within a dir

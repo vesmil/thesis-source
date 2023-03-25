@@ -33,10 +33,11 @@ public:
     void destroy() override {}
 
     int getattr(const std::string &pathname, struct stat *st) override;
-    int readdir(const std::string &pathname, off_t off,struct fuse_file_info *fi, readdir_flags flags) override;
-    int read(const std::string &pathname, char *buf, size_t count, off_t offset,struct fuse_file_info *fi) override;
+    int readdir(const std::string &pathname, off_t off, struct fuse_file_info *fi, readdir_flags flags) override;
+    int read(const std::string &pathname, char *buf, size_t count, off_t offset, struct fuse_file_info *fi) override;
     int chmod(const std::string &pathname, mode_t mode) override;
-    int write(const std::string &pathname, const char *buf, size_t count,off_t offset, struct fuse_file_info *fi) override;
+    int write(const std::string &pathname, const char *buf, size_t count, off_t offset,
+              struct fuse_file_info *fi) override;
     int truncate(const std::string &pathname, off_t length) override;
     int mknod(const std::string &pathname, mode_t mode, dev_t dev) override;
     int mkdir(const std::string &pathname, mode_t mode) override;

@@ -11,9 +11,12 @@
 
 class FuseWrapper::detail {
 public:
+    detail() = delete;
+
     static class FuseWrapper &fuse() {
-        struct fuse_context *ctx = fuse_get_context();
+        auto *ctx = fuse_get_context();
         auto *fuseptr = static_cast<class FuseWrapper *>(ctx->private_data);
+
         if (fuseptr->pid == 0) {
             fuseptr->uid = ctx->uid;
             fuseptr->gid = ctx->gid;
@@ -25,18 +28,9 @@ public:
         return *fuseptr;
     }
 
-#if FUSE_VERSION < 30
     static int getattr(const char *pathname, struct stat *buf) {
         return fuse().getattr(pathname, buf);
     }
-#else  // FUSE_VERSION < 30
-    static int getattr(const char *pathname, struct stat *buf,
-                       struct fuse_file_info *fi) {
-#warning getattr fuse_file_info unimplemented
-        (void)fi;
-        return fuse().getattr(pathname, buf);
-    }
-#endif
     static int readlink(const char *pathname, char *buffer, size_t size) {
         return fuse().readlink(pathname, buffer, size);
     }
@@ -55,7 +49,7 @@ public:
     static int rename(const char *oldpath, const char *newpath) {
         return fuse().rename(oldpath, newpath, 0);
     }
-#else  // FUSE_VERSION < 30
+#else
     static int rename(const char *oldpath, const char *newpath,
                       unsigned int flags) {
         return fuse().rename(oldpath, newpath, flags);
@@ -449,7 +443,15 @@ int FuseWrapper::fallocate(const std::string &, int, off_t, off_t,
 }
 #endif  // FUSE_VERSION >= 26
 
-FuseWrapper::FuseWrapper() : uid(0), gid(0), pid(0), umask(022) {}
+FuseWrapper::FuseWrapper()
+    : uid(0),
+      gid(0),
+      pid(0),
+      umask(022),
+      flag_nopath(0),
+      flag_nullpath_ok(0),
+      flag_reserved(0),
+      flag_utime_omit_ok(0) {}
 
 int FuseWrapper::main(int argc, char *argv[]) {
     int ret;

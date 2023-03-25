@@ -8,13 +8,13 @@
 
 ## TODO
 
-- [ ] Project setup
+- [X] Project setup
   - [X] Empty CMake project
-  - [ ] Empty unit tests
-  - [ ] Setup pipelines (build, test, clang-format, clang-tidy, ...)
-  - [ ] Look into [vcpkg](https://github.com/microsoft/vcpkg) for dependencies
-- [ ] Functioning VFS
-  - [ ] *According to CustomVFS functions I suppose*
+  - [X] Empty unit tests
+  - [X] Setup pipelines (build, test, clang-format, clang-tidy, ...)
+  - [X] Look into [vcpkg](https://github.com/microsoft/vcpkg) - will not be used
+- [X] Functioning VFS
+  - [X] Hello world project
   - [ ] ...
 - [ ] Versioning features
   - [ ] Logging file changes 

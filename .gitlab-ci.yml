@@ -2,7 +2,7 @@ image: ubuntu:latest
 
 before_script:
   - apt-get update
-  - apt-get install -y clang cmake libfuse-dev libgtest-dev pkg-config
+  - apt-get install -y clang cmake libfuse-dev libgtest-dev pkg-config clang-format git
   - mkdir build
   - cd build
 
@@ -17,15 +17,11 @@ build:
   script:
     - cmake ../
     - make
+  artifacts:
+    paths:
+      - build/CustomVFS
 
 test:
   stage: test
   script:
     - ctest
-
-# store_artifact:
-#   stage: deploy
-#   script:
-#   artifacts:
-#     paths:
-#       - build

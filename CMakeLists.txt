@@ -17,7 +17,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 # CustomVFS library
 add_library(customvfs STATIC ${CUSTOMVFS_SOURCES})
-target_link_libraries(customvfs PRIVATE fusexx)
+target_link_libraries(customvfs PUBLIC fusexx)
 
 # CustomVFS executable
 add_executable(customvfs_exec src/main.cpp)

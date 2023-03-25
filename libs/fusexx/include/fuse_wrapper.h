@@ -38,16 +38,16 @@ public:
 
 protected:
     /** User ID of the calling process */
-    uid_t uid;
+    uid_t uid = 0;
 
     /** Group ID of the calling process */
-    gid_t gid;
+    gid_t gid = 0;
 
     /** Thread ID of the calling process */
-    pid_t pid;
+    pid_t pid = 0 ;
 
     /** Umask of the calling process (introduced in version 2.8) */
-    mode_t umask;
+    mode_t umask = 022;
 
     /**
      * The file system operations:
@@ -584,6 +584,8 @@ protected:
                           off_t len, struct fuse_file_info *fi);
 
 private:
+    static struct fuse_operations ops;
+
     class detail;
     friend class detail;
 };

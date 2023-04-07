@@ -30,6 +30,8 @@ public:
     [[nodiscard]] std::vector<std::string> subfiles(const std::string &pathname) const;
 
     void init() override;
+    void test_files();
+
     void populate_from_directory(const std::string &path);
     void destroy() override {}
 
@@ -53,7 +55,6 @@ public:
 
     int open(const std::string &pathname, struct fuse_file_info *fi) override;
     int release(const std::string &pathname, struct fuse_file_info *fi) override;
-    void test_files();
 };
 
 #endif

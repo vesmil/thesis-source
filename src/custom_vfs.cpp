@@ -24,8 +24,10 @@ void CustomVfs::test_files() {
 void CustomVfs::init() {
     files.clear();
 
-    std::string root_directory = ".";
-    populate_from_directory(root_directory);
+    // test_files();
+
+    // std::string root_directory = ".";
+    // populate_from_directory(root_directory);
 }
 
 void CustomVfs::populate_from_directory(const std::string &path) {

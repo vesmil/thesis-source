@@ -1,18 +1,38 @@
-#include "CustomVFS.h"
+#include "custom_vfs.h"
 
-void CustomVFS::init() {
-    // TODO
-    files.clear();
+void CustomVfs::test_files() {
+    if (files.empty()) {
+        files["/"] = File("root", S_IFDIR | (0777 ^ umask));
+        files["/helloworld.txt"] = File("helloworld.txt", S_IFREG | (0666 ^ umask), "Hello, world.\n");
 
-    files["/"] = File("root", S_IFDIR | (0777 ^ umask));
-    files["/helloworld.txt"] = File("helloworld.txt", S_IFREG | (0666 ^ umask), "Hello, world.\n");
+        // add directory
+        files["/dir"] = File("dir", S_IFDIR | (0777 ^ umask));
+        files["/dir/helloworld.txt"] = File("helloworld.txt", S_IFREG | (0666 ^ umask), "Hello, world.\n");
+    }
 
-    // add directory
-    files["/dir"] = File("dir", S_IFDIR | (0777 ^ umask));
-    files["/dir/helloworld.txt"] = File("helloworld.txt", S_IFREG | (0666 ^ umask), "Hello, world.\n");
+    std::string log = "Files in VFS:\n";
+
+    for (const auto &item : files) {
+        const std::string &filepath = item.first;
+        const File &file = item.second;
+        log += filepath + "\n";
+    }
+
+    files["/log.txt"] = File("log.txt", S_IFREG | (0666 ^ umask), log);
 }
 
-std::vector<std::string> CustomVFS::subfiles(const std::string &pathname) const {
+void CustomVfs::init() {
+    files.clear();
+
+    std::string root_directory = ".";
+    populate_from_directory(root_directory);
+}
+
+void CustomVfs::populate_from_directory(const std::string &path) {
+    // TODO
+}
+
+std::vector<std::string> CustomVfs::subfiles(const std::string &pathname) const {
     std::vector<std::string> result;
     size_t pathsize = pathname.back() == '/' ? pathname.size() : pathname.size() + 1;
 
@@ -26,10 +46,12 @@ std::vector<std::string> CustomVFS::subfiles(const std::string &pathname) const 
     }
     return result;
 }
-int CustomVFS::getattr(const std::string &pathname, struct stat *st) {
+
+int CustomVfs::getattr(const std::string &pathname, struct stat *st) {
     memset(st, 0, sizeof(*st));
     st->st_uid = uid;
     st->st_gid = gid;
+
     if (files.count(pathname)) {
         const File &file = files.at(pathname);
         st->st_mode = file.mode;
@@ -39,7 +61,7 @@ int CustomVFS::getattr(const std::string &pathname, struct stat *st) {
         return -ENOENT;
     }
 }
-int CustomVFS::readdir(const std::string &pathname, off_t off, struct fuse_file_info *fi,
+int CustomVfs::readdir(const std::string &pathname, off_t off, struct fuse_file_info *fi,
                        FuseWrapper::readdir_flags flags) {
     struct stat st {};
 
@@ -52,7 +74,7 @@ int CustomVFS::readdir(const std::string &pathname, off_t off, struct fuse_file_
 
     return 0;
 }
-int CustomVFS::read(const std::string &pathname, char *buf, size_t count, off_t offset, struct fuse_file_info *fi) {
+int CustomVfs::read(const std::string &pathname, char *buf, size_t count, off_t offset, struct fuse_file_info *fi) {
     const std::string &content = files.at(pathname).content;
     if (count + offset > content.size()) {
         if (static_cast<size_t>(offset) > content.size()) {
@@ -61,10 +83,12 @@ int CustomVFS::read(const std::string &pathname, char *buf, size_t count, off_t 
             count = content.size() - offset;
         }
     }
-    memcpy(buf, content.data() + offset, count);
+
+    std::copy(content.data() + offset, content.data() + offset + count, buf);
     return static_cast<int>(count);
 }
-int CustomVFS::chmod(const std::string &pathname, mode_t mode) {
+
+int CustomVfs::chmod(const std::string &pathname, mode_t mode) {
     if (files.count(pathname)) {
         files[pathname].mode = mode;
         return 0;
@@ -72,14 +96,19 @@ int CustomVFS::chmod(const std::string &pathname, mode_t mode) {
         return -ENOENT;
     }
 }
-int CustomVFS::write(const std::string &pathname, const char *buf, size_t count, off_t offset,
+
+int CustomVfs::write(const std::string &pathname, const char *buf, size_t count, off_t offset,
                      struct fuse_file_info *fi) {
+    if (files.count(pathname) == 0) {
+        return -ENOENT;
+    }
     std::string &content = files[pathname].content;
     size_t precount = offset + count > content.size() ? content.size() - offset : count;
     content.replace(offset, precount, std::string(buf, buf + count));
     return static_cast<int>(count);
 }
-int CustomVFS::truncate(const std::string &pathname, off_t length) {
+
+int CustomVfs::truncate(const std::string &pathname, off_t length) {
     if (files.count(pathname)) {
         files[pathname].content.resize(length);
         return 0;
@@ -87,19 +116,23 @@ int CustomVFS::truncate(const std::string &pathname, off_t length) {
         return -ENOENT;
     }
 }
-int CustomVFS::mknod(const std::string &pathname, mode_t mode, dev_t dev) {
+
+int CustomVfs::mknod(const std::string &pathname, mode_t mode, dev_t dev) {
     files[pathname] = File(pathname.substr(pathname.rfind('/') + 1), mode);
     return 0;
 }
-int CustomVFS::mkdir(const std::string &pathname, mode_t mode) {
+
+int CustomVfs::mkdir(const std::string &pathname, mode_t mode) {
     files[pathname] = File(pathname.substr(pathname.rfind('/') + 1), S_IFDIR | mode);
     return 0;
 }
-int CustomVFS::unlink(const std::string &pathname) {
+
+int CustomVfs::unlink(const std::string &pathname) {
     files.erase(pathname);
     return 0;
 }
-int CustomVFS::rmdir(const std::string &pathname) {
+
+int CustomVfs::rmdir(const std::string &pathname) {
     if (!subfiles(pathname).empty()) {
         return -ENOTEMPTY;
     } else {
@@ -107,13 +140,14 @@ int CustomVFS::rmdir(const std::string &pathname) {
         return 0;
     }
 }
-int CustomVFS::rename(const std::string &oldpath, const std::string &newpath, unsigned int flags) {
+
+int CustomVfs::rename(const std::string &oldpath, const std::string &newpath, unsigned int flags) {
     if (oldpath == newpath) {
         return 0;
     }
 
     std::queue<std::pair<std::string, std::string>> path_pairs;
-    path_pairs.push({oldpath, newpath});
+    path_pairs.emplace(oldpath, newpath);
 
     while (!path_pairs.empty()) {
         std::string cur_oldpath = path_pairs.front().first;
@@ -131,7 +165,7 @@ int CustomVFS::rename(const std::string &oldpath, const std::string &newpath, un
         std::vector<std::string> subfiles_list = subfiles(cur_oldpath);
         for (const auto &subfile : subfiles_list) {
             std::string new_subpath = cur_newpath + subfile.substr(cur_oldpath.size());
-            path_pairs.push({subfile, new_subpath});
+            path_pairs.emplace(subfile, new_subpath);
         }
 
         File file = files[cur_oldpath];
@@ -140,5 +174,40 @@ int CustomVFS::rename(const std::string &oldpath, const std::string &newpath, un
         files[cur_newpath] = file;
     }
 
+    return 0;
+}
+
+int CustomVfs::symlink(const std::string &target, const std::string &linkpath) {
+    files[linkpath] = File(linkpath.substr(linkpath.rfind('/') + 1), S_IFLNK | 0777, target);
+    return 0;
+}
+
+int CustomVfs::readlink(const std::string &pathname, char *buf, size_t size) {
+    if (files.count(pathname) == 0 || !(files[pathname].mode & S_IFLNK)) {
+        return -ENOENT;
+    }
+    strncpy(buf, files[pathname].content.c_str(), size);
+    return 0;
+}
+
+int CustomVfs::link(const std::string &oldpath, const std::string &newpath) {
+    if (files.count(oldpath) == 0) {
+        return -ENOENT;
+    }
+    files[newpath] = files[oldpath];
+    return 0;
+}
+
+int CustomVfs::open(const std::string &pathname, struct fuse_file_info *fi) {
+    if (files.count(pathname) == 0) {
+        return -ENOENT;
+    }
+    return 0;
+}
+
+int CustomVfs::release(const std::string &pathname, struct fuse_file_info *fi) {
+    if (files.count(pathname) == 0) {
+        return -ENOENT;
+    }
     return 0;
 }

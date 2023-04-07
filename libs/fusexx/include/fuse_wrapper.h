@@ -44,7 +44,7 @@ protected:
     gid_t gid = 0;
 
     /** Thread ID of the calling process */
-    pid_t pid = 0 ;
+    pid_t pid = 0;
 
     /** Umask of the calling process (introduced in version 2.8) */
     mode_t umask = 022;
@@ -88,8 +88,7 @@ protected:
      * buffer, it should be truncated.	The return value should be 0
      * for success.
      */
-    virtual int readlink(const std::string &pathname, char *buffer,
-                         size_t size);
+    virtual int readlink(const std::string &pathname, char *buffer, size_t size);
 
     /**
      * Readdir flags, passed to readdir()
@@ -120,8 +119,7 @@ protected:
      * passes non-zero offset to fill_dir.  When the buffer is full
      * (or an error happens), fill_dir will return '1'.
      */
-    virtual int readdir(const std::string &pathname, off_t off,
-                        struct fuse_file_info *fi, readdir_flags flags);
+    virtual int readdir(const std::string &pathname, off_t off, struct fuse_file_info *fi, readdir_flags flags);
 
     enum fill_dir_flags {
         /**
@@ -144,8 +142,7 @@ protected:
      * @param flags fill flags
      * @return 1 if buffer is full, zero otherwise
      */
-    static int fill_dir(const std::string &name, const struct stat *stbuf,
-                        off_t off = 0,
+    static int fill_dir(const std::string &name, const struct stat *stbuf, off_t off = 0,
                         [[maybe_unused]] fill_dir_flags flags = (fill_dir_flags)0);
 
     /** Create a file node
@@ -174,8 +171,7 @@ protected:
     virtual int symlink(const std::string &target, const std::string &linkpath);
 
     /** Rename a file */
-    virtual int rename(const std::string &oldpath, const std::string &newpath,
-                       unsigned int flags);
+    virtual int rename(const std::string &oldpath, const std::string &newpath, unsigned int flags);
 
     /** Create a hard link to a file */
     virtual int link(const std::string &oldpath, const std::string &newpath);
@@ -219,8 +215,7 @@ protected:
      *
      * Changed in version 2.2
      */
-    virtual int read(const std::string &pathname, char *buf, size_t count,
-                     off_t offset, struct fuse_file_info *fi);
+    virtual int read(const std::string &pathname, char *buf, size_t count, off_t offset, struct fuse_file_info *fi);
 
     /** Write data to an open file
      *
@@ -230,8 +225,8 @@ protected:
      *
      * Changed in version 2.2
      */
-    virtual int write(const std::string &pathname, const char *buf,
-                      size_t count, off_t offset, struct fuse_file_info *fi);
+    virtual int write(const std::string &pathname, const char *buf, size_t count, off_t offset,
+                      struct fuse_file_info *fi);
 
     /** Get file system statistics
      *
@@ -290,16 +285,14 @@ protected:
      *
      * Changed in version 2.2
      */
-    virtual int fsync(const std::string &pathname, int datasync,
-                      struct fuse_file_info *fi);
+    virtual int fsync(const std::string &pathname, int datasync, struct fuse_file_info *fi);
 
     /** Set extended attributes */
-    virtual int setxattr(const std::string &path, const std::string &name,
-                         const std::string &value, size_t size, int flags);
+    virtual int setxattr(const std::string &path, const std::string &name, const std::string &value, size_t size,
+                         int flags);
 
     /** Get extended attributes */
-    virtual int getxattr(const std::string &path, const std::string &name,
-                         char *value, size_t size);
+    virtual int getxattr(const std::string &path, const std::string &name, char *value, size_t size);
 
     /** List extended attributes */
     virtual int listxattr(const std::string &path, char *list, size_t size);
@@ -323,8 +316,7 @@ protected:
      *
      * Introduced in version 2.3
      */
-    virtual int releasedir(const std::string &pathname,
-                           struct fuse_file_info *fi);
+    virtual int releasedir(const std::string &pathname, struct fuse_file_info *fi);
 
     /** Synchronize directory contents
      *
@@ -333,8 +325,7 @@ protected:
      *
      * Introduced in version 2.3
      */
-    virtual int fsyncdir(const std::string &pathname, int datasync,
-                         struct fuse_file_info *fi);
+    virtual int fsyncdir(const std::string &pathname, int datasync, struct fuse_file_info *fi);
 
     /**
      * Initialize filesystem
@@ -378,8 +369,7 @@ protected:
      *
      * Introduced in version 2.5
      */
-    virtual int create(const std::string &pathname, mode_t mode,
-                       struct fuse_file_info *fi);
+    virtual int create(const std::string &pathname, mode_t mode, struct fuse_file_info *fi);
 
     /**
      * Perform POSIX file locking operation
@@ -413,8 +403,7 @@ protected:
      *
      * Introduced in version 2.6
      */
-    virtual int lock(const std::string &pathname, struct fuse_file_info *fi,
-                     int cmd, struct flock *lock);
+    virtual int lock(const std::string &pathname, struct fuse_file_info *fi, int cmd, struct flock *lock);
 
     /**
      * Change the access and modification times of a file with
@@ -427,8 +416,7 @@ protected:
      *
      * Introduced in version 2.6
      */
-    virtual int utimens(const std::string &pathname,
-                        const struct timespec tv[2]);
+    virtual int utimens(const std::string &pathname, const struct timespec tv[2]);
 
     /**
      * Map block index within file to block index within device
@@ -438,8 +426,7 @@ protected:
      *
      * Introduced in version 2.6
      */
-    virtual int bmap(const std::string &pathname, size_t blocksize,
-                     uint64_t *idx);
+    virtual int bmap(const std::string &pathname, size_t blocksize, uint64_t *idx);
 
     /**
      * Flag indicating that the filesystem can accept a NULL path
@@ -493,8 +480,7 @@ protected:
      *
      * Introduced in version 2.8
      */
-    virtual int ioctl(const std::string &pathname, int cmd, void *arg,
-                      struct fuse_file_info *fi, unsigned int flags,
+    virtual int ioctl(const std::string &pathname, int cmd, void *arg, struct fuse_file_info *fi, unsigned int flags,
                       void *data);
 
     /**
@@ -514,8 +500,8 @@ protected:
      *
      * Introduced in version 2.8
      */
-    virtual int poll(const std::string &pathname, struct fuse_file_info *fi,
-                     struct fuse_pollhandle *ph, unsigned *reventsp);
+    virtual int poll(const std::string &pathname, struct fuse_file_info *fi, struct fuse_pollhandle *ph,
+                     unsigned *reventsp);
 
     /** Write contents of buffer to an open file
      *
@@ -525,8 +511,7 @@ protected:
      *
      * Introduced in version 2.9
      */
-    virtual int write_buf(const std::string &pathname, struct fuse_bufvec *buf,
-                          off_t off, struct fuse_file_info *fi);
+    virtual int write_buf(const std::string &pathname, struct fuse_bufvec *buf, off_t off, struct fuse_file_info *fi);
 
     /** Store data from an open file in a buffer
      *
@@ -544,8 +529,8 @@ protected:
      *
      * Introduced in version 2.9
      */
-    virtual int read_buf(const std::string &pathname, struct fuse_bufvec **bufp,
-                         size_t size, off_t off, struct fuse_file_info *fi);
+    virtual int read_buf(const std::string &pathname, struct fuse_bufvec **bufp, size_t size, off_t off,
+                         struct fuse_file_info *fi);
 
     /**
      * Perform BSD file locking operation
@@ -567,8 +552,7 @@ protected:
      *
      * Introduced in version 2.9
      */
-    virtual int flock(const std::string &pathname, struct fuse_file_info *fi,
-                      int op);
+    virtual int flock(const std::string &pathname, struct fuse_file_info *fi, int op);
 
     /**
      * Allocates space for an open file
@@ -580,8 +564,7 @@ protected:
      *
      * Introduced in version 2.9.1
      */
-    virtual int fallocate(const std::string &pathname, int mode, off_t offset,
-                          off_t len, struct fuse_file_info *fi);
+    virtual int fallocate(const std::string &pathname, int mode, off_t offset, off_t len, struct fuse_file_info *fi);
 
 private:
     static struct fuse_operations ops;

@@ -1,5 +1,5 @@
-#ifndef SRC_CUSTOMVFS_H
-#define SRC_CUSTOMVFS_H
+#ifndef SRC_CUSTOM_VFS_H
+#define SRC_CUSTOM_VFS_H
 
 #include <cerrno>
 #include <cstring>
@@ -11,7 +11,7 @@
 
 #include "fuse_wrapper.h"
 
-class CustomVFS : public FuseWrapper {
+class CustomVfs : public FuseWrapper {
 public:
     struct File {
         std::string name;
@@ -30,6 +30,7 @@ public:
     [[nodiscard]] std::vector<std::string> subfiles(const std::string &pathname) const;
 
     void init() override;
+    void populate_from_directory(const std::string &path);
     void destroy() override {}
 
     int getattr(const std::string &pathname, struct stat *st) override;
@@ -40,10 +41,19 @@ public:
               struct fuse_file_info *fi) override;
     int truncate(const std::string &pathname, off_t length) override;
     int mknod(const std::string &pathname, mode_t mode, dev_t dev) override;
-    int mkdir(const std::string &pathname, mode_t mode) override;
-    int unlink(const std::string &pathname) override;
-    int rmdir(const std::string &pathname) override;
     int rename(const std::string &oldpath, const std::string &newpath, unsigned int flags) override;
+
+    int symlink(const std::string &target, const std::string &linkpath) override;
+    int readlink(const std::string &pathname, char *buf, size_t size) override;
+    int link(const std::string &oldpath, const std::string &newpath) override;
+    int unlink(const std::string &pathname) override;
+
+    int mkdir(const std::string &pathname, mode_t mode) override;
+    int rmdir(const std::string &pathname) override;
+
+    int open(const std::string &pathname, struct fuse_file_info *fi) override;
+    int release(const std::string &pathname, struct fuse_file_info *fi) override;
+    void test_files();
 };
 
 #endif

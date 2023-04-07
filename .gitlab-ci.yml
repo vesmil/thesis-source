@@ -1,27 +1,35 @@
 image: ubuntu:latest
 
-before_script:
-  - apt-get update
-  - apt-get install -y clang cmake libfuse-dev libgtest-dev pkg-config clang-format git
-  - mkdir build
-  - cd build
+stages:
+  - format
+  - build
+  - test
 
 format:
-  stage: test
+  stage: format
   script:
-    - clang-format -i ../src/*.cpp ../include/*.h
+    - apt-get update && apt-get install -y clang-format git
+    - clang-format -i src/*.cpp include/*.h
     - git diff --exit-code
 
 build:
   stage: build
+  dependencies:
+    - format
   script:
-    - cmake ../
-    - make
+    - apt-get update && apt-get install -y clang cmake libfuse-dev libgtest-dev pkg-config
+    - mkdir build && cd build
+    - cmake ../ && make
   artifacts:
     paths:
-      - build/CustomVFS
+      - build/
+    expire_in: 1 week
 
 test:
   stage: test
+  dependencies:
+    - build
   script:
-    - ctest
+    - apt-get update && apt-get install -y libfuse-dev libgtest-dev fuse
+    - cd build
+    - ./customvfs_tests

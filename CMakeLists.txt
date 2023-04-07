@@ -29,6 +29,3 @@ find_package(GTest REQUIRED)
 add_executable(customvfs_tests tests/test_main.cpp tests/basic_tests.cpp tests/test_config.h)
 target_link_libraries(customvfs_tests PRIVATE GTest::GTest GTest::Main customvfs)
 target_include_directories(customvfs_tests PRIVATE ${GTEST_INCLUDE_DIRS})
-
-enable_testing()
-add_test(NAME customvfs_tests COMMAND customvfs_tests)

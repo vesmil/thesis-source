@@ -1,11 +1,13 @@
 #ifndef SRC_CUSTOM_VFS_H
 #define SRC_CUSTOM_VFS_H
 
-#include <cerrno>
+// #include <cerrno>
 #include <cstring>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <queue>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -51,7 +53,7 @@ public:
 
 private:
     Directory root;
-    std::map<std::string, File> files{};
+    std::map<std::string, std::shared_ptr<VfsNode>> files{};
 };
 
 #endif

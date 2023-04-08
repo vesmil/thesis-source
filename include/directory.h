@@ -11,6 +11,8 @@ struct Directory : public VfsNode {
     Directory(const std::string &name, mode_t mode) : VfsNode(name, mode) {}
     Directory &operator=(Directory const &other) = default;
 
+    bool is_directory() override { return true; }
+
     // TODO Overridden methods for directory using CustomVfs
 };
 

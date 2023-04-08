@@ -1,6 +1,6 @@
 # Fuse++
 
-This is my fairly edited version of the original [Fuse++ library](www.github.com/xloem/fusexx). 
+This is my fairly edited version of the original [Fuse++ library](www.github.com/xloem/fusexx).
 
 * There are fixed bugs for various fuse versions
 * Modernized syntax - removed C style casts, void casts, etc.

@@ -1,5 +1,34 @@
 #include "custom_vfs.h"
 
+#include <filesystem>
+
+CustomVfs::CustomVfs(const std::string &string) { populate_from_directory(string); }
+
+void CustomVfs::init() {}
+
+void CustomVfs::populate_from_directory(const std::string &path) {
+    for (const auto &entry : std::filesystem::recursive_directory_iterator(path)) {
+        std::string filepath = entry.path().string();
+        std::string filename = entry.path().filename().string();
+        mode_t mode = entry.is_directory() ? S_IFDIR | (0777 ^ umask) : S_IFREG | (0666 ^ umask);
+        std::string content = entry.is_regular_file()
+                                  ? std::filesystem::file_size(entry) > 0
+                                        ? std::filesystem::file_size(entry) > 1000000  ? "File too large to display"
+                                          : std::filesystem::file_size(entry) > 100000 ? "File too large to display"
+                                          : std::filesystem::file_size(entry) > 10000  ? "File too large to display"
+                                          : std::filesystem::file_size(entry) > 1000   ? "File too large to display"
+                                          : std::filesystem::file_size(entry) > 100    ? "File too large to display"
+                                          : std::filesystem::file_size(entry) > 10     ? "File too large to display"
+                                          : std::filesystem::file_size(entry) > 1      ? "File too large to display"
+                                          : std::filesystem::file_size(entry) > 0      ? "File too large to display"
+                                                                                       : ""
+                                        : ""
+                                  : "";
+
+        files[filepath] = File(filename, mode, content);
+    }
+}
+
 void CustomVfs::test_files() {
     if (files.empty()) {
         files["/"] = File("root", S_IFDIR | (0777 ^ umask));
@@ -19,19 +48,6 @@ void CustomVfs::test_files() {
     }
 
     files["/log.txt"] = File("log.txt", S_IFREG | (0666 ^ umask), log);
-}
-
-void CustomVfs::init() {
-    files.clear();
-
-    // test_files();
-
-    // std::string root_directory = ".";
-    // populate_from_directory(root_directory);
-}
-
-void CustomVfs::populate_from_directory(const std::string &path) {
-    // TODO
 }
 
 std::vector<std::string> CustomVfs::subfiles(const std::string &pathname) const {

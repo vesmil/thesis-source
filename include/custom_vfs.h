@@ -11,8 +11,15 @@
 
 #include "fuse_wrapper.h"
 
-class CustomVfs : public FuseWrapper {
+class VfsBase : public FuseWrapper {
 public:
+    virtual ~VfsBase() = default;
+};
+
+class CustomVfs : public VfsBase {
+public:
+    explicit CustomVfs(const std::string &string);
+
     struct File {
         std::string name;
         mode_t mode{};
@@ -30,10 +37,10 @@ public:
     [[nodiscard]] std::vector<std::string> subfiles(const std::string &pathname) const;
 
     void init() override;
-    void test_files();
-
-    void populate_from_directory(const std::string &path);
     void destroy() override {}
+
+    void test_files();
+    void populate_from_directory(const std::string &path);
 
     int getattr(const std::string &pathname, struct stat *st) override;
     int readdir(const std::string &pathname, off_t off, struct fuse_file_info *fi, readdir_flags flags) override;

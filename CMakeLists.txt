@@ -9,7 +9,7 @@ pkg_search_module(FUSE REQUIRED fuse)
 # FUSE C++ wrapper
 add_subdirectory(libs)
 
-set(CUSTOMVFS_SOURCES src/custom_vfs.cpp include/custom_vfs.h src/file.cpp include/file.h src/directory.cpp include/directory.h include/vfs_node.h include/decorators.h)
+set(CUSTOMVFS_SOURCES src/custom_vfs.cpp include/custom_vfs.h include/file.h include/directory.h include/vfs_node.h include/decorators.h)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 # CustomVFS library

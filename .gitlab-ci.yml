@@ -31,5 +31,6 @@ test:
     - build
   script:
     - apt-get update && apt-get install -y libfuse-dev libgtest-dev fuse
+    - modprobe fuse
     - cd build
     - ./customvfs_tests

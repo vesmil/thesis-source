@@ -1,43 +1,42 @@
 #include "custom_vfs.h"
 
 #include <filesystem>
+#include <fstream>
 
-CustomVfs::CustomVfs(const std::string &string) { populate_from_directory(string); }
+CustomVfs::CustomVfs(const std::string &string, bool debug) {
+    populate_from_directory(string);
+
+    if (debug) {
+        test_files();
+    }
+}
 
 void CustomVfs::init() {}
+
+void CustomVfs::destroy() {}
 
 void CustomVfs::populate_from_directory(const std::string &path) {
     for (const auto &entry : std::filesystem::recursive_directory_iterator(path)) {
         std::string filepath = entry.path().string();
         std::string filename = entry.path().filename().string();
         mode_t mode = entry.is_directory() ? S_IFDIR | (0777 ^ umask) : S_IFREG | (0666 ^ umask);
-        std::string content = entry.is_regular_file()
-                                  ? std::filesystem::file_size(entry) > 0
-                                        ? std::filesystem::file_size(entry) > 1000000  ? "File too large to display"
-                                          : std::filesystem::file_size(entry) > 100000 ? "File too large to display"
-                                          : std::filesystem::file_size(entry) > 10000  ? "File too large to display"
-                                          : std::filesystem::file_size(entry) > 1000   ? "File too large to display"
-                                          : std::filesystem::file_size(entry) > 100    ? "File too large to display"
-                                          : std::filesystem::file_size(entry) > 10     ? "File too large to display"
-                                          : std::filesystem::file_size(entry) > 1      ? "File too large to display"
-                                          : std::filesystem::file_size(entry) > 0      ? "File too large to display"
-                                                                                       : ""
-                                        : ""
-                                  : "";
+
+        std::vector<uint8_t> content;
+
+        content.reserve(entry.file_size());
+        std::ifstream ifs(filepath, std::ifstream::in | std::ifstream::binary);
+        content.assign(std::istreambuf_iterator<char>(ifs), std::istreambuf_iterator<char>());
+        ifs.close();
 
         files[filepath] = File(filename, mode, content);
     }
 }
 
 void CustomVfs::test_files() {
-    if (files.empty()) {
-        files["/"] = File("root", S_IFDIR | (0777 ^ umask));
-        files["/helloworld.txt"] = File("helloworld.txt", S_IFREG | (0666 ^ umask), "Hello, world.\n");
-
-        // add directory
-        files["/dir"] = File("dir", S_IFDIR | (0777 ^ umask));
-        files["/dir/helloworld.txt"] = File("helloworld.txt", S_IFREG | (0666 ^ umask), "Hello, world.\n");
-    }
+    files["/"] = File("root", S_IFDIR | (0777 ^ umask));
+    files["/helloworld.txt"] = File("helloworld.txt", S_IFREG | (0666 ^ umask), "Hello, world.\n");
+    files["/dir"] = File("dir", S_IFDIR | (0777 ^ umask));
+    files["/dir/helloworld2.txt"] = File("helloworld.txt", S_IFREG | (0666 ^ umask), "Another hello, world.\n");
 
     std::string log = "Files in VFS:\n";
 
@@ -93,7 +92,8 @@ int CustomVfs::readdir(const std::string &pathname, off_t off, struct fuse_file_
     return 0;
 }
 int CustomVfs::read(const std::string &pathname, char *buf, size_t count, off_t offset, struct fuse_file_info *fi) {
-    const std::string &content = files.at(pathname).content;
+    const auto &content = files.at(pathname).content;
+
     if (count + offset > content.size()) {
         if (static_cast<size_t>(offset) > content.size()) {
             count = 0;
@@ -120,9 +120,10 @@ int CustomVfs::write(const std::string &pathname, const char *buf, size_t count,
     if (files.count(pathname) == 0) {
         return -ENOENT;
     }
-    std::string &content = files[pathname].content;
-    size_t precount = offset + count > content.size() ? content.size() - offset : count;
-    content.replace(offset, precount, std::string(buf, buf + count));
+
+    auto &content = files[pathname].content;
+    content.insert(content.begin() + offset, buf, buf + count);
+
     return static_cast<int>(count);
 }
 
@@ -204,7 +205,8 @@ int CustomVfs::readlink(const std::string &pathname, char *buf, size_t size) {
     if (files.count(pathname) == 0 || !(files[pathname].mode & S_IFLNK)) {
         return -ENOENT;
     }
-    strncpy(buf, files[pathname].content.c_str(), size);
+
+    std::copy(files[pathname].content.begin(), files[pathname].content.end(), buf);
     return 0;
 }
 
@@ -227,5 +229,49 @@ int CustomVfs::release(const std::string &pathname, struct fuse_file_info *fi) {
     if (files.count(pathname) == 0) {
         return -ENOENT;
     }
+    return 0;
+}
+
+int CustomVfs::utimens(const std::string &pathname, const struct timespec *tv) {
+    if (files.count(pathname) == 0) {
+        return -ENOENT;
+    }
+    files[pathname].times[0] = tv[0];
+    files[pathname].times[1] = tv[1];
+    return 0;
+}
+
+int CustomVfs::statfs(const std::string &pathname, struct statvfs *stbuf) {
+    if (!files.count(pathname)) {
+        return -ENOENT;
+    }
+
+    memset(stbuf, 0, sizeof(struct statvfs));
+    stbuf->f_bsize = 4096;   // Block size
+    stbuf->f_frsize = 4096;  // Fragment size
+
+    // Count total and available blocks
+    uint64_t total_blocks = 0;
+    uint64_t available_blocks = 0;
+    for (const auto &item : files) {
+        const File &file = item.second;
+        total_blocks += (file.content.size() + stbuf->f_frsize - 1) / stbuf->f_frsize;
+        if (file.mode & S_IWUSR || file.mode & S_IWGRP || file.mode & S_IWOTH) {
+            available_blocks += (file.content.size() + stbuf->f_frsize - 1) / stbuf->f_frsize;
+        }
+    }
+    stbuf->f_blocks = total_blocks;
+    stbuf->f_bfree = available_blocks;
+    stbuf->f_bavail = available_blocks;
+
+    // Count total and available inodes
+    stbuf->f_files = static_cast<fsfilcnt_t>(files.size());
+    stbuf->f_ffree = 0;
+    stbuf->f_favail = 0;
+
+    stbuf->f_fsid = 0;       // File system ID
+    stbuf->f_flag = 0;       // Mount flags
+    stbuf->f_namemax = 255;  // Maximum filename length
+
     return 0;
 }

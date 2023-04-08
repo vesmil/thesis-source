@@ -21,8 +21,6 @@ public:
     /**
      * Main function of FUSE.
      *
-     * This is all that has to be called from the main() function.
-     *
      * This function does the following:
      *   - parses command line options (-d -s and -h)
      *   - passes relevant mount options to fuse_mount()
@@ -168,8 +166,6 @@ protected:
      * given flags. Optionally open may also return an arbitrary
      * filehandle in the fuse_file_info structure, which will be
      * passed to all file operations.
-     *
-     * Changed in version 2.2
      */
     virtual int open(const std::string &pathname, struct fuse_file_info *fi);
 
@@ -181,8 +177,6 @@ protected:
      * 'direct_io' mount option is specified, in which case the return
      * value of the read system call will reflect the return value of
      * this operation.
-     *
-     * Changed in version 2.2
      */
     virtual int read(const std::string &pathname, char *buf, size_t count, off_t offset, struct fuse_file_info *fi);
 
@@ -191,8 +185,6 @@ protected:
      * Write should return exactly the number of bytes requested
      * except on error.	 An exception to this is when the 'direct_io'
      * mount option is specified (see read operation).
-     *
-     * Changed in version 2.2
      */
     virtual int write(const std::string &pathname, const char *buf, size_t count, off_t offset,
                       struct fuse_file_info *fi);
@@ -200,9 +192,6 @@ protected:
     /** Get file system statistics
      *
      * The 'f_frsize', 'f_favail', 'f_fsid' and 'f_flag' fields are ignored
-     *
-     * Replaced 'struct statfs' parameter with 'struct statvfs' in
-     * version 2.5
      */
     virtual int statfs(const std::string &path, struct statvfs *buf);
 
@@ -226,8 +215,6 @@ protected:
      *
      * Filesystems shouldn't assume that flush will always be called
      * after some writes, or that if will be called at all.
-     *
-     * Changed in version 2.2
      */
     virtual int flush(const std::string &pathname, struct fuse_file_info *fi);
 
@@ -242,8 +229,6 @@ protected:
      * have a file opened more than once, in which case only the last
      * release will mean, that no more reads/writes will happen on the
      * file.  The return value of release is ignored.
-     *
-     * Changed in version 2.2
      */
     virtual int release(const std::string &pathname, struct fuse_file_info *fi);
 
@@ -251,8 +236,6 @@ protected:
      *
      * If the datasync parameter is non-zero, then only the user data
      * should be flushed, not the meta data.
-     *
-     * Changed in version 2.2
      */
     virtual int fsync(const std::string &pathname, int datasync, struct fuse_file_info *fi);
 
@@ -276,14 +259,10 @@ protected:
      * directory. Optionally opendir may also return an arbitrary
      * filehandle in the fuse_file_info structure, which will be
      * passed to readdir, closedir and fsyncdir.
-     *
-     * Introduced in version 2.3
      */
     virtual int opendir(const std::string &name, struct fuse_file_info *fi);
 
     /** Release directory
-     *
-     * Introduced in version 2.3
      */
     virtual int releasedir(const std::string &pathname, struct fuse_file_info *fi);
 
@@ -291,16 +270,11 @@ protected:
      *
      * If the datasync parameter is non-zero, then only the user data
      * should be flushed, not the meta data
-     *
-     * Introduced in version 2.3
      */
     virtual int fsyncdir(const std::string &pathname, int datasync, struct fuse_file_info *fi);
 
     /**
      * Initialize filesystem
-     *
-     * Introduced in version 2.3
-     * Changed in version 2.6
      */
     virtual void init();
 
@@ -308,8 +282,6 @@ protected:
      * Clean up filesystem
      *
      * Called on filesystem exit.
-     *
-     * Introduced in version 2.3
      */
     virtual void destroy();
 
@@ -321,8 +293,6 @@ protected:
      * called.
      *
      * This method is not called under Linux kernel versions 2.4.x
-     *
-     * Introduced in version 2.5
      */
     virtual int access(const std::string &pathname, int mode);
 
@@ -335,8 +305,6 @@ protected:
      * If this method is not implemented or under Linux kernel
      * versions earlier than 2.6.15, the mknod() and open() methods
      * will be called instead.
-     *
-     * Introduced in version 2.5
      */
     virtual int create(const std::string &pathname, mode_t mode, struct fuse_file_info *fi);
 
@@ -369,8 +337,6 @@ protected:
      * Note: if this method is not implemented, the kernel will still
      * allow file locking to work locally.  Hence it is only
      * interesting for network filesystems and similar.
-     *
-     * Introduced in version 2.6
      */
     virtual int lock(const std::string &pathname, struct fuse_file_info *fi, int cmd, struct flock *lock);
 
@@ -382,8 +348,6 @@ protected:
      * should use this.
      *
      * See the utimensat(2) man page for details.
-     *
-     * Introduced in version 2.6
      */
     virtual int utimens(const std::string &pathname, const struct timespec tv[2]);
 
@@ -392,8 +356,6 @@ protected:
      *
      * Note: This makes sense only for block device backed filesystems
      * mounted with the 'blkdev' option
-     *
-     * Introduced in version 2.6
      */
     virtual int bmap(const std::string &pathname, size_t blocksize, uint64_t *idx);
 
@@ -446,8 +408,6 @@ protected:
      *
      * If flags has FUSE_IOCTL_DIR then the fuse_file_info refers to a
      * directory file handle.
-     *
-     * Introduced in version 2.8
      */
     virtual int ioctl(const std::string &pathname, int cmd, void *arg, struct fuse_file_info *fi, unsigned int flags,
                       void *data);
@@ -466,8 +426,6 @@ protected:
      *
      * The callee is responsible for destroying ph with
      * fuse_pollhandle_destroy() when no longer in use.
-     *
-     * Introduced in version 2.8
      */
     virtual int poll(const std::string &pathname, struct fuse_file_info *fi, struct fuse_pollhandle *ph,
                      unsigned *reventsp);
@@ -477,8 +435,6 @@ protected:
      * Similar to the write() method, but data is supplied in a
      * generic buffer.  Use fuse_buf_copy() to transfer data to
      * the destination.
-     *
-     * Introduced in version 2.9
      */
     virtual int write_buf(const std::string &pathname, struct fuse_bufvec *buf, off_t off, struct fuse_file_info *fi);
 
@@ -495,8 +451,6 @@ protected:
      * location pointed to by bufp.  If the buffer contains memory
      * regions, they too must be allocated using malloc().  The
      * allocated memory will be freed by the caller.
-     *
-     * Introduced in version 2.9
      */
     virtual int read_buf(const std::string &pathname, struct fuse_bufvec **bufp, size_t size, off_t off,
                          struct fuse_file_info *fi);
@@ -518,8 +472,6 @@ protected:
      * Note: if this method is not implemented, the kernel will still
      * allow file locking to work locally.  Hence it is only
      * interesting for network filesystems and similar.
-     *
-     * Introduced in version 2.9
      */
     virtual int flock(const std::string &pathname, struct fuse_file_info *fi, int op);
 
@@ -530,8 +482,6 @@ protected:
      * file.  If this function returns success then any subsequent write
      * request to specified range is guaranteed not to fail because of lack
      * of space on the file system media.
-     *
-     * Introduced in version 2.9.1
      */
     virtual int fallocate(const std::string &pathname, int mode, off_t offset, off_t len, struct fuse_file_info *fi);
 

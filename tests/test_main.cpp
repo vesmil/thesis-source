@@ -45,7 +45,7 @@ int main(int argc, char** argv) {
 
     cleanup_and_prepare_mountpoint(TestConfig::inst().mountpoint);
 
-    CustomVfs fuseWrapper(std::string());
+    CustomVfs fuseWrapper(TestConfig::inst().mountpoint);
     TestConfig::inst().vfs = &fuseWrapper;
 
     char* fuse_argv[] = {argv[0], const_cast<char*>(TestConfig::inst().mountpoint.c_str())};

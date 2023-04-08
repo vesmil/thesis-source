@@ -9,10 +9,8 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    CustomVfs fuseWrapper(mountpoint);
-
+    CustomVfs fuseWrapper(mountpoint, true);
     fuseWrapper.main(argc, argv);
-    fuseWrapper.test_files();
 
     return 0;
 }

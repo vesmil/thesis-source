@@ -27,9 +27,9 @@ cmake ..
 
 ### Run
 
-Simply pass a directory as a mountpoint to the executable.
+Simply pass a Directory as a mountpoint to the executable.
 
-**Note:** The directory must exist and be empty - TODO solve empty directory problem
+**Note:** The Directory must exist and be empty - TODO solve empty Directory problem
 
 ```bash
 CustomVFS <mountpoint>

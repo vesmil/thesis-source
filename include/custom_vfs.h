@@ -9,6 +9,8 @@
 #include <utility>
 #include <vector>
 
+#include "directory.h"
+#include "file.h"
 #include "fuse_wrapper.h"
 
 class CustomVfs : public FuseWrapper {
@@ -48,33 +50,6 @@ public:
     [[nodiscard]] std::vector<std::string> subfiles(const std::string &pathname) const;
 
 private:
-    struct File {
-        std::string name;
-        mode_t mode{};
-        std::vector<uint8_t> content;
-        timespec times[2] = {};
-
-        File(std::string name, mode_t mode, std::vector<uint8_t> content = {})
-            : name(std::move(name)), mode(mode), content(std::move(content)) {}
-        File(std::string name, mode_t mode, std::string content)
-            : name(std::move(name)), mode(mode), content(content.begin(), content.end()) {}
-
-        File() = default;
-        File &operator=(File const &other) = default;
-    };
-
-    struct Directory {
-        std::string name;
-        mode_t mode{};
-        std::map<std::string, File> files;
-        std::map<std::string, Directory> subdirectories;
-
-        Directory(std::string name, mode_t mode) : name(std::move(name)), mode(mode) {}
-
-        Directory() = default;
-        Directory &operator=(Directory const &other) = default;
-    };
-
     Directory root;
     std::map<std::string, File> files{};
 };

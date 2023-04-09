@@ -11,13 +11,14 @@
 #include <utility>
 #include <vector>
 
-#include "directory.h"
-#include "file.h"
 #include "fuse_wrapper.h"
+#include "nodes.h"
 
 class CustomVfs : public FuseWrapper {
 public:
     explicit CustomVfs(const std::string &string, bool debug = false);
+
+    Directory root_from_main(int argc, char *argv[]);
 
     void init() override;
     void destroy() override;

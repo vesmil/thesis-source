@@ -30,7 +30,6 @@ test:
   dependencies:
     - build
   script:
-    - apt-get update && apt-get install -y libfuse-dev libgtest-dev fuse
-    - modprobe fuse
+    - apt-get update && apt-get install -y libfuse-dev libgtest-dev
     - cd build
     - ./customvfs_tests

@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <thread>
 
 CustomVfs::CustomVfs(const std::string &string, bool debug) : root("/", S_IFDIR | (0777 ^ umask)) {
     populate_from_directory(string);
@@ -9,6 +10,16 @@ CustomVfs::CustomVfs(const std::string &string, bool debug) : root("/", S_IFDIR 
     if (debug) {
         test_files();
     }
+}
+
+Directory CustomVfs::root_from_main(int argc, char **argv) {
+    std::thread fuse_thread(&CustomVfs::main, this, argc, argv);
+    fuse_thread.detach();
+
+    // Fuse-main kills the program, so I run it in a separate thread
+    // Could be solved by using low-level fuse API
+
+    return root;
 }
 
 void CustomVfs::init() {}

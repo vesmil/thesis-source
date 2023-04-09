@@ -5,7 +5,7 @@
 #include <memory>
 #include <utility>
 
-#include "vfs_node.h"
+#include "nodes.h"
 
 class VfsNodeDecorator : public VfsNode {
 public:

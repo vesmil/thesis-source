@@ -55,7 +55,8 @@ int main(int argc, char** argv) {
     int test_results = RUN_ALL_TESTS();
 
     try {
-        execute_system_command("fusermount -u " + TestConfig::inst().mountpoint);
+        // The `false` is there just because of workflow that lacks fusermount
+        execute_system_command("fusermount -u " + TestConfig::inst().mountpoint, false);
         std::filesystem::remove_all(mountpoint);
     } catch (const std::exception& e) {
         std::cerr << "Error during cleanup: " << e.what() << std::endl;

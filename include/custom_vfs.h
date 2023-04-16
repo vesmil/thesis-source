@@ -16,7 +16,21 @@
 
 class CustomVfs : public FuseWrapper {
 public:
-    explicit CustomVfs(const std::string &string, bool debug = false);
+    /**
+     * Create a new filesystem - possibly with example files
+     *
+     * @param create_test Whether to create example files
+     */
+    explicit CustomVfs(bool create_test = false);
+
+    /**
+     * Create a new filesystem from a given directory
+     * The directory will be copied into the filesystem
+     *
+     * @param string The path to the directory*/
+    explicit CustomVfs(const std::string &string);
+
+    // Directory root_from_main(int argc, char *argv[]);
 
     Directory root_from_main(int argc, char *argv[]);
 

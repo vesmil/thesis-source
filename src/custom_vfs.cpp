@@ -4,12 +4,14 @@
 #include <fstream>
 #include <thread>
 
-CustomVfs::CustomVfs(const std::string &string, bool debug) : root("/", S_IFDIR | (0777 ^ umask)) {
-    populate_from_directory(string);
-
-    if (debug) {
+CustomVfs::CustomVfs(bool create_test) : root("/", S_IFDIR | (0777 ^ umask)) {
+    if (create_test) {
         test_files();
     }
+}
+
+CustomVfs::CustomVfs(const std::string &string) : root("/", S_IFDIR | (0777 ^ umask)) {
+    populate_from_directory(string);
 }
 
 Directory CustomVfs::root_from_main(int argc, char **argv) {

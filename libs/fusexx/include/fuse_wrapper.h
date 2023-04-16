@@ -18,8 +18,7 @@ public:
     FuseWrapper();
     ~FuseWrapper();
 
-    /**
-     * Main function of FUSE.
+    /** Main function of FUSE.
      *
      * This function does the following:
      *   - parses command line options (-d -s and -h)
@@ -34,7 +33,6 @@ public:
      */
     int main(int argc, char *argv[]);
 
-protected:
     /** User ID of the calling process */
     uid_t uid = 0;
 

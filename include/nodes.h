@@ -1,3 +1,6 @@
+#ifndef SRC_VFS_NODE_H
+#define SRC_VFS_NODE_H
+
 #include <cstdlib>
 #include <ctime>
 #include <map>
@@ -5,8 +8,8 @@
 #include <utility>
 #include <vector>
 
-#ifndef SRC_VFS_NODE_H
-#define SRC_VFS_NODE_H
+// Mostly used for debug purposes
+// Was used to experiment with VFS based on nodes
 
 struct VfsNode {
     VfsNode(std::string name, mode_t mode) : name(std::move(name)), mode(mode) {

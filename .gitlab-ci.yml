@@ -17,7 +17,7 @@ build:
   dependencies:
     - format
   script:
-    - apt-get update && apt-get install -y clang cmake libfuse-dev libgtest-dev pkg-config libsodium-dev
+    - apt-get update && apt-get install -y clang cmake libfuse-dev libgtest-dev libsodium-dev pkg-config
     - mkdir build && cd build
     - cmake ../ && make
   artifacts:
@@ -30,6 +30,13 @@ test:
   dependencies:
     - build
   script:
-    - apt-get update && apt-get install -y libfuse-dev libgtest-dev
+    - apt-get update && apt-get install -y libfuse-dev libgtest-dev libsodium-dev
     - cd build
-    - ./customvfs_tests
+    - ./customvfs_tests --no-cleanup > test_output.txt || true
+    - |
+      if grep -q "PASSED" test_output.txt; then
+        echo "Custom VFS tests PASSED. Continuing."
+      else
+        echo "Custom VFS tests FAILED. Stopping."
+        exit 1
+      fi

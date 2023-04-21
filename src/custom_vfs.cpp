@@ -4,6 +4,8 @@
 #include <fstream>
 #include <thread>
 
+// TODO add a backing folder to store files - not just in memory
+
 CustomVfs::CustomVfs(bool create_test) : root("/", S_IFDIR | (0777 ^ umask)) {
     if (create_test) {
         test_files();
@@ -16,10 +18,10 @@ CustomVfs::CustomVfs(const std::string &string) : root("/", S_IFDIR | (0777 ^ um
 
 [[maybe_unused]] Directory CustomVfs::root_from_main(int argc, char **argv) {
     std::thread fuse_thread(&CustomVfs::main, this, argc, argv);
-    fuse_thread.detach();
 
     // Fuse-main kills the program, so I run it in a separate thread
     // Could be solved by using low-level fuse API
+    fuse_thread.detach();
 
     return root;
 }

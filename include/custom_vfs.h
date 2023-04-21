@@ -13,6 +13,11 @@
 #include "fuse_wrapper.h"
 #include "nodes.h"
 
+/**
+ * A custom filesystem based on memory
+ *
+ * It uses the FuseWrapper to provide a FUSE interface
+ */
 class CustomVfs : public FuseWrapper {
 public:
     /**
@@ -28,8 +33,6 @@ public:
      *
      * @param string The path to the directory*/
     explicit CustomVfs(const std::string &string);
-
-    // Directory root_from_main(int argc, char *argv[]);
 
     [[maybe_unused]] Directory root_from_main(int argc, char *argv[]);
 

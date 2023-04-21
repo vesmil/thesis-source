@@ -1,7 +1,7 @@
 #include <filesystem>
 
 #include "custom_vfs.h"
-#include "encryption_decorator.h"
+#include "encryption_vfs.h"
 #include "versioning_vfs.h"
 
 int main(int argc, char* argv[]) {

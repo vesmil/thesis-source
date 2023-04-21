@@ -9,7 +9,7 @@ pkg_search_module(FUSE REQUIRED fuse)
 # FUSE C++ wrapper
 add_subdirectory(libs)
 
-set(CUSTOMVFS_SOURCES src/custom_vfs.cpp src/encryption_decorator.cpp src/versioning_vfs.cpp)
+set(CUSTOMVFS_SOURCES src/custom_vfs.cpp src/encryption_vfs.cpp src/versioning_vfs.cpp)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 # Libsodium

@@ -25,41 +25,52 @@ void execute_system_command(const std::string& command, bool check_result = true
     }
 }
 
-void cleanup_and_prepare_mountpoint(const std::string& mountpoint) {
-    try {
-        execute_system_command("fusermount -u " + mountpoint, false);
-        std::filesystem::remove_all(mountpoint);
-        std::filesystem::create_directory(mountpoint);
-    } catch (const std::filesystem::filesystem_error& e) {
-        std::cerr << "Cleaning up failed: " << e.what() << std::endl;
-        std::cerr << "Running tests anyway...";
-    }
-}
-
 int main(int argc, char** argv) {
-    testing::InitGoogleTest(&argc, argv);
+    // Parse command line arguments
+    bool cleanup = true;
+    if (argc >= 2 && argv[1] == std::string("--no-cleanup")) {
+        cleanup = false;
 
-    // Get current directory and append /tests
+        argv[1] = argv[0];
+        argv++;
+        argc--;
+    }
+
+    // Create mountpoint
     std::filesystem::path mountpoint = std::filesystem::current_path() / "tests";
     TestConfig::inst().mountpoint = mountpoint.string();
 
-    cleanup_and_prepare_mountpoint(TestConfig::inst().mountpoint);
+    if (cleanup) {
+        try {
+            execute_system_command("fusermount -u " + TestConfig::inst().mountpoint, false);
+            std::filesystem::remove_all(mountpoint);
+        } catch (const std::filesystem::filesystem_error& e) {
+            std::cerr << "Cleaning up failed: " << e.what() << std::endl;
+            std::cerr << "Running tests anyway...";
+        }
+    }
+
+    std::filesystem::create_directory(mountpoint);
 
     CustomVfs fuseWrapper(TestConfig::inst().mountpoint);
     TestConfig::inst().vfs = &fuseWrapper;
 
+    // Mount filesystem
     char* fuse_argv[] = {argv[0], const_cast<char*>(TestConfig::inst().mountpoint.c_str())};
-
     auto fuse_thread = std::thread(&CustomVfs::main, &fuseWrapper, 2, fuse_argv);
 
+    // Run tests
+    testing::InitGoogleTest(&argc, argv);
     int test_results = RUN_ALL_TESTS();
 
-    try {
-        // The `false` is there just because of workflow that lacks fusermount
-        execute_system_command("fusermount -u " + TestConfig::inst().mountpoint, false);
-        std::filesystem::remove_all(mountpoint);
-    } catch (const std::exception& e) {
-        std::cerr << "Error during cleanup: " << e.what() << std::endl;
+    // Unmount filesystem and clean up
+    if (cleanup) {
+        try {
+            execute_system_command("fusermount -u " + TestConfig::inst().mountpoint);
+            std::filesystem::remove_all(mountpoint);
+        } catch (const std::exception& e) {
+            std::cerr << "Error during cleanup: " << e.what() << std::endl;
+        }
     }
 
     return test_results;

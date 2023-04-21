@@ -17,7 +17,7 @@ build:
   dependencies:
     - format
   script:
-    - apt-get update && apt-get install -y clang cmake libfuse-dev libgtest-dev pkg-config
+    - apt-get update && apt-get install -y clang cmake libfuse-dev libgtest-dev pkg-config libsodium-dev
     - mkdir build && cd build
     - cmake ../ && make
   artifacts:

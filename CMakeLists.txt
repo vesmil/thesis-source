@@ -12,14 +12,14 @@ add_subdirectory(libs)
 set(CUSTOMVFS_SOURCES src/custom_vfs.cpp src/encryption_decorator.cpp src/versioning_vfs.cpp)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
-# Crypto++
-pkg_search_module(CRYPTOPP REQUIRED libcrypto)
+# Libsodium
+pkg_search_module(LIBSODIUM REQUIRED libsodium)
 
 # CustomVFS library
 add_library(customvfs STATIC ${CUSTOMVFS_SOURCES})
 target_include_directories(customvfs PUBLIC include)
-target_include_directories(customvfs PRIVATE ${FUSE_INCLUDE_DIRS} ${CRYPTOPP_INCLUDE_DIRS})
-target_link_libraries(customvfs PUBLIC fusexx ${FUSE_LIBRARIES} ${CRYPTOPP_LIBRARIES})
+target_include_directories(customvfs PRIVATE ${FUSE_INCLUDE_DIRS} ${LIBSODIUM_INCLUDE_DIRS})
+target_link_libraries(customvfs PUBLIC fusexx ${FUSE_LIBRARIES} ${LIBSODIUM_LIBRARIES})
 set_target_properties(customvfs PROPERTIES LINK_FLAGS "${FUSE_LDFLAGS_OTHER}")
 
 # CustomVFS executable

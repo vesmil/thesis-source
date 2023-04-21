@@ -1,7 +1,6 @@
 #ifndef SRC_CUSTOM_VFS_H
 #define SRC_CUSTOM_VFS_H
 
-// #include <cerrno>
 #include <cstring>
 #include <iostream>
 #include <map>
@@ -32,7 +31,7 @@ public:
 
     // Directory root_from_main(int argc, char *argv[]);
 
-    Directory root_from_main(int argc, char *argv[]);
+    [[maybe_unused]] Directory root_from_main(int argc, char *argv[]);
 
     void init() override;
     void destroy() override;

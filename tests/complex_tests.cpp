@@ -3,10 +3,9 @@
 #include "custom_vfs.h"
 
 TEST(CustomVfs, test_mount) {
-   // Create files inside a folder
+    // Create files inside a folder
 
-   // Mount that folder
+    // Mount that folder
 
-   // Verify that data has been preserved
-
+    // Verify that data has been preserved
 }

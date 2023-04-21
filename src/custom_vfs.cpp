@@ -14,7 +14,7 @@ CustomVfs::CustomVfs(const std::string &string) : root("/", S_IFDIR | (0777 ^ um
     populate_from_directory(string);
 }
 
-Directory CustomVfs::root_from_main(int argc, char **argv) {
+[[maybe_unused]] Directory CustomVfs::root_from_main(int argc, char **argv) {
     std::thread fuse_thread(&CustomVfs::main, this, argc, argv);
     fuse_thread.detach();
 

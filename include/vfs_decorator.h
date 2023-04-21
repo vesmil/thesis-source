@@ -7,10 +7,10 @@
 
 class VfsDecorator : public CustomVfs {
 public:
-    explicit VfsDecorator(std::shared_ptr<CustomVfs> wrapped_vfs) : wrapped_vfs_(std::move(wrapped_vfs)) {}
+    explicit VfsDecorator(CustomVfs& wrapped_vfs) : wrapped_vfs_(wrapped_vfs) {}
 
 protected:
-    std::shared_ptr<CustomVfs> wrapped_vfs_;
+    CustomVfs& wrapped_vfs_;
 };
 
 #endif  // SRC_VFS_DECORATOR_H

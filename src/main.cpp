@@ -11,18 +11,18 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    std::shared_ptr<CustomVfs> custom_vfs;
+    CustomVfs custom_vfs;
 
     if (std::filesystem::is_empty(mountpoint)) {
-            custom_vfs = std::make_shared<CustomVfs>(true);
+        custom_vfs = CustomVfs(true);
     } else {
-            custom_vfs = std::make_shared<CustomVfs>(mountpoint);
+        custom_vfs = CustomVfs(mountpoint);
     }
 
-    std::shared_ptr<VersioningVfs> versioned = std::make_shared<VersioningVfs>(custom_vfs);
-    std::shared_ptr<EncryptionVfs> encrypted = std::make_shared<EncryptionVfs>(versioned);
+    VersioningVfs versioned = VersioningVfs(custom_vfs);
+    EncryptionVfs encrypted = EncryptionVfs(versioned);
 
-    encrypted->main(argc, argv);
+    encrypted.main(argc, argv);
 
     return 0;
 }

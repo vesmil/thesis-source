@@ -33,10 +33,11 @@ test:
     - apt-get update && apt-get install -y libfuse-dev libgtest-dev libsodium-dev
     - cd build
     - ./customvfs_tests --no-cleanup > test_output.txt || true
+    - cat test_output.txt
     - |
       if grep -q "PASSED" test_output.txt; then
-        echo "Custom VFS tests PASSED. Continuing."
+        echo "Custom VFS tests PASSED."
       else
-        echo "Custom VFS tests FAILED. Stopping."
+        echo "Custom VFS tests FAILED."
         exit 1
       fi

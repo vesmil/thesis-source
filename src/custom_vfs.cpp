@@ -4,16 +4,15 @@
 #include <fstream>
 #include <thread>
 
-// TODO add a backing folder to store files - not just in memory
+#include "config.h"
 
-CustomVfs::CustomVfs(bool create_test) : root("/", S_IFDIR | (0777 ^ umask)) {
+CustomVfs::CustomVfs(const std::string &path, bool create_test) : root("/", S_IFDIR | (0777 ^ umask)) {
     if (create_test) {
         test_files();
     }
-}
 
-CustomVfs::CustomVfs(const std::string &string) : root("/", S_IFDIR | (0777 ^ umask)) {
-    populate_from_directory(string);
+    backing_path = parent_path(path) + Config::base.backing_prefix + path.substr(path.find_last_of('/') + 1);
+    populate_from_directory(path);
 }
 
 [[maybe_unused]] Directory CustomVfs::root_from_main(int argc, char **argv) {
@@ -31,6 +30,8 @@ void CustomVfs::init() {}
 void CustomVfs::destroy() {}
 
 void CustomVfs::populate_from_directory(const std::string &path) {
+    // Todo create backing-path and use it
+
     for (const auto &entry : std::filesystem::recursive_directory_iterator(path)) {
         std::string filepath = entry.path().string();
         std::string filename = entry.path().filename().string();
@@ -57,22 +58,24 @@ void CustomVfs::test_files() {
 
 std::vector<std::string> CustomVfs::subfiles(const std::string &pathname) const {
     std::vector<std::string> result;
-    size_t pathsize = pathname.back() == '/' ? pathname.size() : pathname.size() + 1;
+    size_t path_size = pathname.back() == '/' ? pathname.size() : pathname.size() + 1;
 
     for (const auto &item : files) {
         const std::string &filepath = item.first;
 
         const VfsNode &file = *item.second;
 
-        if (file.name.size() + pathsize == filepath.size() && filepath.compare(0, pathname.size(), pathname) == 0) {
+        if (file.name.size() + path_size == filepath.size() && filepath.compare(0, pathname.size(), pathname) == 0) {
             result.push_back(filepath);
         }
     }
+
     return result;
 }
 
 int CustomVfs::getattr(const std::string &pathname, struct stat *st) {
     memset(st, 0, sizeof(*st));
+
     st->st_uid = uid;
     st->st_gid = gid;
 
@@ -80,13 +83,14 @@ int CustomVfs::getattr(const std::string &pathname, struct stat *st) {
         const VfsNode &file = *files.at(pathname);
         st->st_mode = file.mode;
 
-        // st->st_size = static_cast<long>(file.content.size());
+        // TODO st->st_size = static_cast<long>(file.content.size());
 
         return 0;
     } else {
         return -ENOENT;
     }
 }
+
 int CustomVfs::readdir(const std::string &pathname, off_t off, struct fuse_file_info *fi,
                        FuseWrapper::readdir_flags flags) {
     struct stat st {};
@@ -308,3 +312,5 @@ int CustomVfs::statfs(const std::string &pathname, struct statvfs *stbuf) {
 
     return 0;
 }
+
+std::string CustomVfs::parent_path(const std::string &path) { return path.substr(0, path.rfind('/')); }

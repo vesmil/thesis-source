@@ -12,6 +12,9 @@ public:
 
     int read(const std::string &pathname, char *buf, size_t count, off_t offset, struct fuse_file_info *fi) override;
 
+    int readdir(const std::string &pathname, off_t off, struct fuse_file_info *fi, readdir_flags flags) override;
+    [[nodiscard]] std::vector<std::string> subfiles(const std::string &pathname) const override;
+
 private:
     bool handle_hook(int &result, const std::string &pathname, char *buf, size_t count, off_t offset,
                      struct fuse_file_info *fi);

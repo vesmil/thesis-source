@@ -1,6 +1,26 @@
 #include "versioning_vfs.h"
+
+#include "config.h"
+
 int VersioningVfs::write(const std::string &pathname, const char *buf, size_t count, off_t offset,
                          struct fuse_file_info *fi) {
+    auto parent_path = wrapped_vfs.parent_path(pathname);
+    std::vector<std::string> path_files = wrapped_vfs.subfiles(parent_path);
+
+    // check if path is in path_files
+    bool found = false;
+    for (const std::string &filename : path_files) {
+        if (filename == pathname) {
+            found = true;
+            break;
+        }
+    }
+
+    if (!found) {
+        // it's first version
+        return wrapped_vfs.write(pathname + "_v1", buf, count, offset, fi);
+    }
+
     // Read the current file content
     struct stat st {};
     wrapped_vfs.getattr(pathname, &st);
@@ -10,7 +30,6 @@ int VersioningVfs::write(const std::string &pathname, const char *buf, size_t co
     wrapped_vfs.read(pathname, current_content, current_size, 0, fi);
 
     // Check for .v_ files to see if there are any versions
-    std::vector<std::string> path_files = wrapped_vfs.subfiles(pathname);
     int max_version = 0;
     for (const std::string &filename : path_files) {
         if (filename.rfind(".v_", 0) == 0) {
@@ -19,9 +38,11 @@ int VersioningVfs::write(const std::string &pathname, const char *buf, size_t co
         }
     }
 
-    // TODO also configure how many versions to keep...
-
-    // TODO diff based approach
+    if (max_version >= Config::versioning.stored_versions) {
+        std::string oldest_version_path =
+            pathname + "/.v_" + std::to_string(max_version - Config::versioning.stored_versions + 1);
+        wrapped_vfs.unlink(oldest_version_path);
+    }
 
     // Store the current content as a new version
     std::string new_version_path = pathname + "/.v_" + std::to_string(max_version + 1);
@@ -67,5 +88,31 @@ void VersioningVfs::restore_version(const std::string &pathname, int version) {
 }
 
 void VersioningVfs::delete_version(const std::string &pathname, int version) {
-    wrapped_vfs.unlink(pathname + "/.v_" + std::to_string(version));
+    wrapped_vfs.unlink(pathname + "/.v" + std::to_string(version));
+}
+
+int VersioningVfs::readdir(const std::string &pathname, off_t off, struct fuse_file_info *fi,
+                           FuseWrapper::readdir_flags flags) {
+    struct stat st {};
+    std::vector<std::string> path_files = subfiles(pathname);
+
+    for (const auto &file : path_files) {
+        getattr(file, &st);
+        fill_dir(files.at(file)->name, &st);
+    }
+
+    return 0;
+}
+
+std::vector<std::string> VersioningVfs::subfiles(const std::string &pathname) const {
+    auto files = CustomVfs::subfiles(pathname);
+
+    std::vector<std::string> filtered_files;
+    for (const std::string &filename : files) {
+        if (filename.rfind(".v1") != 0) {
+            filtered_files.push_back(filename);
+        }
+    }
+
+    return filtered_files;
 }

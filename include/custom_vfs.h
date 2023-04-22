@@ -21,19 +21,17 @@
 class CustomVfs : public FuseWrapper {
 public:
     /**
-     * Create a new filesystem - possibly with example files
-     *
-     * @param create_test Whether to create example files
-     */
-    explicit CustomVfs(bool create_test = false);
-
-    /**
      * Create a new filesystem from a given directory
      * The directory will be copied into the filesystem
      *
-     * @param string The path to the directory*/
-    explicit CustomVfs(const std::string &string);
+     * @param path The path to the directory
+     * @param create_test Whether to create example files
+     */
+    explicit CustomVfs(const std::string &path, bool create_test = false);
 
+    /**
+     * Gets a Directory from the main function arguments - used for testing
+     */
     [[maybe_unused]] Directory root_from_main(int argc, char *argv[]);
 
     void init() override;
@@ -66,10 +64,14 @@ public:
     int mkdir(const std::string &pathname, mode_t mode) override;
     int rmdir(const std::string &pathname) override;
     int readdir(const std::string &pathname, off_t off, struct fuse_file_info *fi, readdir_flags flags) override;
-    [[nodiscard]] std::vector<std::string> subfiles(const std::string &pathname) const;
+    [[nodiscard]] virtual std::vector<std::string> subfiles(const std::string &pathname) const;
 
-private:
+protected:
+    static std::string parent_path(const std::string &path);
+
     Directory root;
+
+    std::string backing_path;
     std::map<std::string, std::shared_ptr<VfsNode>> files{};
 };
 

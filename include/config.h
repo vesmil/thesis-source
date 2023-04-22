@@ -22,7 +22,6 @@ struct Base {
 };
 
 struct Versioning {
-    bool optimize_write = true;
     std::size_t stored_versions = 10;
 };
 

@@ -16,6 +16,10 @@ public:
     [[nodiscard]] std::vector<std::string> subfiles(const std::string &pathname) const override;
 
 private:
+    std::string const version_prefix = "#v";
+
+    int get_max_version(const std::string &pathname);
+
     bool handle_hook(int &result, const std::string &pathname, char *buf, size_t count, off_t offset,
                      struct fuse_file_info *fi);
 

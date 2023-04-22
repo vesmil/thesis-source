@@ -4,32 +4,41 @@
 
 int VersioningVfs::write(const std::string &pathname, const char *buf, size_t count, off_t offset,
                          struct fuse_file_info *fi) {
-    auto parent_path = wrapped_vfs.parent_path(pathname);
+    int max_version = get_max_version(pathname);
+
+    if (max_version != 0) {
+        // Delete oldest versions if needed
+        while (max_version > Config::versioning.stored_versions) {
+            std::string oldest_version_path =
+                pathname + version_prefix + std::to_string(max_version - Config::versioning.stored_versions + 1);
+            wrapped_vfs.unlink(oldest_version_path);
+
+            for (size_t i = max_version - Config::versioning.stored_versions + 2; i <= max_version; i++) {
+                std::string old_version_path = pathname + version_prefix + std::to_string(i);
+                std::string new_version_path = pathname + version_prefix + std::to_string(i - 1);
+
+                wrapped_vfs.rename(old_version_path, new_version_path, 0);
+            }
+
+            max_version--;
+        }
+    } else {
+        max_version = 1;
+    }
+
+    std::string new_version_path = pathname + version_prefix + std::to_string(max_version + 1);
+
+    struct stat st {};
+    getattr(pathname, &st);
+
+    wrapped_vfs.mknod(new_version_path, st.st_mode, st.st_dev);
+    return wrapped_vfs.write(new_version_path, buf, count, offset, fi);
+}
+
+int VersioningVfs::get_max_version(const std::string &pathname) {
+    auto parent_path = CustomVfs::parent_path(pathname);
     std::vector<std::string> path_files = wrapped_vfs.subfiles(parent_path);
 
-    // check if path is in path_files
-    bool found = false;
-    for (const std::string &filename : path_files) {
-        if (filename == pathname) {
-            found = true;
-            break;
-        }
-    }
-
-    if (!found) {
-        // it's first version
-        return wrapped_vfs.write(pathname + "_v1", buf, count, offset, fi);
-    }
-
-    // Read the current file content
-    struct stat st {};
-    wrapped_vfs.getattr(pathname, &st);
-    off_t current_size = st.st_size;
-
-    char *current_content = new char[current_size];
-    wrapped_vfs.read(pathname, current_content, current_size, 0, fi);
-
-    // Check for .v_ files to see if there are any versions
     int max_version = 0;
     for (const std::string &filename : path_files) {
         if (filename.rfind(".v_", 0) == 0) {
@@ -38,21 +47,7 @@ int VersioningVfs::write(const std::string &pathname, const char *buf, size_t co
         }
     }
 
-    if (max_version >= Config::versioning.stored_versions) {
-        std::string oldest_version_path =
-            pathname + "/.v_" + std::to_string(max_version - Config::versioning.stored_versions + 1);
-        wrapped_vfs.unlink(oldest_version_path);
-    }
-
-    // Store the current content as a new version
-    std::string new_version_path = pathname + "/.v_" + std::to_string(max_version + 1);
-    wrapped_vfs.mknod(new_version_path, st.st_mode, st.st_dev);
-    wrapped_vfs.write(new_version_path, current_content, current_size, 0, fi);
-
-    delete[] current_content;
-
-    // Delegate the write operation to the wrapped VFS
-    return wrapped_vfs.write(pathname, buf, count, offset, fi);
+    return max_version;
 }
 
 int VersioningVfs::read(const std::string &pathname, char *buf, size_t count, off_t offset, struct fuse_file_info *fi) {
@@ -61,15 +56,22 @@ int VersioningVfs::read(const std::string &pathname, char *buf, size_t count, of
         return result;
     }
 
-    return CustomVfs::read(pathname, buf, count, offset, fi);
+    std::string version_path = pathname + version_prefix + std::to_string(get_max_version(pathname));
+    return wrapped_vfs.read(version_path, buf, count, offset, fi);
 }
 
 bool VersioningVfs::handle_hook(int &result, const std::string &pathname, char *buf, size_t count, off_t offset,
                                 struct fuse_file_info *fi) {
-    if (pathname[0] == '#') {
-        // save_version
+    std::string filename = CustomVfs::filename_from_path(pathname);
+    if (filename[0] == '#') {
+        std::string command = filename.substr(1, filename.find('#') - 1);
+        std::string arg = filename.substr(filename.find('#') + 1);
 
-        // list_versions
+        // decide what to do based on command
+        if (command == "restore") {
+            // TODO...
+            restore_version(pathname, std::stoi(arg));
+        }
 
         return true;
     }

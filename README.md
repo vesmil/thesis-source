@@ -44,7 +44,6 @@ CustomVFS <mountpoint>
     - [X] Look into [vcpkg](https://github.com/microsoft/vcpkg) - will not be used
 - [X] Functioning VFS
     - [X] Hello world project
-    - [ ] ...
 - [ ] Versioning features
     - [ ] Logging file changes
     - [ ] Creating snapshots
@@ -52,3 +51,6 @@ CustomVFS <mountpoint>
 - [ ] Encryption features
     - [ ] Encrypting files
     - [ ] Decrypting files
+- [ ] CLI
+    - [ ] Encryption
+    - [ ] Versioning

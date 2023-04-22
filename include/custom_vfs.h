@@ -73,6 +73,7 @@ protected:
 
     std::string backing_path;
     std::map<std::string, std::shared_ptr<VfsNode>> files{};
+    static std::string filename_from_path(const std::string &basicString);
 };
 
 #endif

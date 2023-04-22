@@ -11,7 +11,7 @@ CustomVfs::CustomVfs(const std::string &path, bool create_test) : root("/", S_IF
         test_files();
     }
 
-    backing_path = parent_path(path) + Config::base.backing_prefix + path.substr(path.find_last_of('/') + 1);
+    backing_path = parent_path(path) + Config::base.backing_prefix + filename_from_path(path);
     populate_from_directory(path);
 }
 
@@ -314,3 +314,7 @@ int CustomVfs::statfs(const std::string &pathname, struct statvfs *stbuf) {
 }
 
 std::string CustomVfs::parent_path(const std::string &path) { return path.substr(0, path.rfind('/')); }
+
+std::string CustomVfs::filename_from_path(const std::string &basicString) {
+    return basicString.substr(basicString.rfind('/') + 1);
+}

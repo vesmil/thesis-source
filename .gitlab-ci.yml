@@ -17,7 +17,7 @@ build:
   dependencies:
     - format
   script:
-    - apt-get update && apt-get install -y clang cmake libfuse-dev libgtest-dev libsodium-dev pkg-config
+    - apt-get update && apt-get install -y clang cmake libfuse-dev libgtest-dev libsodium-dev pkg-config libboost-program-options-dev
     - mkdir build && cd build
     - cmake ../ && make
   artifacts:
@@ -30,7 +30,7 @@ test:
   dependencies:
     - build
   script:
-    - apt-get update && apt-get install -y libfuse-dev libgtest-dev libsodium-dev
+    - apt-get update && apt-get install -y libfuse-dev libgtest-dev libsodium-dev libboost-program-options-dev
     - cd build
     - ./customvfs_tests --no-cleanup > test_output.txt || true
     - cat test_output.txt

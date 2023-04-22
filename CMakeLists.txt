@@ -2,24 +2,28 @@ cmake_minimum_required(VERSION 3.1.2)
 project(CustomVFS CXX)
 set(CMAKE_CXX_STANDARD 17)
 
-# FUSE
+# Libs
 include(FindPkgConfig)
+
 pkg_search_module(FUSE REQUIRED fuse)
+pkg_search_module(LIBSODIUM REQUIRED libsodium)
+find_package(Boost COMPONENTS program_options REQUIRED)
 
 # FUSE C++ wrapper
 add_subdirectory(libs)
 
-set(CUSTOMVFS_SOURCES src/custom_vfs.cpp src/encryption_vfs.cpp src/versioning_vfs.cpp src/config.cpp)
-set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
+# Tools
+add_subdirectory(tools)
 
-# Libsodium
-pkg_search_module(LIBSODIUM REQUIRED libsodium)
+# Sources
+set(CUSTOMVFS_SOURCES src/custom_vfs.cpp src/encryption_vfs.cpp src/versioning_vfs.cpp src/config.cpp)
 
 # CustomVFS library
 add_library(customvfs STATIC ${CUSTOMVFS_SOURCES})
 target_include_directories(customvfs PUBLIC include)
-target_include_directories(customvfs PRIVATE ${FUSE_INCLUDE_DIRS} ${LIBSODIUM_INCLUDE_DIRS})
-target_link_libraries(customvfs PUBLIC fusexx ${FUSE_LIBRARIES} ${LIBSODIUM_LIBRARIES})
+target_include_directories(customvfs PRIVATE ${FUSE_INCLUDE_DIRS} ${LIBSODIUM_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
+
+target_link_libraries(customvfs PUBLIC fusexx ${FUSE_LIBRARIES} ${LIBSODIUM_LIBRARIES} ${Boost_LIBRARIES})
 set_target_properties(customvfs PROPERTIES LINK_FLAGS "${FUSE_LDFLAGS_OTHER}")
 
 # CustomVFS executable

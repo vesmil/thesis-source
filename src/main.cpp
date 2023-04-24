@@ -14,7 +14,7 @@ void setup_options(boost::program_options::options_description& desc) {
         ("mountpoint,m", boost::program_options::value<std::string>(), "mountpoint")      //
         ("config,c", boost::program_options::value<std::string>(), "configuration file")  //
         ("test,t", "Create test files inside mount directory.")                           //
-        ("fuse-args,f", boost::program_options::value<std::vector<std::string>>(), "FUSE arguments");
+        ("fuse-args,f", boost::program_options::value<std::string>(), "FUSE arguments");
 }
 
 /**
@@ -64,8 +64,17 @@ bool parse_arguments(int argc, char* argv[], boost::program_options::variables_m
  * Prepares arguments for FUSE main.
  * SImply prepending program name and appending mountpoint.
  */
-std::vector<char*> prepare_fuse_arguments(const std::vector<std::string>& fuse_args, const std::string& mountpoint,
+std::vector<char*> prepare_fuse_arguments(const std::string& fuse_arg_str, const std::string& mountpoint,
                                           const char* argv0) {
+    std::vector<std::string> fuse_args;
+
+    // split fuse arg string
+    std::stringstream ss(fuse_arg_str);
+    std::string arg;
+    while (std::getline(ss, arg, ' ')) {
+        fuse_args.push_back(arg);
+    }
+
     int fuse_argc = static_cast<int>(fuse_args.size()) + 2;
     std::vector<char*> fuse_argv(fuse_argc);
 
@@ -97,16 +106,16 @@ int main(int argc, char* argv[]) {
     }
 
     CustomVfs custom_vfs(mountpoint, test_mode);
-    VersioningVfs versioned(custom_vfs);
-    EncryptionVfs encrypted(versioned);
+    // VersioningVfs versioned(custom_vfs);
+    // EncryptionVfs encrypted(versioned);
 
-    std::vector<std::string> fuse_args;
+    std::string fuse_args;
     if (vm.count("fuse-args")) {
-        fuse_args = vm["fuse-args"].as<std::vector<std::string>>();
+        fuse_args = vm["fuse-args"].as<std::string>();
     }
 
     auto fuse_argv = prepare_fuse_arguments(fuse_args, mountpoint, argv[0]);
-    encrypted.main(static_cast<int>(fuse_argv.size()), fuse_argv.data());
+    custom_vfs.main(static_cast<int>(fuse_argv.size()), fuse_argv.data());
 
     return 0;
 }

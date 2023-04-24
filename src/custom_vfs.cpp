@@ -1,320 +1,202 @@
 #include "custom_vfs.h"
 
+#include <dirent.h>
+#include <fcntl.h>
+#include <fuse_lowlevel.h>
+#include <sys/stat.h>
+#include <sys/statvfs.h>
+#include <unistd.h>
+
+#include <cerrno>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
-#include <thread>
 
 #include "config.h"
 
-CustomVfs::CustomVfs(const std::string &path, bool create_test) : root("/", S_IFDIR | (0777 ^ umask)) {
+#define LOG(...)                                                    \
+    do {                                                            \
+        std::fstream stream("/home/vesmil/log.txt", std::ios::app); \
+        stream << __VA_ARGS__ << std::endl;                         \
+        stream.close();                                             \
+    } while (0);
+
+#define POSIX_CALL(call)   \
+    LOG(#call)             \
+    do {                   \
+        int res = call;    \
+        if (res == -1) {   \
+            return -errno; \
+        }                  \
+    } while (0);
+
+CustomVfs::CustomVfs(const std::string &path, bool test) : mount_path(path), create_test(test) {
+    std::string parent = CustomVfs::parent_path(path);
+    std::string name = CustomVfs::toplevel_name(path);
+
+    backing_dir = parent + Config::base.backing_prefix + name;
+    std::filesystem::create_directory(backing_dir);
+}
+
+void CustomVfs::init() {
+    FuseWrapper::init();
+
     if (create_test) {
-        test_files();
-    }
-
-    backing_path = parent_path(path) + Config::base.backing_prefix + filename_from_path(path);
-    populate_from_directory(path);
-}
-
-[[maybe_unused]] Directory CustomVfs::root_from_main(int argc, char **argv) {
-    std::thread fuse_thread(&CustomVfs::main, this, argc, argv);
-
-    // Fuse-main kills the program, so I run it in a separate thread
-    // Could be solved by using low-level fuse API
-    fuse_thread.detach();
-
-    return root;
-}
-
-void CustomVfs::init() {}
-
-void CustomVfs::destroy() {}
-
-void CustomVfs::populate_from_directory(const std::string &path) {
-    // Todo create backing-path and use it
-
-    for (const auto &entry : std::filesystem::recursive_directory_iterator(path)) {
-        std::string filepath = entry.path().string();
-        std::string filename = entry.path().filename().string();
-        mode_t mode = entry.is_directory() ? S_IFDIR | (0777 ^ umask) : S_IFREG | (0666 ^ umask);
-
-        std::vector<uint8_t> content;
-
-        content.reserve(entry.file_size());
-        std::ifstream ifs(filepath, std::ifstream::in | std::ifstream::binary);
-        content.assign(std::istreambuf_iterator<char>(ifs), std::istreambuf_iterator<char>());
-        ifs.close();
-
-        files[filepath] = std::make_shared<File>(filename, mode, content);
+        std::filesystem::create_directory(backing_dir + "/dir");
+        std::string filename = backing_dir + "/dir/file.txt";
+        int fd = ::open(filename.c_str(), O_CREAT | O_RDWR);
+        ::write(fd, "Hello World", 11);
+        ::close(fd);
     }
 }
 
-void CustomVfs::test_files() {
-    files["/"] = std::make_shared<Directory>("root", S_IFDIR | (0777 ^ umask));
-    files["/helloworld.txt"] = std::make_shared<File>("helloworld.txt", S_IFREG | (0666 ^ umask), "Hello, world.\n");
-    files["/dir"] = std::make_shared<Directory>("dir", S_IFDIR | (0777 ^ umask));
-    files["/dir/helloworld2.txt"] =
-        std::make_shared<File>("helloworld.txt", S_IFREG | (0666 ^ umask), "Another hello, world.\n");
-}
+void CustomVfs::destroy() { FuseWrapper::destroy(); }
 
-std::vector<std::string> CustomVfs::subfiles(const std::string &pathname) const {
-    std::vector<std::string> result;
-    size_t path_size = pathname.back() == '/' ? pathname.size() : pathname.size() + 1;
-
-    for (const auto &item : files) {
-        const std::string &filepath = item.first;
-
-        const VfsNode &file = *item.second;
-
-        if (file.name.size() + path_size == filepath.size() && filepath.compare(0, pathname.size(), pathname) == 0) {
-            result.push_back(filepath);
-        }
-    }
-
-    return result;
-}
-
-int CustomVfs::getattr(const std::string &pathname, struct stat *st) {
-    memset(st, 0, sizeof(*st));
-
-    st->st_uid = uid;
-    st->st_gid = gid;
-
-    if (files.count(pathname)) {
-        const VfsNode &file = *files.at(pathname);
-        st->st_mode = file.mode;
-
-        // TODO st->st_size = static_cast<long>(file.content.size());
-
-        return 0;
-    } else {
-        return -ENOENT;
-    }
-}
-
-int CustomVfs::readdir(const std::string &pathname, off_t off, struct fuse_file_info *fi,
-                       FuseWrapper::readdir_flags flags) {
-    struct stat st {};
-
-    std::vector<std::string> path_files = subfiles(pathname);
-
-    for (const auto &file : path_files) {
-        getattr(file, &st);
-        fill_dir(files.at(file)->name, &st);
-    }
-
+int CustomVfs::mknod(const std::string &pathname, mode_t mode, dev_t dev) {
+    POSIX_CALL(::mknod(to_backing(pathname).c_str(), mode, dev));
     return 0;
 }
 
 int CustomVfs::read(const std::string &pathname, char *buf, size_t count, off_t offset, struct fuse_file_info *fi) {
-    const auto node = files.at(pathname);
-    if (node->is_directory()) {
-        return -EISDIR;
-    }
-    const auto file = std::static_pointer_cast<File>(node);
-
-    const auto &content = file->content;
-    if (count + offset > content.size()) {
-        if (static_cast<size_t>(offset) > content.size()) {
-            count = 0;
-        } else {
-            count = content.size() - offset;
-        }
-    }
-
-    std::copy(content.data() + offset, content.data() + offset + count, buf);
-    return static_cast<int>(count);
-}
-
-int CustomVfs::chmod(const std::string &pathname, mode_t mode) {
-    if (files.count(pathname)) {
-        files[pathname]->mode = mode;
-        return 0;
-    } else {
-        return -ENOENT;
-    }
+    LOG("read " << pathname);
+    int fd = fi->fh;
+    return ::pread(fd, buf, count, offset);
 }
 
 int CustomVfs::write(const std::string &pathname, const char *buf, size_t count, off_t offset,
                      struct fuse_file_info *fi) {
-    if (files.count(pathname) == 0) {
-        return -ENOENT;
-    }
-
-    const auto node = files.at(pathname);
-    if (node->is_directory()) {
-        return -EISDIR;
-    }
-    const auto file = std::static_pointer_cast<File>(node);
-
-    auto &content = file->content;
-    content.insert(content.begin() + offset, buf, buf + count);
-
-    return static_cast<int>(count);
+    LOG("write " << pathname);
+    int fd = fi->fh;
+    return ::pwrite(fd, buf, count, offset);
 }
 
 int CustomVfs::truncate(const std::string &pathname, off_t length) {
-    if (files.count(pathname)) {
-        const auto node = files.at(pathname);
-
-        if (node->is_directory()) {
-            return -EISDIR;
-        }
-
-        std::static_pointer_cast<File>(node)->content.resize(length);
-        return 0;
-    } else {
-        return -ENOENT;
-    }
-}
-
-int CustomVfs::mknod(const std::string &pathname, mode_t mode, dev_t dev) {
-    files[pathname] = std::make_shared<File>(pathname.substr(pathname.rfind('/') + 1), mode, "");
-    return 0;
-}
-
-int CustomVfs::mkdir(const std::string &pathname, mode_t mode) {
-    files[pathname] = std::make_shared<Directory>(pathname.substr(pathname.rfind('/') + 1), mode);
-    return 0;
-}
-
-int CustomVfs::unlink(const std::string &pathname) {
-    files.erase(pathname);
-    return 0;
-}
-
-int CustomVfs::rmdir(const std::string &pathname) {
-    if (!subfiles(pathname).empty()) {
-        return -ENOTEMPTY;
-    } else {
-        files.erase(pathname);
-        return 0;
-    }
+    std::string full_path = to_backing(pathname);
+    return ::truncate(full_path.c_str(), length);
 }
 
 int CustomVfs::rename(const std::string &oldpath, const std::string &newpath, unsigned int flags) {
-    if (oldpath == newpath) {
-        return 0;
-    }
+    std::string full_old = to_backing(oldpath);
+    std::string full_new = to_backing(newpath);
 
-    std::queue<std::pair<std::string, std::string>> path_pairs;
-    path_pairs.emplace(oldpath, newpath);
-
-    while (!path_pairs.empty()) {
-        std::string cur_oldpath = path_pairs.front().first;
-        std::string cur_newpath = path_pairs.front().second;
-
-        path_pairs.pop();
-
-        if (!files.count(cur_oldpath)) {
-            return -ENOENT;
-        }
-
-        if (files.count(cur_newpath)) {
-            return -EEXIST;
-        }
-
-        std::vector<std::string> subfiles_list = subfiles(cur_oldpath);
-
-        for (const auto &subfile : subfiles_list) {
-            std::string new_subpath = cur_newpath + subfile.substr(cur_oldpath.size());
-            path_pairs.emplace(subfile, new_subpath);
-        }
-
-        files[cur_oldpath]->name = cur_newpath.substr(cur_newpath.rfind('/') + 1);
-    }
-
-    return 0;
+    return ::rename(oldpath.c_str(), newpath.c_str());
 }
 
-int CustomVfs::symlink(const std::string &target, const std::string &linkpath) {
-    files[linkpath] = std::make_shared<File>(linkpath.substr(linkpath.rfind('/') + 1), S_IFLNK | 0777, target);
-    return 0;
-}
-
-int CustomVfs::readlink(const std::string &pathname, char *buf, size_t size) {
-    if (files.count(pathname) == 0 || !(files[pathname]->mode & S_IFLNK)) {
-        return -ENOENT;
-    }
-
-    std::shared_ptr<File> file = std::static_pointer_cast<File>(files[pathname]);
-    std::copy(file->content.begin(), file->content.end(), buf);
-
-    return 0;
-}
-
-int CustomVfs::link(const std::string &oldpath, const std::string &newpath) {
-    if (files.count(oldpath) == 0) {
-        return -ENOENT;
-    }
-    files[newpath] = files[oldpath];
-    return 0;
-}
-
-int CustomVfs::open(const std::string &pathname, struct fuse_file_info *fi) {
-    if (files.count(pathname) == 0) {
-        return -ENOENT;
-    }
-    return 0;
-}
-
-int CustomVfs::release(const std::string &pathname, struct fuse_file_info *fi) {
-    if (files.count(pathname) == 0) {
-        return -ENOENT;
-    }
-    return 0;
-}
-
-int CustomVfs::utimens(const std::string &pathname, const struct timespec *tv) {
-    if (files.count(pathname) == 0) {
-        return -ENOENT;
-    }
-    files[pathname]->times[0] = tv[0];
-    files[pathname]->times[1] = tv[1];
-    return 0;
+int CustomVfs::getattr(const std::string &pathname, struct stat *st) {
+    return ::lstat(to_backing(pathname).c_str(), st);
 }
 
 int CustomVfs::statfs(const std::string &pathname, struct statvfs *stbuf) {
-    if (!files.count(pathname)) {
-        return -ENOENT;
+    return ::statvfs(to_backing(pathname).c_str(), stbuf);
+}
+
+int CustomVfs::utimens(const std::string &pathname, const struct timespec tv[2]) {
+    return ::utimensat(AT_FDCWD, to_backing(pathname).c_str(), tv, AT_SYMLINK_NOFOLLOW);
+}
+
+int CustomVfs::chmod(const std::string &pathname, mode_t mode) { return ::chmod(to_backing(pathname).c_str(), mode); }
+
+int CustomVfs::open(const std::string &pathname, struct fuse_file_info *fi) {
+    LOG("open " << pathname)
+    int fd = ::open(to_backing(pathname).c_str(), fi->flags);
+    if (fd == -1) {
+        return -errno;
+    }
+    fi->fh = fd;
+    return 0;
+}
+
+int CustomVfs::release(const std::string &pathname, struct fuse_file_info *fi) { return ::close(fi->fh); }
+
+int CustomVfs::symlink(const std::string &target, const std::string &linkpath) {
+    return ::symlink(to_backing(target).c_str(), to_backing(linkpath).c_str());
+}
+
+int CustomVfs::readlink(const std::string &pathname, char *buf, size_t size) {
+    return ::readlink(to_backing(pathname).c_str(), buf, size);
+}
+
+int CustomVfs::link(const std::string &oldpath, const std::string &newpath) {
+    return ::link(oldpath.c_str(), newpath.c_str());
+}
+
+int CustomVfs::unlink(const std::string &pathname) { return ::unlink(to_backing(pathname).c_str()); }
+
+int CustomVfs::mkdir(const std::string &pathname, mode_t mode) {
+    POSIX_CALL(::mkdir(to_backing(pathname).c_str(), mode));
+    return 0;
+}
+
+int CustomVfs::rmdir(const std::string &pathname) { return ::rmdir(to_backing(pathname).c_str()); }
+
+int CustomVfs::readdir(const std::string &pathname, off_t off, struct fuse_file_info *fi, readdir_flags flags) {
+    auto real_path = to_backing(pathname);
+
+    DIR *dp;
+    struct dirent *de;
+
+    dp = ::opendir(to_backing(pathname).c_str());
+    if (dp == nullptr) {
+        return -errno;
     }
 
-    memset(stbuf, 0, sizeof(struct statvfs));
-    stbuf->f_bsize = 4096;   // Block size
-    stbuf->f_frsize = 4096;  // Fragment size
+    while ((de = ::readdir(dp)) != nullptr) {
+        struct stat st {};
+        memset(&st, 0, sizeof(st));
+        st.st_ino = de->d_ino;
 
-    // Count total and available blocks
-    uint64_t total_blocks = 0;
-    uint64_t available_blocks = 0;
-
-    for (const auto &item : files) {
-        if (item.second->is_directory()) {
-            total_blocks += 1;
-            available_blocks += 1;
+        std::error_code ec;
+        auto status = std::filesystem::status(real_path, ec);
+        if (ec) {
+            LOG("Error getting status for " << real_path << ": " << ec.message());
+            continue;
+        }
+        if (status.type() == std::filesystem::file_type::directory) {
+            st.st_mode |= S_IFDIR;
+        } else if (status.type() == std::filesystem::file_type::regular) {
+            st.st_mode |= S_IFREG;
+        } else if (status.type() == std::filesystem::file_type::symlink) {
+            st.st_mode |= S_IFLNK;
         } else {
-            const auto file = std::static_pointer_cast<File>(item.second);
-            total_blocks += (file->content.size() + 4095) / 4096;
-            available_blocks += (file->content.size() + 4095) / 4096;
+            LOG("Unknown file type for " << real_path);
+            continue;
+        }
+
+        // ...
+
+        if (fill_dir(de->d_name, &st, flags)) {
+            break;
         }
     }
 
-    stbuf->f_blocks = total_blocks;
-    stbuf->f_bfree = available_blocks;
-    stbuf->f_bavail = available_blocks;
-
-    // Count total and available inodes
-    stbuf->f_files = static_cast<fsfilcnt_t>(files.size());
-    stbuf->f_ffree = 0;
-    stbuf->f_favail = 0;
-
-    stbuf->f_fsid = 0;       // File system ID
-    stbuf->f_flag = 0;       // Mount flags
-    stbuf->f_namemax = 255;  // Maximum filename length
-
+    ::closedir(dp);
     return 0;
 }
 
 std::string CustomVfs::parent_path(const std::string &path) { return path.substr(0, path.rfind('/')); }
 
-std::string CustomVfs::filename_from_path(const std::string &basicString) {
+std::string CustomVfs::toplevel_name(const std::string &basicString) {
     return basicString.substr(basicString.rfind('/') + 1);
 }
+
+std::vector<std::string> CustomVfs::subfiles(const std::string &pathname) const {
+    std::vector<std::string> files;
+    try {
+        std::filesystem::path dirPath(pathname);
+        if (!std::filesystem::is_directory(dirPath)) {
+            return files;
+        }
+
+        for (const auto &entry : std::filesystem::directory_iterator(dirPath)) {
+            if (std::filesystem::is_regular_file(entry.status())) {
+                files.push_back(entry.path().filename().string());
+            }
+        }
+    } catch (const std::filesystem::filesystem_error &e) {
+        std::cerr << e.what() << std::endl;
+    }
+
+    return files;
+}
+
+std::string CustomVfs::to_backing(const std::string &pathname) const { return backing_dir + pathname; }

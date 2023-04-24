@@ -27,18 +27,10 @@ public:
      * @param path The path to the directory
      * @param create_test Whether to create example files
      */
-    explicit CustomVfs(const std::string &path, bool create_test = false);
-
-    /**
-     * Gets a Directory from the main function arguments - used for testing
-     */
-    [[maybe_unused]] Directory root_from_main(int argc, char *argv[]);
+    explicit CustomVfs(const std::string &path, bool test = false);
 
     void init() override;
     void destroy() override;
-
-    void test_files();
-    void populate_from_directory(const std::string &path);
 
     // Files
     int mknod(const std::string &pathname, mode_t mode, dev_t dev) override;
@@ -68,12 +60,16 @@ public:
 
 protected:
     static std::string parent_path(const std::string &path);
+    static std::string toplevel_name(const std::string &basicString);
 
-    Directory root;
+private:
+    // Converts a path to its real path in the backing directory
+    [[nodiscard]] std::string to_backing(const std::string &pathname) const;
 
-    std::string backing_path;
-    std::map<std::string, std::shared_ptr<VfsNode>> files{};
-    static std::string filename_from_path(const std::string &basicString);
+    std::string backing_dir;
+    const std::string mount_path;
+
+    bool create_test;
 };
 
 #endif

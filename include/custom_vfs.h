@@ -68,6 +68,15 @@ private:
     // Converts a path to its real path in the backing directory
     [[nodiscard]] std::string to_backing(const std::string &pathname) const;
 
+    template <typename Func, typename... Args>
+    static int posix_call_result(Func operation, Args... args) {
+        int result = operation(args...);
+        if (result < 0) {
+            return -errno;
+        }
+        return result;
+    }
+
     std::string backing_dir;
     const std::string mount_path;
 

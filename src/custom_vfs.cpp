@@ -8,27 +8,10 @@
 #include <unistd.h>
 
 #include <cerrno>
-#include <cstring>
 #include <filesystem>
 #include <fstream>
 
 #include "config.h"
-
-#define LOG(...)                                                    \
-    do {                                                            \
-        std::fstream stream("/home/vesmil/log.txt", std::ios::app); \
-        stream << __VA_ARGS__ << std::endl;                         \
-        stream.close();                                             \
-    } while (0);
-
-#define POSIX_CALL(call)   \
-    LOG(#call)             \
-    do {                   \
-        int res = call;    \
-        if (res == -1) {   \
-            return -errno; \
-        }                  \
-    } while (0);
 
 CustomVfs::CustomVfs(const std::string &path, bool test) : mount_path(path), create_test(test) {
     std::string parent = CustomVfs::parent_path(path);
@@ -42,161 +25,195 @@ void CustomVfs::init() {
     FuseWrapper::init();
 
     if (create_test) {
-        std::filesystem::create_directory(backing_dir + "/dir");
-        std::string filename = backing_dir + "/dir/file.txt";
+        std::filesystem::create_directory(mount_path + "/dir");
+        std::string filename = mount_path + "/dir/file.txt";
         int fd = ::open(filename.c_str(), O_CREAT | O_RDWR);
         ::write(fd, "Hello World", 11);
         ::close(fd);
     }
 }
 
-void CustomVfs::destroy() { FuseWrapper::destroy(); }
+void CustomVfs::destroy() {}
 
 int CustomVfs::mknod(const std::string &pathname, mode_t mode, dev_t dev) {
-    POSIX_CALL(::mknod(to_backing(pathname).c_str(), mode, dev));
-    return 0;
+    std::string real_path = to_backing(pathname);
+    return ::mknod(real_path.c_str(), mode, dev);
 }
 
 int CustomVfs::read(const std::string &pathname, char *buf, size_t count, off_t offset, struct fuse_file_info *fi) {
-    LOG("read " << pathname);
-    int fd = fi->fh;
-    return ::pread(fd, buf, count, offset);
+    std::string real_path = to_backing(pathname);
+    int fd = ::open(real_path.c_str(), O_RDONLY);
+    if (fd < 0) {
+        return -errno;
+    }
+    int ret = ::pread(fd, buf, count, offset);
+    ::close(fd);
+    return ret;
 }
 
 int CustomVfs::write(const std::string &pathname, const char *buf, size_t count, off_t offset,
                      struct fuse_file_info *fi) {
-    LOG("write " << pathname);
-    int fd = fi->fh;
-    return ::pwrite(fd, buf, count, offset);
+    std::string real_path = to_backing(pathname);
+    int fd = ::open(real_path.c_str(), O_WRONLY);
+    if (fd < 0) {
+        return -errno;
+    }
+    int ret = ::pwrite(fd, buf, count, offset);
+    ::close(fd);
+    return ret;
 }
 
 int CustomVfs::truncate(const std::string &pathname, off_t length) {
-    std::string full_path = to_backing(pathname);
-    return ::truncate(full_path.c_str(), length);
+    std::string real_path = to_backing(pathname);
+    return ::truncate(real_path.c_str(), length);
 }
 
 int CustomVfs::rename(const std::string &oldpath, const std::string &newpath, unsigned int flags) {
-    std::string full_old = to_backing(oldpath);
-    std::string full_new = to_backing(newpath);
-
-    return ::rename(oldpath.c_str(), newpath.c_str());
+    std::string old_real_path = to_backing(oldpath);
+    std::string new_real_path = to_backing(newpath);
+    return ::renameat(AT_FDCWD, old_real_path.c_str(), AT_FDCWD, new_real_path.c_str());
 }
 
 int CustomVfs::getattr(const std::string &pathname, struct stat *st) {
-    return ::lstat(to_backing(pathname).c_str(), st);
+    std::string real_path = to_backing(pathname);
+    int result = ::lstat(real_path.c_str(), st);
+    if (result < 0) {
+        return -errno;
+    }
+    return result;
 }
 
 int CustomVfs::statfs(const std::string &pathname, struct statvfs *stbuf) {
-    return ::statvfs(to_backing(pathname).c_str(), stbuf);
+    std::string real_path = to_backing(pathname);
+    return ::statvfs(real_path.c_str(), stbuf);
 }
 
 int CustomVfs::utimens(const std::string &pathname, const struct timespec tv[2]) {
-    return ::utimensat(AT_FDCWD, to_backing(pathname).c_str(), tv, AT_SYMLINK_NOFOLLOW);
+    std::string real_path = to_backing(pathname);
+    return ::utimensat(AT_FDCWD, real_path.c_str(), tv, AT_SYMLINK_NOFOLLOW);
 }
 
-int CustomVfs::chmod(const std::string &pathname, mode_t mode) { return ::chmod(to_backing(pathname).c_str(), mode); }
+int CustomVfs::chmod(const std::string &pathname, mode_t mode) {
+    std::string real_path = to_backing(pathname);
+    return ::chmod(real_path.c_str(), mode);
+}
 
 int CustomVfs::open(const std::string &pathname, struct fuse_file_info *fi) {
-    LOG("open " << pathname)
-    int fd = ::open(to_backing(pathname).c_str(), fi->flags);
-    if (fd == -1) {
+    std::string real_path = to_backing(pathname);
+    int fd = ::open(real_path.c_str(), fi->flags);
+    if (fd < 0) {
         return -errno;
     }
     fi->fh = fd;
     return 0;
 }
 
-int CustomVfs::release(const std::string &pathname, struct fuse_file_info *fi) { return ::close(fi->fh); }
-
 int CustomVfs::symlink(const std::string &target, const std::string &linkpath) {
-    return ::symlink(to_backing(target).c_str(), to_backing(linkpath).c_str());
+    std::string real_linkpath = to_backing(linkpath);
+    return ::symlink(target.c_str(), real_linkpath.c_str());
 }
 
 int CustomVfs::readlink(const std::string &pathname, char *buf, size_t size) {
-    return ::readlink(to_backing(pathname).c_str(), buf, size);
+    std::string real_path = to_backing(pathname);
+    return ::readlink(real_path.c_str(), buf, size);
 }
 
 int CustomVfs::link(const std::string &oldpath, const std::string &newpath) {
-    return ::link(oldpath.c_str(), newpath.c_str());
+    std::string old_real_path = to_backing(oldpath);
+    std::string new_real_path = to_backing(newpath);
+    return ::link(old_real_path.c_str(), new_real_path.c_str());
 }
 
-int CustomVfs::unlink(const std::string &pathname) { return ::unlink(to_backing(pathname).c_str()); }
+int CustomVfs::unlink(const std::string &pathname) {
+    std::string real_path = to_backing(pathname);
+    return ::unlink(real_path.c_str());
+}
 
 int CustomVfs::mkdir(const std::string &pathname, mode_t mode) {
-    POSIX_CALL(::mkdir(to_backing(pathname).c_str(), mode));
+    std::string real_path = to_backing(pathname);
+    return ::mkdir(real_path.c_str(), mode);
+}
+
+int CustomVfs::rmdir(const std::string &pathname) {
+    std::string real_path = to_backing(pathname);
+    return ::rmdir(real_path.c_str());
+}
+
+int CustomVfs::readdir(const std::string &pathname, off_t off, struct fuse_file_info *fi, readdir_flags flags) {
+    std::string real_path = to_backing(pathname);
+
+    std::ofstream log_file("/home/vesmil/log.txt", std::ios::app);  // Open the file in append mode
+
+    if (log_file.is_open()) {
+        log_file << "readdir: " << real_path << std::endl;
+    }
+
+    struct stat stbuf {};
+    if (::lstat(real_path.c_str(), &stbuf) != 0 || !S_ISDIR(stbuf.st_mode)) {
+        log_file << "readdir: " << real_path << " is not a directory" << std::endl;
+        log_file.close();
+        return -ENOENT;
+    }
+
+    // Iterate over directory entries
+    off_t current_offset = 0;
+    for (const auto &entry : std::filesystem::directory_iterator(real_path)) {
+        log_file << "entry: " << entry.path() << std::endl;
+        if (current_offset >= off) {
+            // Get entry attributes
+            struct stat entry_stbuf {};
+            if (::lstat(entry.path().c_str(), &entry_stbuf) == 0) {
+                // Fill the directory entry
+                log_file << "fill_dir: " << entry.path().filename() << std::endl;
+                if (fill_dir(entry.path().filename(), &entry_stbuf, current_offset + 1, FILL_DIR_PLUS) == 1) {
+                    break;
+                }
+            }
+        }
+        current_offset++;
+        log_file << "current_offset: " << current_offset << std::endl;
+    }
+
+    log_file << "Closing file" << std::endl;  // "Close the file
+    log_file.close();
     return 0;
 }
 
-int CustomVfs::rmdir(const std::string &pathname) { return ::rmdir(to_backing(pathname).c_str()); }
-
-int CustomVfs::readdir(const std::string &pathname, off_t off, struct fuse_file_info *fi, readdir_flags flags) {
-    auto real_path = to_backing(pathname);
-
-    DIR *dp;
-    struct dirent *de;
-
-    dp = ::opendir(to_backing(pathname).c_str());
+int CustomVfs::opendir(const std::string &pathname, struct fuse_file_info *fi) {
+    std::string real_path = to_backing(pathname);
+    DIR *dp = ::opendir(real_path.c_str());
     if (dp == nullptr) {
         return -errno;
     }
-
-    while ((de = ::readdir(dp)) != nullptr) {
-        struct stat st {};
-        memset(&st, 0, sizeof(st));
-        st.st_ino = de->d_ino;
-
-        std::error_code ec;
-        auto status = std::filesystem::status(real_path, ec);
-        if (ec) {
-            LOG("Error getting status for " << real_path << ": " << ec.message());
-            continue;
-        }
-        if (status.type() == std::filesystem::file_type::directory) {
-            st.st_mode |= S_IFDIR;
-        } else if (status.type() == std::filesystem::file_type::regular) {
-            st.st_mode |= S_IFREG;
-        } else if (status.type() == std::filesystem::file_type::symlink) {
-            st.st_mode |= S_IFLNK;
-        } else {
-            LOG("Unknown file type for " << real_path);
-            continue;
-        }
-
-        // ...
-
-        if (fill_dir(de->d_name, &st, flags)) {
-            break;
-        }
-    }
-
-    ::closedir(dp);
+    fi->fh = reinterpret_cast<uintptr_t>(dp);
     return 0;
 }
+
+int CustomVfs::releasedir(const std::string &pathname, struct fuse_file_info *fi) {
+    DIR *dp = reinterpret_cast<DIR *>(fi->fh);
+    if (::closedir(dp) < 0) {
+        return -errno;
+    }
+    return 0;
+}
+
+std::vector<std::string> CustomVfs::subfiles(const std::string &pathname) const {
+    std::string real_path = to_backing(pathname);
+    std::vector<std::string> files;
+
+    for (const auto &entry : std::filesystem::directory_iterator(real_path)) {
+        files.push_back(entry.path().filename());
+    }
+
+    return files;
+}
+
+int CustomVfs::release(const std::string &pathname, struct fuse_file_info *fi) { return ::close(fi->fh); }
 
 std::string CustomVfs::parent_path(const std::string &path) { return path.substr(0, path.rfind('/')); }
 
 std::string CustomVfs::toplevel_name(const std::string &basicString) {
     return basicString.substr(basicString.rfind('/') + 1);
-}
-
-std::vector<std::string> CustomVfs::subfiles(const std::string &pathname) const {
-    std::vector<std::string> files;
-    try {
-        std::filesystem::path dirPath(pathname);
-        if (!std::filesystem::is_directory(dirPath)) {
-            return files;
-        }
-
-        for (const auto &entry : std::filesystem::directory_iterator(dirPath)) {
-            if (std::filesystem::is_regular_file(entry.status())) {
-                files.push_back(entry.path().filename().string());
-            }
-        }
-    } catch (const std::filesystem::filesystem_error &e) {
-        std::cerr << e.what() << std::endl;
-    }
-
-    return files;
 }
 
 std::string CustomVfs::to_backing(const std::string &pathname) const { return backing_dir + pathname; }

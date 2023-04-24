@@ -3,3 +3,5 @@ IndentWidth: 4
 PointerAlignment: Left
 AccessModifierOffset: -4
 ColumnLimit: 120
+AllowShortBlocksOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: Empty

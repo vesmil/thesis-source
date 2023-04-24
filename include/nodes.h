@@ -22,7 +22,9 @@ struct VfsNode {
     std::string name;
     mode_t mode{};
 
-    virtual bool is_directory() { return false; }
+    virtual bool is_directory() {
+        return false;
+    }
 };
 
 struct File : public VfsNode {
@@ -44,7 +46,9 @@ struct Directory : public VfsNode {
     Directory(const std::string &name, mode_t mode) : VfsNode(name, mode) {}
     Directory &operator=(Directory const &other) = default;
 
-    bool is_directory() override { return true; }
+    bool is_directory() override {
+        return true;
+    }
 
     void add_file(const std::string &name, mode_t mode, const std::vector<uint8_t> &content) {
         // files[name] = File(name, mode, content);

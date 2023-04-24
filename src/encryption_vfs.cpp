@@ -15,8 +15,7 @@ int EncryptionVfs::read(const std::string &pathname, char *buf, size_t count, of
 
     // TODO store a cache...
 
-    if (result >= 0) {
-    }
+    if (result >= 0) {}
 
     return result;
 }

@@ -32,37 +32,59 @@ public:
         return *fuseptr;
     }
 
-    static int getattr(const char *pathname, struct stat *buf) { return fuse().getattr(pathname, buf); }
+    static int getattr(const char *pathname, struct stat *buf) {
+        return fuse().getattr(pathname, buf);
+    }
 
     static int readlink(const char *pathname, char *buffer, size_t size) {
         return fuse().readlink(pathname, buffer, size);
     }
 
-    static int mknod(const char *pathname, mode_t mode, dev_t dev) { return fuse().mknod(pathname, mode, dev); }
+    static int mknod(const char *pathname, mode_t mode, dev_t dev) {
+        return fuse().mknod(pathname, mode, dev);
+    }
 
-    static int mkdir(const char *pathname, mode_t mode) { return fuse().mkdir(pathname, mode); }
+    static int mkdir(const char *pathname, mode_t mode) {
+        return fuse().mkdir(pathname, mode);
+    }
 
-    static int unlink(const char *pathname) { return fuse().unlink(pathname); }
+    static int unlink(const char *pathname) {
+        return fuse().unlink(pathname);
+    }
 
-    static int rmdir(const char *pathname) { return fuse().rmdir(pathname); }
+    static int rmdir(const char *pathname) {
+        return fuse().rmdir(pathname);
+    }
 
-    static int symlink(const char *target, const char *linkpath) { return fuse().symlink(target, linkpath); }
+    static int symlink(const char *target, const char *linkpath) {
+        return fuse().symlink(target, linkpath);
+    }
 #if FUSE_VERSION < 30
-    static int rename(const char *oldpath, const char *newpath) { return fuse().rename(oldpath, newpath, 0); }
+    static int rename(const char *oldpath, const char *newpath) {
+        return fuse().rename(oldpath, newpath, 0);
+    }
 #else  // FUSE_VERSION >= 30
     static int rename(const char *oldpath, const char *newpath, unsigned int flags) {
         return fuse().rename(oldpath, newpath, flags);
     }
 #endif
 
-    static int link(const char *oldpath, const char *newpath) { return fuse().link(oldpath, newpath); }
+    static int link(const char *oldpath, const char *newpath) {
+        return fuse().link(oldpath, newpath);
+    }
 
 #if FUSE_VERSION < 30
-    static int chmod(const char *pathname, mode_t mode) { return fuse().chmod(pathname, mode); }
+    static int chmod(const char *pathname, mode_t mode) {
+        return fuse().chmod(pathname, mode);
+    }
 
-    static int chown(const char *pathname, uid_t uid, gid_t gid) { return fuse().chown(pathname, uid, gid); }
+    static int chown(const char *pathname, uid_t uid, gid_t gid) {
+        return fuse().chown(pathname, uid, gid);
+    }
 
-    static int truncate(const char *path, off_t length) { return fuse().truncate(path, length); }
+    static int truncate(const char *path, off_t length) {
+        return fuse().truncate(path, length);
+    }
 #else  // FUSE_VERSION >= 30
     static int chmod(const char *pathname, mode_t mode, struct fuse_file_info *fi) {
 #warning chmod fuse_file_info unimplemented
@@ -80,7 +102,9 @@ public:
         return fuse().truncate(path, length);
     }
 #endif
-    static int open(const char *pathname, struct fuse_file_info *fi) { return fuse().open(pathname, fi); }
+    static int open(const char *pathname, struct fuse_file_info *fi) {
+        return fuse().open(pathname, fi);
+    }
 
     static int read(const char *pathname, char *buf, size_t count, off_t offset, struct fuse_file_info *fi) {
         return fuse().read(pathname, buf, count, offset, fi);
@@ -90,11 +114,17 @@ public:
         return fuse().write(pathname, buf, count, offset, fi);
     }
 
-    static int statfs(const char *path, struct statvfs *buf) { return fuse().statfs(path, buf); }
+    static int statfs(const char *path, struct statvfs *buf) {
+        return fuse().statfs(path, buf);
+    }
 
-    static int flush(const char *pathname, struct fuse_file_info *fi) { return fuse().flush(pathname, fi); }
+    static int flush(const char *pathname, struct fuse_file_info *fi) {
+        return fuse().flush(pathname, fi);
+    }
 
-    static int release(const char *pathname, struct fuse_file_info *fi) { return fuse().release(pathname, fi); }
+    static int release(const char *pathname, struct fuse_file_info *fi) {
+        return fuse().release(pathname, fi);
+    }
 
     static int fsync(const char *pathname, int datasync, struct fuse_file_info *fi) {
         return fuse().fsync(pathname, datasync, fi);
@@ -108,14 +138,20 @@ public:
         return fuse().getxattr(path, name, value, size);
     }
 
-    static int listxattr(const char *path, char *list, size_t size) { return fuse().listxattr(path, list, size); }
+    static int listxattr(const char *path, char *list, size_t size) {
+        return fuse().listxattr(path, list, size);
+    }
 
-    static int removexattr(const char *path, const char *name) { return fuse().removexattr(path, name); }
+    static int removexattr(const char *path, const char *name) {
+        return fuse().removexattr(path, name);
+    }
 
     static thread_local void *filler_handle;
     static thread_local fuse_fill_dir_t filler;
 
-    static int opendir(const char *opendir, struct fuse_file_info *fi) { return fuse().opendir(opendir, fi); }
+    static int opendir(const char *opendir, struct fuse_file_info *fi) {
+        return fuse().opendir(opendir, fi);
+    }
 
     static int readdir(const char *pathname, void *buf, fuse_fill_dir_t fillerDir, off_t off,
                        struct fuse_file_info *fi) {
@@ -125,7 +161,9 @@ public:
         return fuse().readdir(pathname, off, fi, static_cast<FuseWrapper::readdir_flags>(flags));
     }
 
-    static int releasedir(const char *pathname, struct fuse_file_info *fi) { return fuse().releasedir(pathname, fi); }
+    static int releasedir(const char *pathname, struct fuse_file_info *fi) {
+        return fuse().releasedir(pathname, fi);
+    }
 
     static int fsyncdir(const char *pathname, int datasync, struct fuse_file_info *fi) {
         return fuse().fsyncdir(pathname, datasync, fi);
@@ -147,7 +185,9 @@ public:
     }
 
 #if FUSE_VERSION >= 25
-    static int access(const char *pathname, int mode) { return fuse().access(pathname, mode); }
+    static int access(const char *pathname, int mode) {
+        return fuse().access(pathname, mode);
+    }
     static int create(const char *pathname, mode_t mode, struct fuse_file_info *fi) {
         return fuse().create(pathname, mode, fi);
     }
@@ -158,7 +198,9 @@ public:
         return fuse().lock(pathname, fi, cmd, lock);
     }
 #if FUSE_VERSION < 30
-    static int utimens(const char *pathname, const struct timespec tv[2]) { return fuse().utimens(pathname, tv); }
+    static int utimens(const char *pathname, const struct timespec tv[2]) {
+        return fuse().utimens(pathname, tv);
+    }
 #else  // FUSE_VERSION >= 30
     static int utimens(const char *pathname, const struct timespec tv[2], struct fuse_file_info *fi) {
 #warning utimens fuse_file_info unimplemented
@@ -188,7 +230,9 @@ public:
         return fuse().read_buf(pathname, bufp, size, off, fi);
     }
 
-    static int flock(const char *pathname, struct fuse_file_info *fi, int op) { return fuse().flock(pathname, fi, op); }
+    static int flock(const char *pathname, struct fuse_file_info *fi, int op) {
+        return fuse().flock(pathname, fi, op);
+    }
 
     static int fallocate(const char *pathname, int mode, off_t offset, off_t len, struct fuse_file_info *fi) {
         return fuse().fallocate(pathname, mode, offset, len, fi);
@@ -205,32 +249,78 @@ public:
 thread_local void *FuseWrapper::detail::filler_handle;
 thread_local fuse_fill_dir_t FuseWrapper::detail::filler;
 
-int FuseWrapper::getattr(const std::string &, struct stat *) { return -ENOSYS; }
-int FuseWrapper::readlink(const std::string &, char *, size_t) { return -ENOSYS; }
-int FuseWrapper::mknod(const std::string &, mode_t, dev_t) { return -ENOSYS; }
-int FuseWrapper::mkdir(const std::string &, mode_t) { return -ENOSYS; }
-int FuseWrapper::unlink(const std::string &) { return -ENOSYS; }
-int FuseWrapper::rmdir(const std::string &) { return -ENOSYS; }
-int FuseWrapper::symlink(const std::string &, const std::string &) { return -ENOSYS; }
-int FuseWrapper::rename(const std::string &, const std::string &, unsigned int) { return -ENOSYS; }
-int FuseWrapper::link(const std::string &, const std::string &) { return -ENOSYS; }
-int FuseWrapper::chmod(const std::string &, mode_t) { return -ENOSYS; }
-int FuseWrapper::chown(const std::string &, uid_t, gid_t) { return -ENOSYS; }
-int FuseWrapper::truncate(const std::string &, off_t) { return -ENOSYS; }
-int FuseWrapper::open(const std::string &, struct fuse_file_info *) { return 0; }
-int FuseWrapper::read(const std::string &, char *, size_t, off_t, struct fuse_file_info *) { return -ENOSYS; }
-int FuseWrapper::write(const std::string &, const char *, size_t, off_t, struct fuse_file_info *) { return -ENOSYS; }
-int FuseWrapper::statfs(const std::string &, struct statvfs *) { return 0; }
-int FuseWrapper::flush(const std::string &, struct fuse_file_info *) { return -ENOSYS; }
-int FuseWrapper::release(const std::string &, struct fuse_file_info *) { return 0; }
-int FuseWrapper::fsync(const std::string &, int, struct fuse_file_info *) { return -ENOSYS; }
+int FuseWrapper::getattr(const std::string &, struct stat *) {
+    return -ENOSYS;
+}
+int FuseWrapper::readlink(const std::string &, char *, size_t) {
+    return -ENOSYS;
+}
+int FuseWrapper::mknod(const std::string &, mode_t, dev_t) {
+    return -ENOSYS;
+}
+int FuseWrapper::mkdir(const std::string &, mode_t) {
+    return -ENOSYS;
+}
+int FuseWrapper::unlink(const std::string &) {
+    return -ENOSYS;
+}
+int FuseWrapper::rmdir(const std::string &) {
+    return -ENOSYS;
+}
+int FuseWrapper::symlink(const std::string &, const std::string &) {
+    return -ENOSYS;
+}
+int FuseWrapper::rename(const std::string &, const std::string &, unsigned int) {
+    return -ENOSYS;
+}
+int FuseWrapper::link(const std::string &, const std::string &) {
+    return -ENOSYS;
+}
+int FuseWrapper::chmod(const std::string &, mode_t) {
+    return -ENOSYS;
+}
+int FuseWrapper::chown(const std::string &, uid_t, gid_t) {
+    return -ENOSYS;
+}
+int FuseWrapper::truncate(const std::string &, off_t) {
+    return -ENOSYS;
+}
+int FuseWrapper::open(const std::string &, struct fuse_file_info *) {
+    return 0;
+}
+int FuseWrapper::read(const std::string &, char *, size_t, off_t, struct fuse_file_info *) {
+    return -ENOSYS;
+}
+int FuseWrapper::write(const std::string &, const char *, size_t, off_t, struct fuse_file_info *) {
+    return -ENOSYS;
+}
+int FuseWrapper::statfs(const std::string &, struct statvfs *) {
+    return 0;
+}
+int FuseWrapper::flush(const std::string &, struct fuse_file_info *) {
+    return -ENOSYS;
+}
+int FuseWrapper::release(const std::string &, struct fuse_file_info *) {
+    return 0;
+}
+int FuseWrapper::fsync(const std::string &, int, struct fuse_file_info *) {
+    return -ENOSYS;
+}
 int FuseWrapper::setxattr(const std::string &, const std::string &, const std::string &, size_t, int) {
     return -ENOSYS;
 }
-int FuseWrapper::getxattr(const std::string &, const std::string &, char *, size_t) { return -ENOSYS; }
-int FuseWrapper::listxattr(const std::string &, char *, size_t) { return -ENOSYS; }
-int FuseWrapper::removexattr(const std::string &, const std::string &) { return -ENOSYS; }
-int FuseWrapper::opendir(const std::string &, struct fuse_file_info *) { return 0; }
+int FuseWrapper::getxattr(const std::string &, const std::string &, char *, size_t) {
+    return -ENOSYS;
+}
+int FuseWrapper::listxattr(const std::string &, char *, size_t) {
+    return -ENOSYS;
+}
+int FuseWrapper::removexattr(const std::string &, const std::string &) {
+    return -ENOSYS;
+}
+int FuseWrapper::opendir(const std::string &, struct fuse_file_info *) {
+    return 0;
+}
 int FuseWrapper::readdir(const std::string &, off_t, struct fuse_file_info *, FuseWrapper::readdir_flags) {
     return -ENOSYS;
 }
@@ -244,20 +334,34 @@ int FuseWrapper::fill_dir(const std::string &name, const struct stat *stbuf, off
 #endif
 }
 
-int FuseWrapper::releasedir(const std::string &, struct fuse_file_info *) { return 0; }
-int FuseWrapper::fsyncdir(const std::string &, int, struct fuse_file_info *) { return -ENOSYS; }
+int FuseWrapper::releasedir(const std::string &, struct fuse_file_info *) {
+    return 0;
+}
+int FuseWrapper::fsyncdir(const std::string &, int, struct fuse_file_info *) {
+    return -ENOSYS;
+}
 void FuseWrapper::init() {}
 void FuseWrapper::destroy() {}
 
 #if FUSE_VERSION >= 25
-int FuseWrapper::access(const std::string &, int) { return -ENOSYS; }
-int FuseWrapper::create(const std::string &, mode_t, struct fuse_file_info *) { return -ENOSYS; }
+int FuseWrapper::access(const std::string &, int) {
+    return -ENOSYS;
+}
+int FuseWrapper::create(const std::string &, mode_t, struct fuse_file_info *) {
+    return -ENOSYS;
+}
 #endif  // FUSE_VERSION >= 25
 
 #if FUSE_VERSION >= 26
-int FuseWrapper::lock(const std::string &, struct fuse_file_info *, int, struct flock *) { return -ENOSYS; }
-int FuseWrapper::utimens(const std::string &, const struct timespec[2]) { return -ENOSYS; }
-int FuseWrapper::bmap(const std::string &, size_t, uint64_t *) { return -ENOSYS; }
+int FuseWrapper::lock(const std::string &, struct fuse_file_info *, int, struct flock *) {
+    return -ENOSYS;
+}
+int FuseWrapper::utimens(const std::string &, const struct timespec[2]) {
+    return -ENOSYS;
+}
+int FuseWrapper::bmap(const std::string &, size_t, uint64_t *) {
+    return -ENOSYS;
+}
 int FuseWrapper::ioctl(const std::string &, int, void *, struct fuse_file_info *, unsigned int, void *) {
     return -ENOSYS;
 }
@@ -311,8 +415,12 @@ int FuseWrapper::read_buf(const std::string &pathname, struct fuse_bufvec **bufp
     return static_cast<int>(amount);
 }
 
-int FuseWrapper::flock(const std::string &, struct fuse_file_info *, int) { return -ENOSYS; }
-int FuseWrapper::fallocate(const std::string &, int, off_t, off_t, struct fuse_file_info *) { return -ENOSYS; }
+int FuseWrapper::flock(const std::string &, struct fuse_file_info *, int) {
+    return -ENOSYS;
+}
+int FuseWrapper::fallocate(const std::string &, int, off_t, off_t, struct fuse_file_info *) {
+    return -ENOSYS;
+}
 #endif  // FUSE_VERSION >= 26
 
 FuseWrapper::FuseWrapper() : flag_nopath(0), flag_nullpath_ok(0), flag_reserved(0), flag_utime_omit_ok(0) {}
@@ -397,6 +505,8 @@ struct fuse_operations FuseWrapper::ops = {
 #endif
 };
 
-int FuseWrapper::main(int argc, char *argv[]) { return fuse_main(argc, argv, &ops, this); }
+int FuseWrapper::main(int argc, char *argv[]) {
+    return fuse_main(argc, argv, &ops, this);
+}
 
 FuseWrapper::~FuseWrapper() = default;

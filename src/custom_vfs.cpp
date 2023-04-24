@@ -110,13 +110,17 @@ int CustomVfs::link(const std::string &oldpath, const std::string &newpath) {
     return posix_call_result(::link, old_real_path.c_str(), new_real_path.c_str());
 }
 
-int CustomVfs::unlink(const std::string &pathname) { return posix_call_result(::unlink, to_backing(pathname).c_str()); }
+int CustomVfs::unlink(const std::string &pathname) {
+    return posix_call_result(::unlink, to_backing(pathname).c_str());
+}
 
 int CustomVfs::mkdir(const std::string &pathname, mode_t mode) {
     return posix_call_result(::mkdir, to_backing(pathname).c_str(), mode);
 }
 
-int CustomVfs::rmdir(const std::string &pathname) { return posix_call_result(::rmdir, to_backing(pathname).c_str()); }
+int CustomVfs::rmdir(const std::string &pathname) {
+    return posix_call_result(::rmdir, to_backing(pathname).c_str());
+}
 
 int CustomVfs::opendir(const std::string &pathname, struct fuse_file_info *fi) {
     DIR *dp = ::opendir(to_backing(pathname).c_str());
@@ -170,10 +174,14 @@ std::vector<std::string> CustomVfs::subfiles(const std::string &pathname) const 
     return files;
 }
 
-std::string CustomVfs::parent_path(const std::string &path) { return path.substr(0, path.rfind('/')); }
+std::string CustomVfs::parent_path(const std::string &path) {
+    return path.substr(0, path.rfind('/'));
+}
 
 std::string CustomVfs::toplevel_name(const std::string &basicString) {
     return basicString.substr(basicString.rfind('/') + 1);
 }
 
-std::string CustomVfs::to_backing(const std::string &pathname) const { return backing_dir + pathname; }
+std::string CustomVfs::to_backing(const std::string &pathname) const {
+    return backing_dir + pathname;
+}

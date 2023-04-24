@@ -7,13 +7,12 @@ int VersioningVfs::write(const std::string &pathname, const char *buf, size_t co
     int max_version = get_max_version(pathname);
 
     if (max_version != 0) {
-        // Delete oldest versions if needed
         while (max_version > Config::versioning.stored_versions) {
             std::string oldest_version_path =
-                pathname + version_prefix + std::to_string(max_version - Config::versioning.stored_versions + 1);
+                pathname + version_prefix + std::to_string(max_version - Config::versioning.stored_versions);
             wrapped_vfs.unlink(oldest_version_path);
 
-            for (size_t i = max_version - Config::versioning.stored_versions + 2; i <= max_version; i++) {
+            for (size_t i = max_version - Config::versioning.stored_versions + 1; i <= max_version; i++) {
                 std::string old_version_path = pathname + version_prefix + std::to_string(i);
                 std::string new_version_path = pathname + version_prefix + std::to_string(i - 1);
 
@@ -41,8 +40,8 @@ int VersioningVfs::get_max_version(const std::string &pathname) {
 
     int max_version = 0;
     for (const std::string &filename : path_files) {
-        if (filename.rfind(".v_", 0) == 0) {
-            int version = std::stoi(filename.substr(3));
+        if (filename.rfind(version_prefix, 0) == 0) {
+            int version = std::stoi(filename.substr(version_prefix.size()));
             max_version = std::max(max_version, version);
         }
     }
@@ -62,35 +61,38 @@ int VersioningVfs::read(const std::string &pathname, char *buf, size_t count, of
 
 bool VersioningVfs::handle_hook(int &result, const std::string &pathname, char *buf, size_t count, off_t offset,
                                 struct fuse_file_info *fi) {
-    std::string filename = CustomVfs::filename_from_path(pathname);
+    std::string filename = CustomVfs::toplevel_name(pathname);
     if (filename[0] == '#') {
         std::string command = filename.substr(1, filename.find('#') - 1);
         std::string arg = filename.substr(filename.find('#') + 1);
 
         // decide what to do based on command
         if (command == "restore") {
-            // TODO...
             restore_version(pathname, std::stoi(arg));
+            result = 0;
+            return true;
         }
-
-        return true;
     }
 
     return false;
 }
 
 std::vector<std::string> VersioningVfs::list_versions(const std::string &pathname) {
-    // returns a list of version files... - not sure if should be strings yet
+    auto parent_path = CustomVfs::parent_path(pathname);
+    std::vector<std::string> path_files = wrapped_vfs.subfiles(parent_path);
 
-    return {};
-}
+    std::vector<std::string> version_files;
+    for (const std::string &filename : path_files) {
+        if (filename.rfind(version_prefix, 0) == 0) {
+            version_files.push_back(filename);
+        }
+    }
 
-void VersioningVfs::restore_version(const std::string &pathname, int version) {
-    // set as current version?
+    return version_files;
 }
 
 void VersioningVfs::delete_version(const std::string &pathname, int version) {
-    wrapped_vfs.unlink(pathname + "/.v" + std::to_string(version));
+    wrapped_vfs.unlink(pathname + version_prefix + std::to_string(version));
 }
 
 int VersioningVfs::readdir(const std::string &pathname, off_t off, struct fuse_file_info *fi,
@@ -100,7 +102,7 @@ int VersioningVfs::readdir(const std::string &pathname, off_t off, struct fuse_f
 
     for (const auto &file : path_files) {
         getattr(file, &st);
-        fill_dir(files.at(file)->name, &st);
+        // fill_dir(files.at(file)->name, &st);
     }
 
     return 0;
@@ -111,10 +113,12 @@ std::vector<std::string> VersioningVfs::subfiles(const std::string &pathname) co
 
     std::vector<std::string> filtered_files;
     for (const std::string &filename : files) {
-        if (filename.rfind(".v1") != 0) {
-            filtered_files.push_back(filename);
+        if (filename.rfind(version_prefix + "1") != 0) {
+            filtered_files.push_back(filename.substr(0, filename.size() - 2));
         }
     }
 
     return filtered_files;
 }
+
+void VersioningVfs::restore_version(const std::string &pathname, int version) {}

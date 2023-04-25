@@ -27,7 +27,7 @@ public:
      * @param path The path to the directory
      * @param create_test Whether to create example files
      */
-    explicit CustomVfs(const std::string &path, bool test = false);
+    explicit CustomVfs(const std::string &path);
 
     void init() override;
     void destroy() override;
@@ -61,8 +61,8 @@ public:
     [[nodiscard]] virtual std::vector<std::string> subfiles(const std::string &pathname) const;
 
 protected:
-    static std::string parent_path(const std::string &path);
-    static std::string toplevel_name(const std::string &basicString);
+    static std::string get_parent(const std::string &path);
+    static std::string get_filename(const std::string &basicString);
 
 private:
     // Converts a path to its real path in the backing directory
@@ -79,8 +79,6 @@ private:
 
     std::string backing_dir;
     const std::string mount_path;
-
-    bool create_test;
 };
 
 #endif

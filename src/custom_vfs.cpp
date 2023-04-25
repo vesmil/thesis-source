@@ -13,9 +13,9 @@
 
 #include "config.h"
 
-CustomVfs::CustomVfs(const std::string &path, bool test) : mount_path(path), create_test(test) {
-    std::string parent = CustomVfs::parent_path(path);
-    std::string name = CustomVfs::toplevel_name(path);
+CustomVfs::CustomVfs(const std::string &path) : mount_path(path) {
+    std::string parent = CustomVfs::get_parent(path);
+    std::string name = CustomVfs::get_filename(path);
 
     backing_dir = parent + Config::base.backing_prefix + name;
     std::filesystem::create_directory(backing_dir);
@@ -23,14 +23,6 @@ CustomVfs::CustomVfs(const std::string &path, bool test) : mount_path(path), cre
 
 void CustomVfs::init() {
     FuseWrapper::init();
-
-    if (create_test) {
-        std::filesystem::create_directory(mount_path + "/dir");
-        std::string filename = mount_path + "/dir/file.txt";
-        std::fstream file(filename, std::ios::out);
-        file << "Hello World!" << std::endl;
-        file.close();
-    }
 }
 
 void CustomVfs::destroy() {}
@@ -164,8 +156,6 @@ int CustomVfs::readdir(const std::string &pathname, off_t off, struct fuse_file_
 }
 
 std::vector<std::string> CustomVfs::subfiles(const std::string &pathname) const {
-    // TODO rewrite so it includes proper path, etc.
-
     std::string real_path = to_backing(pathname);
     std::vector<std::string> files;
 
@@ -178,11 +168,11 @@ std::vector<std::string> CustomVfs::subfiles(const std::string &pathname) const 
     return files;
 }
 
-std::string CustomVfs::parent_path(const std::string &path) {
+std::string CustomVfs::get_parent(const std::string &path) {
     return path.substr(0, path.rfind('/'));
 }
 
-std::string CustomVfs::toplevel_name(const std::string &basicString) {
+std::string CustomVfs::get_filename(const std::string &basicString) {
     return basicString.substr(basicString.rfind('/') + 1);
 }
 

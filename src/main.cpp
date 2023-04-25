@@ -105,8 +105,8 @@ int main(int argc, char* argv[]) {
         Config::Parser::ParseFile(vm["config"].as<std::string>());
     }
 
-    CustomVfs custom_vfs(mountpoint, test_mode);
-    // VersioningVfs versioned(custom_vfs);
+    CustomVfs custom_vfs(mountpoint);
+    VersioningVfs versioned(custom_vfs);
     // EncryptionVfs encrypted(versioned);
 
     std::string fuse_args;
@@ -115,7 +115,12 @@ int main(int argc, char* argv[]) {
     }
 
     auto fuse_argv = prepare_fuse_arguments(fuse_args, mountpoint, argv[0]);
-    custom_vfs.main(static_cast<int>(fuse_argv.size()), fuse_argv.data());
+    versioned.main(static_cast<int>(fuse_argv.size()), fuse_argv.data());
+
+    if (test_mode) {
+        // might need to be run in separate thread
+        // create test files
+    }
 
     return 0;
 }

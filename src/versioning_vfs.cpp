@@ -2,11 +2,29 @@
 
 #include "config.h"
 
+int VersioningVfs::read(const std::string &pathname, char *buf, size_t count, off_t offset, struct fuse_file_info *fi) {
+    int result;
+    if (handle_hook(result, pathname, buf, count, offset, fi)) {
+        return result;
+    }
+
+    int max_version = get_max_version(pathname);
+
+    // This is just in case there were no writes to the file
+    if (max_version == 0) {
+        return wrapped_vfs.read(pathname, buf, count, offset, fi);
+    }
+
+    std::string version_path = pathname + version_prefix + std::to_string(max_version);
+    return wrapped_vfs.read(version_path, buf, count, offset, fi);
+}
+
 int VersioningVfs::write(const std::string &pathname, const char *buf, size_t count, off_t offset,
                          struct fuse_file_info *fi) {
     int max_version = get_max_version(pathname);
 
     if (max_version != 0) {
+        // Remove oldest versions if needed
         while (max_version > Config::versioning.stored_versions) {
             std::string oldest_version_path =
                 pathname + version_prefix + std::to_string(max_version - Config::versioning.stored_versions);
@@ -21,8 +39,6 @@ int VersioningVfs::write(const std::string &pathname, const char *buf, size_t co
 
             max_version--;
         }
-    } else {
-        max_version = 1;
     }
 
     std::string new_version_path = pathname + version_prefix + std::to_string(max_version + 1);
@@ -32,6 +48,11 @@ int VersioningVfs::write(const std::string &pathname, const char *buf, size_t co
 
     wrapped_vfs.mknod(new_version_path, st.st_mode, st.st_dev);
     return wrapped_vfs.write(new_version_path, buf, count, offset, fi);
+}
+
+int VersioningVfs::unlink(const std::string &pathname) {
+    // TODO Will not delete versions but will hide the file
+    return CustomVfs::unlink(pathname);
 }
 
 int VersioningVfs::get_max_version(const std::string &pathname) {
@@ -49,16 +70,6 @@ int VersioningVfs::get_max_version(const std::string &pathname) {
     return max_version;
 }
 
-int VersioningVfs::read(const std::string &pathname, char *buf, size_t count, off_t offset, struct fuse_file_info *fi) {
-    int result;
-    if (handle_hook(result, pathname, buf, count, offset, fi)) {
-        return result;
-    }
-
-    std::string version_path = pathname + version_prefix + std::to_string(get_max_version(pathname));
-    return wrapped_vfs.read(version_path, buf, count, offset, fi);
-}
-
 bool VersioningVfs::handle_hook(int &result, const std::string &pathname, char *buf, size_t count, off_t offset,
                                 struct fuse_file_info *fi) {
     std::string filename = CustomVfs::get_filename(pathname);
@@ -72,6 +83,8 @@ bool VersioningVfs::handle_hook(int &result, const std::string &pathname, char *
             result = 0;
             return true;
         }
+
+        // TODO ...
     }
 
     return false;
@@ -97,10 +110,13 @@ void VersioningVfs::delete_version(const std::string &pathname, int version) {
 
 int VersioningVfs::readdir(const std::string &pathname, off_t off, struct fuse_file_info *fi,
                            FuseWrapper::readdir_flags flags) {
+    // TODO ...
     return wrapped_vfs.readdir(pathname, off, fi, flags);
 }
 
 std::vector<std::string> VersioningVfs::subfiles(const std::string &pathname) const {
+    return wrapped_vfs.subfiles(pathname);
+
     auto files = CustomVfs::subfiles(pathname);
 
     std::vector<std::string> filtered_files;

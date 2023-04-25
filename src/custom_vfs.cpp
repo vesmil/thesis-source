@@ -9,7 +9,6 @@
 
 #include <cerrno>
 #include <filesystem>
-#include <fstream>
 
 #include "config.h"
 

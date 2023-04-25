@@ -164,11 +164,15 @@ int CustomVfs::readdir(const std::string &pathname, off_t off, struct fuse_file_
 }
 
 std::vector<std::string> CustomVfs::subfiles(const std::string &pathname) const {
+    // TODO rewrite so it includes proper path, etc.
+
     std::string real_path = to_backing(pathname);
     std::vector<std::string> files;
 
     for (const auto &entry : std::filesystem::directory_iterator(real_path)) {
-        files.push_back(entry.path().filename());
+        std::string path = entry.path();
+        path.replace(0, backing_dir.length(), mount_path);
+        files.push_back(path);
     }
 
     return files;

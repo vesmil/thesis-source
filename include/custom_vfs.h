@@ -56,6 +56,8 @@ public:
     int mkdir(const std::string &pathname, mode_t mode) override;
     int rmdir(const std::string &pathname) override;
     int readdir(const std::string &pathname, off_t off, struct fuse_file_info *fi, readdir_flags flags) override;
+    virtual int fill_dir(const std::string &name, const struct stat *stbuf, off_t off,
+                         FuseWrapper::fill_dir_flags flags);
     int opendir(const std::string &pathname, struct fuse_file_info *fi) override;
     int releasedir(const std::string &pathname, struct fuse_file_info *fi) override;
     [[nodiscard]] virtual std::vector<std::string> subfiles(const std::string &pathname) const;

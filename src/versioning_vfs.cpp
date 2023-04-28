@@ -1,9 +1,12 @@
 #include "versioning_vfs.h"
 
+#include <filesystem>
+
 #include "config.h"
 
 int VersioningVfs::read(const std::string &pathname, char *buf, size_t count, off_t offset, struct fuse_file_info *fi) {
     int result;
+ 
     if (handle_hook(result, pathname, buf, count, offset, fi)) {
         return result;
     }
@@ -60,10 +63,13 @@ int VersioningVfs::get_max_version(const std::string &pathname) {
     std::vector<std::string> path_files = wrapped_vfs.subfiles(parent_path);
 
     int max_version = 0;
-    for (const std::string &filename : path_files) {
-        if (filename.rfind(version_prefix, 0) == 0) {
-            int version = std::stoi(filename.substr(version_prefix.size()));
-            max_version = std::max(max_version, version);
+    for (const std::string &parent_file : path_files) {
+        if (parent_file.rfind(pathname) != std::string::npos) {
+            if (parent_file.rfind(version_prefix) != std::string::npos) {
+                size_t pos = parent_file.find_last_of(version_prefix);
+                int version = std::stoi(parent_file.substr(pos + 1));
+                max_version = std::max(max_version, version);
+            }
         }
     }
 
@@ -110,23 +116,32 @@ void VersioningVfs::delete_version(const std::string &pathname, int version) {
 
 int VersioningVfs::readdir(const std::string &pathname, off_t off, struct fuse_file_info *fi,
                            FuseWrapper::readdir_flags flags) {
-    // TODO ...
-    return wrapped_vfs.readdir(pathname, off, fi, flags);
+    return CustomVfs::readdir(pathname, off, fi, flags);
+}
+
+int VersioningVfs::fill_dir(const std::string &name, const struct stat *stbuf, off_t off,
+                            FuseWrapper::fill_dir_flags flags) {
+    if (name.rfind(version_prefix) == std::string::npos) {
+        return CustomVfs::fill_dir(name, stbuf, off, flags);
+    } else {
+        return 0;
+    }
 }
 
 std::vector<std::string> VersioningVfs::subfiles(const std::string &pathname) const {
-    return wrapped_vfs.subfiles(pathname);
+    std::vector<std::string> files;
 
-    auto files = CustomVfs::subfiles(pathname);
+    for (const auto &entry : std::filesystem::directory_iterator(pathname)) {
+        std::string path = entry.path();
 
-    std::vector<std::string> filtered_files;
-    for (const std::string &filename : files) {
-        if (filename.rfind(version_prefix + "1") != 0) {
-            filtered_files.push_back(filename.substr(0, filename.size() - 2));
+        if (path.rfind(version_prefix) == 0) {
+            files.push_back(path);
         }
+
+        files.push_back(path);
     }
 
-    return filtered_files;
+    return files;
 }
 
 void VersioningVfs::restore_version(const std::string &pathname, int version) {}

@@ -6,7 +6,7 @@
 
 int VersioningVfs::read(const std::string &pathname, char *buf, size_t count, off_t offset, struct fuse_file_info *fi) {
     int result;
- 
+
     if (handle_hook(result, pathname, buf, count, offset, fi)) {
         return result;
     }

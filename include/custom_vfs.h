@@ -11,7 +11,6 @@
 #include <vector>
 
 #include "fuse_wrapper.h"
-#include "nodes.h"
 
 /**
  * A custom filesystem based on memory

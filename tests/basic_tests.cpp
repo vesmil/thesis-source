@@ -29,7 +29,7 @@ TEST(CustomVfs, test_file) {
     for (const auto& entry : std::filesystem::directory_iterator(TestConfig::inst().mountpoint)) {
         std::filesystem::remove_all(entry.path());
     }
-    
+
     std::filesystem::create_directory(TestConfig::inst().mountpoint + "/test/");
     std::ofstream file(TestConfig::inst().mountpoint + "/test/file");
     file << "test";

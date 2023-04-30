@@ -36,13 +36,35 @@ std::string get_password() {
 /**
  * Writes password to file.
  */
-void write_password_to_file(const std::string& filename, const std::string& password) {
-    std::ofstream out(filename);
+void write_password_to_file(const std::string& command_prefix, const std::string& filename,
+                            const std::string& password) {
+    size_t pos = filename.find_last_of("/\\");
+    std::string complete;
+
+    if (pos != std::string::npos) {
+        std::string path = filename.substr(0, pos);
+        std::string file = filename.substr(pos + 1);
+        complete = path + "/" + command_prefix + file;
+    } else {
+        complete = command_prefix + filename;
+    }
+
+    std::ofstream out(complete);
     if (out.is_open()) {
         out << password;
         out.close();
     } else {
-        std::cerr << "Unable to open file: " << filename << std::endl;
+        std::cerr << "Unable to complete command" << std::endl;
+    }
+
+    std::ifstream in(complete);
+    if (in.is_open()) {
+        std::string line;
+        std::getline(in, line);
+        std::cout << line << std::endl;
+        in.close();
+    } else {
+        std::cerr << "Unable to get response" << std::endl;
     }
 }
 
@@ -69,7 +91,7 @@ int main(int argc, char* argv[]) {
             std::string file = vm["unlock"].as<std::string>();
             std::cout << "Enter password to unlock " << file << ": ";
             std::string password = get_password();
-            write_password_to_file("#unlock-" + file, password);
+            write_password_to_file("#unlock-", file, password);
         }
 
         if (vm.count("lock")) {
@@ -77,12 +99,12 @@ int main(int argc, char* argv[]) {
             std::cout << "Enter password to lock " << file << " (or leave empty for default): ";
             std::string password = get_password();
             if (password.empty()) {
-                // TODO default password
-                password = "default_password";
+                // TODO password = "default_password";
+                std::cerr << "Default password is not implemented yet" << std::endl;
+                return 0;
             }
 
-            // TODO solve the relative path problem
-            write_password_to_file("#lock-" + file, password);
+            write_password_to_file("#lock-", file, password);
         }
     } catch (std::exception& e) {
         std::cerr << "error: " << e.what() << std::endl;

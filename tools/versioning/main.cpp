@@ -5,31 +5,50 @@
 
 namespace po = boost::program_options;
 
-void create_command_file(const std::string& command, const std::string& file, const std::string& num = "") {
-    // TODO solve the problem with relative path
+void create_command_file(std::string command, const std::string& filepath, const std::string& num = "") {
+    size_t pos = filepath.find_last_of("/\\");
+    std::string complete;
 
-    std::string filename = "#" + command + "-" + file;
     if (!num.empty()) {
-        filename += "_" + num;
+        command += "_" + num;
     }
 
-    std::ofstream out(filename);
+    if (pos != std::string::npos) {
+        std::string path = filepath.substr(0, pos);
+        std::string file = filepath.substr(pos + 1);
+        complete = path + "/" + "#" + command + "-" + file;
+    } else {
+        complete = "#" + command + "-" + filepath;
+    }
+
+    std::ofstream out(complete);
     if (out.is_open()) {
         out.close();
     } else {
-        std::cerr << "Unable to create file: " << filename << std::endl;
+        std::cerr << "Unable to complete command" << std::endl;
+        return;
+    }
+
+    std::ifstream in(complete);
+    if (in.is_open()) {
+        std::string line;
+        std::getline(in, line);
+        std::cout << line << std::endl;
+        in.close();
+    } else {
+        std::cerr << "Unable to get response" << std::endl;
     }
 }
 
 int main(int argc, char* argv[]) {
     try {
         po::options_description desc("Allowed options");
-        desc.add_options()("help", "produce help message")                       //
-            ("list", "list all versions of a file")                              //
-            ("restore", "restore a file to a specific version")                  //
-            ("delete", po::value<int>(), "delete a specific version of a file")  //
-            ("delete_all", "delete all versions of a file")                      //
-            ("file", po::value<std::string>(), "file path");
+        desc.add_options()("help", "produce help message")                         //
+            ("list", "list all versions of a file")                                //
+            ("restore", po::value<int>(), "restore a file to a specific version")  //
+            ("delete", po::value<int>(), "delete a specific version of a file")    //
+            ("delete_all", "delete all versions of a file")                        //
+            ("file", po::value<std::string>(), "file path (is also a positional argument)");
 
         po::positional_options_description p;
         p.add("file", 1);
@@ -55,7 +74,8 @@ int main(int argc, char* argv[]) {
         }
 
         if (vm.count("restore")) {
-            create_command_file("restore", file);
+            int version = vm["restore"].as<int>();
+            create_command_file("restore", file, std::to_string(version));
         }
 
         if (vm.count("delete")) {

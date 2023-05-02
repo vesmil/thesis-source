@@ -26,6 +26,7 @@ struct Versioning {
 };
 
 struct Encryption {
+    bool temporaryCache = true;
     enum class Mode {
         AES,
     } mode = Mode::AES;

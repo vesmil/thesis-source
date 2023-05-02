@@ -2,6 +2,7 @@
 
 #include <iostream>
 
+#include "config.h"
 #include "custom_vfs.h"
 
 EncryptionVfs::EncryptionVfs(CustomVfs &wrapped_vfs) : VfsDecorator(wrapped_vfs) {
@@ -11,20 +12,28 @@ EncryptionVfs::EncryptionVfs(CustomVfs &wrapped_vfs) : VfsDecorator(wrapped_vfs)
 }
 
 int EncryptionVfs::read(const std::string &pathname, char *buf, size_t count, off_t offset, struct fuse_file_info *fi) {
-    int result = wrapped_vfs.read(pathname, buf, count, offset, fi);
+    if (Config::encryption.temporaryCache) {
+        // TODO decrypt the file
 
-    // TODO store a cache...
+        return wrapped_vfs.read(pathname, buf, count, offset, fi);
+    }
 
-    if (result >= 0) {}
+    // TODO read from a temporary file
 
-    return result;
+    return wrapped_vfs.read(pathname, buf, count, offset, fi);
 }
 
 int EncryptionVfs::write(const std::string &pathname, const char *buf, size_t count, off_t offset,
                          struct fuse_file_info *fi) {
-    // TODO should it be writing straight to the file or to a cache?
-
     std::vector<char> encrypted_buf(count);
 
-    return wrapped_vfs.write(pathname, encrypted_buf.data(), count, offset, fi);
+    if (Config::encryption.temporaryCache) {
+        // TODO encrypt the file
+
+        return wrapped_vfs.write(pathname, encrypted_buf.data(), count, offset, fi);
+    }
+
+    // TODO store it into a temporary file
+
+    return wrapped_vfs.write(pathname, buf, count, offset, fi);
 }

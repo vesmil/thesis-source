@@ -5,7 +5,8 @@
 #include "config.h"
 
 int VersioningVfs::getattr(const std::string &pathname, struct stat *st) {
-    int max_version = get_max_version(pathname);  // TODO get current version and not max
+    int max_version = get_max_version(pathname);
+    // TODO get current version and not max
 
     if (max_version == 0) {
         return wrapped_vfs.getattr(pathname, st);
@@ -118,13 +119,16 @@ bool VersioningVfs::handle_versioned_command(const std::string &command, const s
         restore_version(arg, std::stoi(subArg));
         printf("Restored version %s of file %s\n", subArg.c_str(), arg.c_str());
 
-        // write result to pathname
+        // TODO write result to pathname
+
         return true;
 
     } else if (command == "delete") {
         delete_version(arg, std::stoi(subArg));
         printf("Deleted version %s of file %s\n", subArg.c_str(), arg.c_str());
-        // write result to pathname
+
+        // TODO write result to pathname
+
         return true;
     }
 
@@ -140,7 +144,7 @@ bool VersioningVfs::handle_non_versioned_command(const std::string &command, con
     } else if (command == "list") {
         auto versions = list_versions(arg);
         printf("Listed versions of file %s\n", arg.c_str());
-        
+
         for (const std::string &version : versions) {
             printf("%s\n", version.c_str());
         }

@@ -5,7 +5,7 @@
 #include "config.h"
 
 int VersioningVfs::getattr(const std::string &pathname, struct stat *st) {
-    int max_version = get_max_version(pathname);
+    int max_version = get_max_version(pathname);  // TODO get current version and not max
 
     if (max_version == 0) {
         return wrapped_vfs.getattr(pathname, st);
@@ -15,15 +15,12 @@ int VersioningVfs::getattr(const std::string &pathname, struct stat *st) {
 }
 
 int VersioningVfs::read(const std::string &pathname, char *buf, size_t count, off_t offset, struct fuse_file_info *fi) {
-    int result;
-
-    if (handle_hook(result, pathname, buf, count, offset, fi)) {
-        return result;
+    // Hook is in format #command_subArg-path
+    if (handle_hook(pathname, fi)) {
+        return 0;
     }
 
     int max_version = get_max_version(pathname);
-
-    // This is just in case there were no writes to the file
     if (max_version == 0) {
         return wrapped_vfs.read(pathname, buf, count, offset, fi);
     }
@@ -88,21 +85,67 @@ int VersioningVfs::get_max_version(const std::string &pathname) {
     return max_version;
 }
 
-bool VersioningVfs::handle_hook(int &result, const std::string &pathname, char *buf, size_t count, off_t offset,
-                                struct fuse_file_info *fi) {
+bool VersioningVfs::handle_hook(const std::string &pathname, struct fuse_file_info *fi) {
     std::string filename = CustomVfs::get_filename(pathname);
-    if (filename[0] == '#') {
-        std::string command = filename.substr(1, filename.find('#') - 1);
-        std::string arg = filename.substr(filename.find('#') + 1);
 
-        // decide what to do based on command
-        if (command == "restore") {
-            restore_version(pathname, std::stoi(arg));
-            result = 0;
-            return true;
+    if (filename[0] != '#') {
+        return false;
+    }
+
+    auto dashPos = filename.find('-');
+    if (dashPos == std::string::npos) {
+        return false;
+    }
+
+    std::string command = filename.substr(1, dashPos - 1);
+    std::string arg = filename.substr(dashPos + 1);
+
+    auto underscorePos = command.find('_');
+    if (underscorePos != std::string::npos) {
+        auto subArg = command.substr(underscorePos + 1);
+        command = command.substr(0, underscorePos);
+
+        return handle_versioned_command(command, subArg, arg, pathname, fi);
+    }
+
+    return handle_non_versioned_command(command, arg, pathname, fi);
+}
+
+bool VersioningVfs::handle_versioned_command(const std::string &command, const std::string &subArg,
+                                             const std::string &arg, const std::string &pathname,
+                                             struct fuse_file_info *fi) {
+    if (command == "restore") {
+        restore_version(arg, std::stoi(subArg));
+        printf("Restored version %s of file %s\n", subArg.c_str(), arg.c_str());
+
+        // write result to pathname
+        return true;
+
+    } else if (command == "delete") {
+        delete_version(arg, std::stoi(subArg));
+        printf("Deleted version %s of file %s\n", subArg.c_str(), arg.c_str());
+        // write result to pathname
+        return true;
+    }
+
+    return false;
+}
+
+bool VersioningVfs::handle_non_versioned_command(const std::string &command, const std::string &arg,
+                                                 const std::string &pathname, struct fuse_file_info *fi) {
+    if (command == "deleteAll") {
+        // delete all versions
+        printf("Deleted all versions of file %s\n", arg.c_str());
+
+    } else if (command == "list") {
+        auto versions = list_versions(arg);
+        printf("Listed versions of file %s\n", arg.c_str());
+        
+        for (const std::string &version : versions) {
+            printf("%s\n", version.c_str());
         }
 
-        // TODO ...
+        return true;
     }
 
     return false;
@@ -124,11 +167,6 @@ std::vector<std::string> VersioningVfs::list_versions(const std::string &pathnam
 
 void VersioningVfs::delete_version(const std::string &pathname, int version) {
     wrapped_vfs.unlink(pathname + version_suffix + std::to_string(version));
-}
-
-int VersioningVfs::readdir(const std::string &pathname, off_t off, struct fuse_file_info *fi,
-                           FuseWrapper::readdir_flags flags) {
-    return CustomVfs::readdir(pathname, off, fi, flags);
 }
 
 int VersioningVfs::fill_dir(const std::string &name, const struct stat *stbuf, off_t off,

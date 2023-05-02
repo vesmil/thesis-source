@@ -23,6 +23,7 @@ void create_command_file(std::string command, const std::string& filepath, const
 
     std::ofstream out(complete);
     if (out.is_open()) {
+        // TODO need to write something or change mknod
         out.close();
     } else {
         std::cerr << "Unable to complete command" << std::endl;
@@ -47,7 +48,7 @@ int main(int argc, char* argv[]) {
             ("list", "list all versions of a file")                                //
             ("restore", po::value<int>(), "restore a file to a specific version")  //
             ("delete", po::value<int>(), "delete a specific version of a file")    //
-            ("delete_all", "delete all versions of a file")                        //
+            ("deleteAll", "delete all versions of a file")                         //
             ("file", po::value<std::string>(), "file path (is also a positional argument)");
 
         po::positional_options_description p;

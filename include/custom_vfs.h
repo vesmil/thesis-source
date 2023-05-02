@@ -13,7 +13,7 @@
 #include "fuse_wrapper.h"
 
 /**
- * A custom filesystem based on memory
+ * A custom filesystem based on storing files into backing folder
  *
  * It uses the FuseWrapper to provide a FUSE interface
  */
@@ -59,6 +59,8 @@ public:
                          FuseWrapper::fill_dir_flags flags);
     int opendir(const std::string &pathname, struct fuse_file_info *fi) override;
     int releasedir(const std::string &pathname, struct fuse_file_info *fi) override;
+
+    // Note - cold be potentially removed
     [[nodiscard]] virtual std::vector<std::string> subfiles(const std::string &pathname) const;
 
 protected:

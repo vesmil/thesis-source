@@ -33,4 +33,4 @@ RUN mkdir build && cd build && cmake ../ && make
 ENTRYPOINT ["/app/build/customvfs_exec"]
 
 # Set the default command to run your application in test mode with the desired mount point
-CMD ["--test", "-m", "/mnt/test", "-f", "-o nonempty -f"]
+CMD ["--test", "-m", "/mnt/fs", "-f", "-o nonempty -f"]

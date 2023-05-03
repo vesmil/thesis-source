@@ -13,6 +13,8 @@ public:
     int write(const std::string &pathname, const char *buf, size_t count, off_t offset,
               struct fuse_file_info *fi) override;
 
+    // TODO open and close to decrypt files
+
     /*
     int mkdir(const std::string &pathname, mode_t mode) override;
     int rmdir(const std::string &pathname) override;

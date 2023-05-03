@@ -23,7 +23,7 @@ void create_command_file(std::string command, const std::string& filepath, const
 
     std::ofstream out(complete);
     if (out.is_open()) {
-        // TODO need to write something or change mknod
+        out << " ";
         out.close();
     } else {
         std::cerr << "Unable to complete command" << std::endl;

@@ -1,36 +1,40 @@
-# Cheatsheet:
-#   docker volume create customvfs-test
+# Debug mode:
+#   docker volume create customvfs-volume
 #   docker build -t customvfs .
-#   docker run --name customvfs-container --rm -it --privileged -v customvfs-test:/mnt/test customvfs
+#   docker run --name customvfs-container --rm -it --privileged -v customvfs-volume:/mnt/fuse customvfs
 #   docker run --rm -it --privileged --volumes-from customvfs-container ubuntu:20.04 bash
 
-# Use a base image with the necessary tools
-FROM ubuntu:20.04
+# Release mode:
+#   docker build -t customvfs .
+#   docker run --name customvfs-container --rm -it --privileged -v <folder to mount>:/mnt/fuse customvfs
 
-# Set environment variables
+FROM ubuntu:20.04
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install dependencies
-RUN apt-get update && apt-get install -y \
-    clang \
-    cmake \
-    libfuse-dev \
-    libgtest-dev \
-    libsodium-dev \
-    pkg-config \
-    libboost-program-options-dev
+# Install dependencies and clean up the apt cache
+RUN apt-get update && \
+    apt-get install --no-install-recommends -y \
+        clang \
+        cmake \
+        make \
+        g++ \
+        fuse \
+        sudo \
+        libfuse-dev \
+        libgtest-dev \
+        libsodium-dev \
+        pkg-config \
+        libboost-program-options-dev && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Create a working directory for your project
 WORKDIR /app
 
-# Copy your project files into the container
+# Copy project files into the container
 COPY . .
 
 # Build the project
 RUN mkdir build && cd build && cmake ../ && make
 
-# Set the entry point to the customvfs_exec executable
-ENTRYPOINT ["/app/build/customvfs_exec"]
-
-# Set the default command to run your application in test mode with the desired mount point
-CMD ["--test", "-m", "/mnt/fs", "-f", "-o nonempty -f"]
+ENTRYPOINT ["sudo", "/app/build/customvfs_exec", "-m", "/mnt/fuse"]

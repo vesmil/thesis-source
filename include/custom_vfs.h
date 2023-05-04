@@ -26,7 +26,7 @@ public:
      * @param path The path to the directory
      * @param create_test Whether to create example files
      */
-    explicit CustomVfs(const std::string &path);
+    explicit CustomVfs(const std::string &path, const std::string &backing = "");
 
     void init() override;
     void destroy() override;

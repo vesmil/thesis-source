@@ -12,12 +12,26 @@
 
 #include "config.h"
 
-CustomVfs::CustomVfs(const std::string &path) : mount_path(path) {
-    std::string parent = CustomVfs::get_parent(path);
-    std::string name = CustomVfs::get_filename(path);
+CustomVfs::CustomVfs(const std::string &path, const std::string &backing) : mount_path(path) {
+    if (!std::filesystem::exists(path)) {
+        std::filesystem::create_directory(path);
+    }
 
-    backing_dir = parent + Config::base.backing_prefix + name;
+    if (backing.empty()) {
+        std::string parent = CustomVfs::get_parent(path);
+        std::string name = CustomVfs::get_filename(path);
+
+        backing_dir = parent + Config::base.backing_prefix + name;
+    } else {
+        backing_dir = backing;
+    }
+
+    printf("Creating backing directory %s\n", backing_dir.c_str());
     std::filesystem::create_directory(backing_dir);
+
+    if (!std::filesystem::exists(path) || !std::filesystem::is_directory(backing_dir)) {
+        throw std::runtime_error("Backing directory does not exist");
+    }
 }
 
 void CustomVfs::init() {
@@ -173,11 +187,29 @@ std::vector<std::string> CustomVfs::subfiles(const std::string &pathname) const 
 }
 
 std::string CustomVfs::get_parent(const std::string &path) {
-    return path.substr(0, path.rfind('/'));
+    auto last_slash = path.rfind('/');
+    if (last_slash == path.length() - 1) {
+        last_slash = path.rfind('/', last_slash - 1);
+    }
+
+    if (last_slash == std::string::npos) {
+        return "";
+    }
+    auto parent = path.substr(0, last_slash);
+    return parent;
 }
 
-std::string CustomVfs::get_filename(const std::string &basicString) {
-    return basicString.substr(basicString.rfind('/') + 1);
+std::string CustomVfs::get_filename(const std::string &path) {
+    auto last_slash = path.rfind('/');
+    if (last_slash == path.length() - 1) {
+        last_slash = path.rfind('/', last_slash - 1);
+    }
+
+    if (last_slash == std::string::npos) {
+        return path;  // no slashes, so the whole path is the filename
+    } else {
+        return path.substr(last_slash + 1);
+    }
 }
 
 std::string CustomVfs::to_backing(const std::string &pathname) const {

@@ -10,8 +10,10 @@
  * Sets up options_description object.
  */
 void setup_options(boost::program_options::options_description& desc) {
-    desc.add_options()("help,h", "produce this help message")                             //
-        ("mountpoint,m", boost::program_options::value<std::string>(), "mountpoint")      //
+    desc.add_options()("help,h", "produce this help message")                                   //
+        ("mountpoint,m", boost::program_options::value<std::string>(), "Customvfs mountpoint")  //
+        ("backing,b", boost::program_options::value<std::string>(),
+         "Directory that is used to store the actual data.")                              //
         ("config,c", boost::program_options::value<std::string>(), "configuration file")  //
         ("test,t", "Create test files inside mount directory.")                           //
         ("fuse-args,f", boost::program_options::value<std::string>(), "FUSE arguments");
@@ -35,7 +37,7 @@ bool validate_arguments(const boost::program_options::variables_map& vm,
 
     std::string mountpoint = vm["mountpoint"].as<std::string>();
     if (!std::filesystem::is_directory(mountpoint)) {
-        std::cerr << "Mountpoint is not a directory" << std::endl;
+        std::cerr << "Mountpoint is not a directory -" << mountpoint << std::endl;
         return false;
     }
 
@@ -105,6 +107,9 @@ int main(int argc, char* argv[]) {
         Config::Parser::ParseFile(vm["config"].as<std::string>());
     }
 
+    if (vm.count("backing")) {}
+
+    // TODO force absolute path
     CustomVfs custom_vfs(mountpoint);
     VersioningVfs versioned(custom_vfs);
     // EncryptionVfs encrypted(versioned);

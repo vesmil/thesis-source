@@ -221,12 +221,13 @@ public:
         return fuse().poll(pathname, fi, ph, reventsp);
     }
 
-    static int write_buf(const char *pathname, struct fuse_bufvec *buf, off_t off, struct fuse_file_info *fi) {
+    [[maybe_unused]] static int write_buf(const char *pathname, struct fuse_bufvec *buf, off_t off,
+                                          struct fuse_file_info *fi) {
         return fuse().write_buf(pathname, buf, off, fi);
     }
 
-    static int read_buf(const char *pathname, struct fuse_bufvec **bufp, size_t size, off_t off,
-                        struct fuse_file_info *fi) {
+    [[maybe_unused]] static int read_buf(const char *pathname, struct fuse_bufvec **bufp, size_t size, off_t off,
+                                         struct fuse_file_info *fi) {
         return fuse().read_buf(pathname, bufp, size, off, fi);
     }
 

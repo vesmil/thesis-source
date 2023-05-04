@@ -6,7 +6,6 @@
 
 int VersioningVfs::getattr(const std::string &pathname, struct stat *st) {
     int max_version = get_max_version(pathname);
-    
     // TODO get current version and not max
 
     if (max_version == 0) {

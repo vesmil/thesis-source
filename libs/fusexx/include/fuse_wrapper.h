@@ -67,7 +67,7 @@ public:
      * Readdir flags, passed to readdir()
      */
     enum readdir_flags {
-        READDIR_PLUS [[maybe_unused]] = (1 << 0),
+        READDIR_PLUS = (1 << 0),
     };
 
     /** Read directory
@@ -96,7 +96,7 @@ public:
          * It is okay to set FILL_DIR_PLUS if READDIR_PLUS is not set
          * and vice versa.
          */
-        FILL_DIR_PLUS [[maybe_unused]] = (1 << 1),
+        FILL_DIR_PLUS = (1 << 1),
     };
 
     /** Function to add an entry in a readdir() operation
@@ -108,7 +108,7 @@ public:
      * @return 1 if buffer is full, zero otherwise
      */
     static int fill_dir(const std::string &name, const struct stat *stbuf, off_t off = 0,
-                        [[maybe_unused]] fill_dir_flags flags = (fill_dir_flags)0);
+                        fill_dir_flags flags = (fill_dir_flags)0);
 
     /** Create a file node
      *
@@ -367,7 +367,7 @@ public:
      * If this flag is set these operations continue to work on
      * unlinked files even if "-ohard_remove" option was specified.
      */
-    unsigned int flag_nullpath_ok [[maybe_unused]] : 1;
+    unsigned int flag_nullpath_ok : 1;
 
     /**
      * Flag indicating that the path need not be calculated for
@@ -381,18 +381,18 @@ public:
      * wasn't unlinked.  However the path can still be non-NULL if
      * it needs to be calculated for some other reason.
      */
-    [[maybe_unused]] unsigned int flag_nopath [[maybe_unused]] : 1;
+    unsigned int flag_nopath : 1;
 
     /**
      * Flag indicating that the filesystem accepts special
      * UTIME_NOW and UTIME_OMIT values in its utimens operation.
      */
-    unsigned int flag_utime_omit_ok [[maybe_unused]] : 1;
+    unsigned int flag_utime_omit_ok : 1;
 
     /**
      * Reserved flags, don't set
      */
-    unsigned int flag_reserved [[maybe_unused]] : 29;
+    unsigned int flag_reserved : 29;
 
     /**
      * Ioctl

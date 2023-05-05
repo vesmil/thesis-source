@@ -18,7 +18,8 @@ public:
 };
 
 struct Base {
-    std::string backing_prefix = "/mnt/customvfs-";
+    std::string backing_location = "/mnt/";
+    std::string backing_prefix = "customvfs-";
 };
 
 struct Versioning {

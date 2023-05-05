@@ -1,7 +1,5 @@
 #include "versioning_vfs.h"
 
-#include <filesystem>
-
 #include "config.h"
 
 int VersioningVfs::getattr(const std::string &pathname, struct stat *st) {
@@ -205,4 +203,10 @@ std::vector<std::string> VersioningVfs::subfiles(const std::string &pathname) co
 
 void VersioningVfs::restore_version(const std::string &pathname, int version) {
     // TODO set current version to ...
+}
+
+std::vector<std::string> VersioningVfs::get_related_files(const std::string &pathname) const {
+    // TODO Iterate in the parent directory
+
+    return {};
 }

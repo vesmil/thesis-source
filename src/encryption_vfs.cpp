@@ -14,17 +14,23 @@ EncryptionVfs::EncryptionVfs(CustomVfs &wrapped_vfs) : VfsDecorator(wrapped_vfs)
 }
 
 int EncryptionVfs::read(const std::string &pathname, char *buf, size_t count, off_t offset, struct fuse_file_info *fi) {
-    // TODO hook
+    if (handle_hook(pathname, fi)) {
+        return 0;
+    }
 
     return CustomVfs::read(pathname, buf, count, offset, fi);
 }
 
-int EncryptionVfs::write(const std::string &pathname, const char *buf, size_t count, off_t offset,
-                         struct fuse_file_info *fi) {
-    // TODO hook
+bool EncryptionVfs::handle_hook(const std::string &path, fuse_file_info *fi) {
+    if (path[0] == '#') {
+        // TODO
 
-    return CustomVfs::write(pathname, buf, count, offset, fi);
+        return true;
+    }
+
+    return false;
 }
+
 int EncryptionVfs::open(const std::string &pathname, struct fuse_file_info *fi) {
     auto realPath = get_fs_path(pathname);
 

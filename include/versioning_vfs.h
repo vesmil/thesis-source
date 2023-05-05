@@ -26,6 +26,9 @@ public:
 
     [[nodiscard]] std::vector<std::string> subfiles(const std::string &pathname) const override;
 
+protected:
+    [[nodiscard]] std::vector<std::string> get_related_files(const std::string &pathname) const override;
+
 private:
     std::string const version_suffix = "#v";
 

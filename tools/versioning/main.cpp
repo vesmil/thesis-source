@@ -84,8 +84,8 @@ int main(int argc, char* argv[]) {
             create_command_file("delete", file, std::to_string(version));
         }
 
-        if (vm.count("delete_all")) {
-            create_command_file("delete_all", file);
+        if (vm.count("deleteAll")) {
+            create_command_file("deleteAll", file);
         }
     } catch (std::exception& e) {
         std::cerr << "error: " << e.what() << std::endl;

@@ -19,7 +19,13 @@ CustomVfs::CustomVfs(const std::string &path, const std::string &backing) : moun
 
     if (backing.empty()) {
         std::string name = CustomVfs::get_filename(path);
-        backing_dir = Config::base.backing_prefix + name;
+        backing_dir = Config::base.backing_location + Config::base.backing_prefix + name;
+
+        // Use home dir if backing dir not writable
+        if (::access(Config::base.backing_location.c_str(), W_OK) != 0) {
+            std::string home_dir = getenv("HOME");
+            backing_dir = home_dir + "/" + Config::base.backing_prefix + name;
+        }
     } else {
         backing_dir = backing;
     }
@@ -216,4 +222,8 @@ std::string CustomVfs::to_backing(const std::string &pathname) const {
 
 std::string CustomVfs::get_fs_path(const std::string &pathname) const {
     return mount_path + pathname;
+}
+
+std::vector<std::string> CustomVfs::get_related_files(const std::string &pathname) const {
+    return {mount_path + pathname};
 }

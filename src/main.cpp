@@ -36,8 +36,7 @@ bool validate_arguments(const boost::program_options::variables_map& vm,
 
     std::string mountpoint = vm["mountpoint"].as<std::string>();
     if (!std::filesystem::is_directory(mountpoint)) {
-        std::cerr << "Mountpoint is not a directory -" << mountpoint << std::endl;
-        return false;
+        std::cerr << "Warning: mountpoint is not a directory - " << mountpoint << std::endl;
     }
 
     return true;

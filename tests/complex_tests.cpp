@@ -2,7 +2,7 @@
 
 #include "custom_vfs.h"
 
-TEST(CustomVfs, test_mount) {
+TEST(CustomVfs, mount) {
     // Create files inside a folder
 
     // Mount that folder

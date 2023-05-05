@@ -4,7 +4,7 @@
 
 #include <iostream>
 
-#include "config.h"
+#include "common/config.h"
 #include "custom_vfs.h"
 
 EncryptionVfs::EncryptionVfs(CustomVfs &wrapped_vfs) : VfsDecorator(wrapped_vfs) {

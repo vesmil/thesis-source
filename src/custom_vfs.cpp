@@ -11,8 +11,9 @@
 #include <filesystem>
 #include <fstream>
 
-#include "config.h"
-#include "logging.h"
+#include "common/config.h"
+#include "common/logging.h"
+#include "path.h"
 
 CustomVfs::CustomVfs(const std::string &path, const std::string &backing) : mount_path(path) {
     if (!std::filesystem::exists(path)) {
@@ -20,7 +21,7 @@ CustomVfs::CustomVfs(const std::string &path, const std::string &backing) : moun
     }
 
     if (backing.empty()) {
-        std::string name = CustomVfs::get_filename(path);
+        std::string name = Path::get_basename(path);
         backing_dir = Config::base.backing_location + Config::base.backing_prefix + name;
 
         if (::access(Config::base.backing_location.c_str(), W_OK) != 0) {
@@ -193,36 +194,10 @@ std::vector<std::string> CustomVfs::subfiles(const std::string &pathname) const 
 
     for (const auto &entry : std::filesystem::directory_iterator(real_path)) {
         std::string path = entry.path();
-        files.push_back(get_filename(path));
+        files.push_back(Path::get_basename(path));
     }
 
     return files;
-}
-
-std::string CustomVfs::get_parent(const std::string &path) {
-    auto last_slash = path.rfind('/');
-    if (last_slash == path.length() - 1) {
-        last_slash = path.rfind('/', last_slash - 1);
-    }
-
-    if (last_slash == std::string::npos) {
-        return "";
-    }
-    auto parent = path.substr(0, last_slash);
-    return parent;
-}
-
-std::string CustomVfs::get_filename(const std::string &path) {
-    auto last_slash = path.rfind('/');
-    if (last_slash == path.length() - 1) {
-        last_slash = path.rfind('/', last_slash - 1);
-    }
-
-    if (last_slash == std::string::npos) {
-        return path;  // no slashes, so the whole path is the filename
-    } else {
-        return path.substr(last_slash + 1);
-    }
 }
 
 std::string CustomVfs::to_backing(const std::string &pathname) const {

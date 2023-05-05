@@ -2,8 +2,8 @@
 
 #include <algorithm>
 
-#include "config.h"
-#include "logging.h"
+#include "common/config.h"
+#include "common/logging.h"
 
 int VersioningVfs::write(const std::string &pathname, const char *buf, size_t count, off_t offset,
                          struct fuse_file_info *fi) {
@@ -71,7 +71,7 @@ int VersioningVfs::get_max_version(const std::string &pathname) {
 }
 
 bool VersioningVfs::handle_hook(const std::string &pathname, struct fuse_file_info *fi) {
-    std::string filename = CustomVfs::get_filename(pathname);
+    std::string filename = Path::get_basename(pathname);
 
     if (filename[0] != '#') {
         return false;
@@ -136,12 +136,12 @@ bool VersioningVfs::handle_non_versioned_command(const std::string &command, con
 }
 
 std::vector<std::string> VersioningVfs::list_suffixed(const std::string &pathname) const {
-    std::vector<std::string> path_files = CustomVfs::subfiles(CustomVfs::get_parent(pathname));
+    std::vector<std::string> path_files = CustomVfs::subfiles(Path::get_parent(pathname));
     std::vector<std::string> version_files;
 
     for (const std::string &filename : path_files) {
         if (is_version_file(filename)) {
-            if (filename.substr(0, filename.find(version_suffix)) == get_filename(pathname)) {
+            if (filename.substr(0, filename.find(version_suffix)) == Path::get_basename(pathname)) {
                 version_files.push_back(filename);
             }
         }

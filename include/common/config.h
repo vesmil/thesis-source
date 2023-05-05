@@ -4,6 +4,8 @@
 #include <cstddef>
 #include <string>
 
+#include "path.h"
+
 /**
  * Configuration for filesystems
  */

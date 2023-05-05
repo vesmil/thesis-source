@@ -1,7 +1,7 @@
 #include <boost/program_options.hpp>
 #include <filesystem>
 
-#include "config.h"
+#include "common/config.h"
 #include "custom_vfs.h"
 #include "encryption_vfs.h"
 #include "versioning_vfs.h"

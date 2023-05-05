@@ -6,7 +6,7 @@
 #include "custom_vfs.h"
 #include "test_config.h"
 
-TEST(CustomVfs, test_dir) {
+TEST(CustomVfs, create_dir) {
     for (const auto& entry : std::filesystem::directory_iterator(TestConfig::inst().mountpoint)) {
         std::filesystem::remove_all(entry.path());
     }
@@ -25,7 +25,7 @@ TEST(CustomVfs, test_dir) {
     EXPECT_EQ(files, expected);
 }
 
-TEST(CustomVfs, test_file) {
+TEST(CustomVfs, create_file) {
     for (const auto& entry : std::filesystem::directory_iterator(TestConfig::inst().mountpoint)) {
         std::filesystem::remove_all(entry.path());
     }

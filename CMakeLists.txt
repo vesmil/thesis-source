@@ -20,7 +20,7 @@ set(CUSTOMVFS_SOURCES src/custom_vfs.cpp src/encryption_vfs.cpp src/versioning_v
 
 # CustomVFS library
 add_library(customvfs STATIC ${CUSTOMVFS_SOURCES})
-target_include_directories(customvfs PUBLIC include)
+target_include_directories(customvfs PUBLIC include include/common)
 target_include_directories(customvfs PRIVATE ${FUSE_INCLUDE_DIRS} ${LIBSODIUM_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 
 target_link_libraries(customvfs PUBLIC fusexx ${FUSE_LIBRARIES} ${LIBSODIUM_LIBRARIES} ${Boost_LIBRARIES})
@@ -33,6 +33,6 @@ target_link_libraries(customvfs_exec PRIVATE customvfs)
 # Tests
 find_package(GTest REQUIRED)
 
-add_executable(customvfs_tests tests/test_main.cpp tests/basic_tests.cpp tests/test_config.h tests/complex_tests.cpp)
+add_executable(customvfs_tests tests/test_main.cpp tests/basic_tests.cpp tests/test_config.h tests/complex_tests.cpp tests/path_tests.cpp)
 target_link_libraries(customvfs_tests PRIVATE GTest::GTest GTest::Main customvfs)
 target_include_directories(customvfs_tests PRIVATE ${GTEST_INCLUDE_DIRS})

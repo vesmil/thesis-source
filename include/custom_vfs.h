@@ -67,9 +67,6 @@ protected:
     [[nodiscard]] std::string get_fs_path(const std::string &pathname) const;
     [[nodiscard]] virtual std::vector<std::string> get_related_files(const std::string &pathname) const;
 
-    static std::string get_parent(const std::string &path);
-    static std::string get_filename(const std::string &basicString);
-
     int copy_file(const std::string &source, const std::string &destination);
 
 private:

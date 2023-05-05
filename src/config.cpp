@@ -1,4 +1,4 @@
-#include "config.h"
+#include "common/config.h"
 
 bool Config::Parser::ParseFile(const std::string& path) {
     // TODO implement

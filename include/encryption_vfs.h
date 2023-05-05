@@ -13,7 +13,9 @@ public:
     int write(const std::string &pathname, const char *buf, size_t count, off_t offset,
               struct fuse_file_info *fi) override;
 
-    // TODO open and close to decrypt files
+    int open(const std::string &pathname, struct fuse_file_info *fi) override;
+
+    int release(const std::string &pathname, struct fuse_file_info *fi) override;
 
     /*
     int mkdir(const std::string &pathname, mode_t mode) override;

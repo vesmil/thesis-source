@@ -18,7 +18,7 @@ public:
 };
 
 struct Base {
-    std::string backing_prefix = "/.customvfs-";
+    std::string backing_prefix = "/mnt/customvfs-";
 };
 
 struct Versioning {
@@ -26,7 +26,6 @@ struct Versioning {
 };
 
 struct Encryption {
-    bool temporaryCache = true;
     enum class Mode {
         AES,
     } mode = Mode::AES;

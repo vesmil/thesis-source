@@ -64,6 +64,8 @@ public:
     [[nodiscard]] virtual std::vector<std::string> subfiles(const std::string &pathname) const;
 
 protected:
+    [[nodiscard]] std::string get_fs_path(const std::string &pathname) const;
+
     static std::string get_parent(const std::string &path);
     static std::string get_filename(const std::string &basicString);
 

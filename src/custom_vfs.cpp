@@ -18,10 +18,8 @@ CustomVfs::CustomVfs(const std::string &path, const std::string &backing) : moun
     }
 
     if (backing.empty()) {
-        std::string parent = CustomVfs::get_parent(path);
         std::string name = CustomVfs::get_filename(path);
-
-        backing_dir = parent + Config::base.backing_prefix + name;
+        backing_dir = Config::base.backing_prefix + name;
     } else {
         backing_dir = backing;
     }
@@ -214,4 +212,8 @@ std::string CustomVfs::get_filename(const std::string &path) {
 
 std::string CustomVfs::to_backing(const std::string &pathname) const {
     return backing_dir + pathname;
+}
+
+std::string CustomVfs::get_fs_path(const std::string &pathname) const {
+    return mount_path + pathname;
 }

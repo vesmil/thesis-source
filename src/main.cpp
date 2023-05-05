@@ -10,12 +10,11 @@
  * Sets up options_description object.
  */
 void setup_options(boost::program_options::options_description& desc) {
-    desc.add_options()("help,h", "produce this help message")                                   //
-        ("mountpoint,m", boost::program_options::value<std::string>(), "Customvfs mountpoint")  //
-        ("backing,b", boost::program_options::value<std::string>(),
-         "Directory that is used to store the actual data.")                              //
-        ("config,c", boost::program_options::value<std::string>(), "configuration file")  //
-        ("test,t", "Create test files inside mount directory.")                           //
+    desc.add_options()("help,h", "produce this help message")                                             //
+        ("mountpoint,m", boost::program_options::value<std::string>(), "Directory to access the vfs")     //
+        ("backing,b", boost::program_options::value<std::string>(), "Directory used to store the data.")  //
+        ("config,c", boost::program_options::value<std::string>(), "configuration file")                  //
+        ("test,t", "Create test files inside mount directory.")                                           //
         ("fuse-args,f", boost::program_options::value<std::string>(), "FUSE arguments");
 }
 

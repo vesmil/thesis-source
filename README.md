@@ -14,8 +14,9 @@ CMake project... blah blah
 
 * C++17
 * CMake
-* Fuse - So far version 2.9.9 has been tested (TODO - test with 3.x)
-* Crypto++
+* Fuse - So far version 2.9.9 has been tested
+* Libsodium
+* Google test
 
 ### Build
 
@@ -37,4 +38,16 @@ CustomVFS <mountpoint>
 
 ## Project TODO
 
-- [ ] Rewrite the base VFS 
+- [X] Rewrite the base VFS
+- [] Hardcode default backing dir
+- [] Current versions in versioning
+- [] File protection
+    - [] Distinguish encrypted 
+    - [] Open decrypt and close encrypt
+    - [] Add support for on disk key
+- [] Recursive folder protection
+- [] Metadata?
+
+Current constraits
+
+

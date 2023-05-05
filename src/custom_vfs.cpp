@@ -9,6 +9,7 @@
 
 #include <cerrno>
 #include <filesystem>
+#include <fstream>
 
 #include "config.h"
 #include "logging.h"
@@ -159,8 +160,6 @@ int CustomVfs::release(const std::string &pathname, struct fuse_file_info *fi) {
 }
 
 int CustomVfs::readdir(const std::string &pathname, off_t off, struct fuse_file_info *fi, readdir_flags flags) {
-    Log::Debug("CustomVfs is reading directory: %s", pathname.c_str());
-
     std::string real_path = to_backing(pathname);
     struct stat stbuf {};
     if (::lstat(real_path.c_str(), &stbuf) != 0 || !S_ISDIR(stbuf.st_mode)) {
@@ -194,8 +193,7 @@ std::vector<std::string> CustomVfs::subfiles(const std::string &pathname) const 
 
     for (const auto &entry : std::filesystem::directory_iterator(real_path)) {
         std::string path = entry.path();
-        path.replace(0, backing_dir.length(), "");
-        files.push_back(path);
+        files.push_back(get_filename(path));
     }
 
     return files;
@@ -237,4 +235,9 @@ std::string CustomVfs::get_fs_path(const std::string &pathname) const {
 
 std::vector<std::string> CustomVfs::get_related_files(const std::string &pathname) const {
     return {mount_path + pathname};
+}
+
+int CustomVfs::copy_file(const std::string &source, const std::string &destination) {
+    std::filesystem::copy_file(to_backing(source), to_backing(destination));
+    return 0;
 }

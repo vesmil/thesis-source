@@ -11,9 +11,6 @@ public:
     int write(const std::string &pathname, const char *buf, size_t count, off_t offset,
               struct fuse_file_info *fi) override;
 
-    /// Read from the latest version
-    int read(const std::string &pathname, char *buf, size_t count, off_t offset, struct fuse_file_info *fi) override;
-
     /// Hide the last version
     int unlink(const std::string &pathname) override;
 
@@ -29,12 +26,12 @@ protected:
 private:
     std::string const version_suffix = "#v";
 
-    bool is_version_file(const std::string &pathname);
+    [[nodiscard]] bool is_version_file(const std::string &pathname) const;
     int get_max_version(const std::string &pathname);
 
     bool handle_hook(const std::string &pathname, struct fuse_file_info *fi);
 
-    std::vector<std::string> list_versions(const std::string &pathname) const;
+    [[nodiscard]] std::vector<std::string> list_suffixed(const std::string &pathname) const;
 
     void restore_version(const std::string &pathname, int version);
     void delete_version(const std::string &pathname, int version);
@@ -44,6 +41,7 @@ private:
 
     bool handle_non_versioned_command(const std::string &command, const std::string &arg, const std::string &pathname,
                                       struct fuse_file_info *fi);
+    void delete_all_versions(const std::string &base_name);
 };
 
 #endif  // SRC_VERSIONING_VFS_H

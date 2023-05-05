@@ -70,6 +70,8 @@ protected:
     static std::string get_parent(const std::string &path);
     static std::string get_filename(const std::string &basicString);
 
+    int copy_file(const std::string &source, const std::string &destination);
+
 private:
     // Converts a path to its real path in the backing directory
     [[nodiscard]] std::string to_backing(const std::string &pathname) const;

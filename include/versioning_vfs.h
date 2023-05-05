@@ -36,11 +36,11 @@ private:
     void restore_version(const std::string &pathname, int version);
     void delete_version(const std::string &pathname, int version);
 
-    bool handle_versioned_command(const std::string &command, const std::string &subArg, const std::string &arg,
+    bool handle_versioned_command(const std::string &command, const std::string &subArg, const std::string &arg_path,
                                   const std::string &pathname, struct fuse_file_info *fi);
 
-    bool handle_non_versioned_command(const std::string &command, const std::string &arg, const std::string &pathname,
-                                      struct fuse_file_info *fi);
+    bool handle_non_versioned_command(const std::string &command, const std::string &arg_path,
+                                      const std::string &pathname, struct fuse_file_info *fi);
     void delete_all_versions(const std::string &base_name);
 };
 

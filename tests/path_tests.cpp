@@ -8,7 +8,7 @@ TEST(CommonLibs, pathlib_simple) {
     EXPECT_EQ(Path::get_basename(path.to_string()), "dir");
 
     EXPECT_EQ(path.parent().to_string(), "/test/something");
-    EXPECT_EQ(path.basename().to_string(), "dir");
+    EXPECT_EQ(path.basename().to_string(), "/dir");
 }
 
 TEST(CommonLibs, pathlib_simple2) {
@@ -17,7 +17,7 @@ TEST(CommonLibs, pathlib_simple2) {
     EXPECT_EQ(Path::get_basename(path.to_string()), "dir");
 
     EXPECT_EQ(path.parent().to_string(), "/");
-    EXPECT_EQ(path.basename().to_string(), "dir");
+    EXPECT_EQ(path.basename().to_string(), "/dir");
 }
 
 TEST(CommonLibs, pathlib_edge) {

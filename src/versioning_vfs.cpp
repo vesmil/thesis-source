@@ -85,46 +85,49 @@ bool VersioningVfs::handle_hook(const std::string &pathname, struct fuse_file_in
     std::string command = filename.substr(1, dashPos - 1);
     std::string arg = filename.substr(dashPos + 1);
 
+    Path parent = Path(pathname).parent();
+
     auto underscorePos = command.find('_');
+
     if (underscorePos != std::string::npos) {
         auto subArg = command.substr(underscorePos + 1);
         command = command.substr(0, underscorePos);
 
-        return handle_versioned_command(command, subArg, arg, pathname, fi);
+        return handle_versioned_command(command, subArg, (parent + arg).to_string(), pathname, fi);
     }
 
-    return handle_non_versioned_command(command, arg, pathname, fi);
+    return handle_non_versioned_command(command, (parent + arg).to_string(), pathname, fi);
 }
 
 bool VersioningVfs::handle_versioned_command(const std::string &command, const std::string &subArg,
-                                             const std::string &arg, const std::string &pathname,
+                                             const std::string &arg_path, const std::string &pathname,
                                              struct fuse_file_info *fi) {
     if (command == "restore") {
-        restore_version(arg, std::stoi(subArg));
-        printf("Restored version %s of file %s\n", subArg.c_str(), arg.c_str());
+        restore_version(arg_path, std::stoi(subArg));
+        printf("Restored version %s of file %s\n", subArg.c_str(), arg_path.c_str());
         return true;
 
     } else if (command == "delete") {
-        delete_version(arg, std::stoi(subArg));
-        printf("Deleted version %s of file %s\n", subArg.c_str(), arg.c_str());
+        delete_version(arg_path, std::stoi(subArg));
+        printf("Deleted version %s of file %s\n", subArg.c_str(), arg_path.c_str());
         return true;
     }
 
     return false;
 }
 
-bool VersioningVfs::handle_non_versioned_command(const std::string &command, const std::string &arg,
+bool VersioningVfs::handle_non_versioned_command(const std::string &command, const std::string &arg_path,
                                                  const std::string &pathname, struct fuse_file_info *fi) {
     if (command == "deleteAll") {
-        delete_all_versions(arg);
+        delete_all_versions(arg_path);
 
-        printf("Deleted all versions of file %s\n", arg.c_str());
+        printf("Deleted all versions of file %s\n", arg_path.c_str());
         return true;
 
     } else if (command == "list") {
-        auto versions = list_suffixed(arg);
+        auto versions = list_suffixed(arg_path);
 
-        printf("Listed versions of file %s\n", arg.c_str());
+        printf("Listed versions of file %s\n", arg_path.c_str());
         for (const std::string &version : versions) {
             printf("%s\n", version.c_str());
         }

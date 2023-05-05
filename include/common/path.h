@@ -8,7 +8,13 @@ public:
 
     [[nodiscard]] Path parent() const {
         auto last_slash = path_.rfind('/');
-        return last_slash == std::string::npos ? Path("") : Path(path_.substr(0, last_slash));
+        if (last_slash == std::string::npos || path_ == "/" || path_.empty()) {
+            return Path("");
+        } else if (last_slash == 0) {
+            return Path("/");
+        } else {
+            return Path(path_.substr(0, last_slash));
+        }
     }
 
     [[nodiscard]] Path basename() const {
@@ -18,7 +24,13 @@ public:
 
     [[nodiscard]] static std::string get_parent(const std::string& path) {
         auto last_slash = path.rfind('/');
-        return last_slash == std::string::npos ? "" : path.substr(0, last_slash);
+        if (last_slash == std::string::npos || path == "/" || path.empty()) {
+            return "";
+        } else if (last_slash == 0) {
+            return "/";
+        } else {
+            return path.substr(0, last_slash);
+        }
     }
 
     [[nodiscard]] static std::string get_basename(const std::string& path) {
@@ -67,6 +79,7 @@ public:
 private:
     static std::string normalize(const std::string& path) {
         if (path.empty()) return path;
+        if (path == "/") return path;
 
         std::string result = path;
         if (result[0] != '/') {

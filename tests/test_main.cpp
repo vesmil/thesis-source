@@ -38,32 +38,27 @@ int main(int argc, char** argv) {
 
     std::filesystem::path mountpoint = std::filesystem::current_path() / "tests";
 
-    try {
-        // Create mountpoint
-        TestConfig::inst().mountpoint = mountpoint.string();
+    // Create mountpoint
+    TestConfig::inst().mountpoint = mountpoint.string();
 
-        if (cleanup) {
-            try {
-                execute_system_command("fusermount -u " + TestConfig::inst().mountpoint, false);
-                std::filesystem::remove_all(mountpoint);
-            } catch (const std::filesystem::filesystem_error& e) {
-                std::cerr << "Cleaning up failed: " << e.what() << std::endl;
-                std::cerr << "Running tests anyway...";
-            }
+    if (cleanup) {
+        try {
+            execute_system_command("fusermount -u " + TestConfig::inst().mountpoint, false);
+            std::filesystem::remove_all(mountpoint);
+        } catch (const std::filesystem::filesystem_error& e) {
+            std::cerr << "Cleaning up failed: " << e.what() << std::endl;
+            std::cerr << "Running tests anyway...";
         }
-
-        std::filesystem::create_directory(mountpoint);
-
-        CustomVfs fuseWrapper(TestConfig::inst().mountpoint);
-        TestConfig::inst().vfs = &fuseWrapper;
-
-        // Mount filesystem
-        char* fuse_argv[] = {argv[0], const_cast<char*>(TestConfig::inst().mountpoint.c_str())};
-        auto fuse_thread = std::thread(&CustomVfs::main, &fuseWrapper, 2, fuse_argv);
-
-    } catch (const std::exception& e) {
-        std::cerr << "Error mounting vfs: " << e.what() << std::endl;
     }
+
+    std::filesystem::create_directory(mountpoint);
+
+    CustomVfs fuseWrapper(TestConfig::inst().mountpoint);
+    TestConfig::inst().vfs = &fuseWrapper;
+
+    // Mount filesystem
+    char* fuse_argv[] = {argv[0], const_cast<char*>(TestConfig::inst().mountpoint.c_str())};
+    auto fuse_thread = std::thread(&CustomVfs::main, &fuseWrapper, 2, fuse_argv);
 
     testing::InitGoogleTest(&argc, argv);
     int test_results = RUN_ALL_TESTS();

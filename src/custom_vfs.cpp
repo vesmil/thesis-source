@@ -11,6 +11,7 @@
 #include <filesystem>
 
 #include "config.h"
+#include "logging.h"
 
 CustomVfs::CustomVfs(const std::string &path, const std::string &backing) : mount_path(path) {
     if (!std::filesystem::exists(path)) {
@@ -21,8 +22,10 @@ CustomVfs::CustomVfs(const std::string &path, const std::string &backing) : moun
         std::string name = CustomVfs::get_filename(path);
         backing_dir = Config::base.backing_location + Config::base.backing_prefix + name;
 
-        // Use home dir if backing dir not writable
         if (::access(Config::base.backing_location.c_str(), W_OK) != 0) {
+            Log::Warn("Backing directory (%s) is not writable, using home directory",
+                      Config::base.backing_location.c_str());
+
             std::string home_dir = getenv("HOME");
             backing_dir = home_dir + "/" + Config::base.backing_prefix + name;
         }
@@ -30,11 +33,17 @@ CustomVfs::CustomVfs(const std::string &path, const std::string &backing) : moun
         backing_dir = backing;
     }
 
-    printf("Creating backing directory %s\n", backing_dir.c_str());
+    Log::Info("Creating backing directory %s", backing_dir.c_str());
     std::filesystem::create_directory(backing_dir);
 
-    if (!std::filesystem::exists(path) || !std::filesystem::is_directory(backing_dir)) {
-        throw std::runtime_error("Backing directory does not exist");
+    if (!std::filesystem::exists(path)) {
+        Log::Fatal("Mount path %s could not be created", path.c_str());
+        throw std::runtime_error("Backing directory could not be created");
+    }
+
+    if (!std::filesystem::exists(backing_dir)) {
+        Log::Fatal("Backing path %s could not be created", backing_dir.c_str());
+        throw std::runtime_error("Backing directory could not be created");
     }
 }
 
@@ -150,6 +159,8 @@ int CustomVfs::release(const std::string &pathname, struct fuse_file_info *fi) {
 }
 
 int CustomVfs::readdir(const std::string &pathname, off_t off, struct fuse_file_info *fi, readdir_flags flags) {
+    Log::Debug("CustomVfs is reading directory: %s", pathname.c_str());
+
     std::string real_path = to_backing(pathname);
     struct stat stbuf {};
     if (::lstat(real_path.c_str(), &stbuf) != 0 || !S_ISDIR(stbuf.st_mode)) {

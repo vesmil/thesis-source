@@ -7,9 +7,6 @@ class VersioningVfs : public VfsDecorator {
 public:
     explicit VersioningVfs(CustomVfs &wrapped_vfs) : VfsDecorator(wrapped_vfs) {}
 
-    /// Gets the attribute of the highest version
-    int getattr(const std::string &pathname, struct stat *st) override;
-
     /// Writes into a new file
     int write(const std::string &pathname, const char *buf, size_t count, off_t offset,
               struct fuse_file_info *fi) override;
@@ -20,7 +17,7 @@ public:
     /// Hide the last version
     int unlink(const std::string &pathname) override;
 
-    /// Hides from readdir if a versioned
+    /// Hides from readdir if a version file
     int fill_dir(const std::string &name, const struct stat *stbuf, off_t off,
                  FuseWrapper::fill_dir_flags flags) override;
 
@@ -32,11 +29,13 @@ protected:
 private:
     std::string const version_suffix = "#v";
 
+    bool is_version_file(const std::string &pathname);
     int get_max_version(const std::string &pathname);
 
     bool handle_hook(const std::string &pathname, struct fuse_file_info *fi);
 
-    std::vector<std::string> list_versions(const std::string &pathname);
+    std::vector<std::string> list_versions(const std::string &pathname) const;
+
     void restore_version(const std::string &pathname, int version);
     void delete_version(const std::string &pathname, int version);
 

@@ -26,8 +26,11 @@ public:
 private:
     bool handle_hook(const std::string &path, fuse_file_info *fi);
 
-    void encrypt(const std::string &path /* key */);
-    void derypt(const std::string &path /* key */);
+    static void derive_key_and_nonce(const std::string &password, unsigned char *key, unsigned char *nonce);
+    bool encrypt_file(const std::string &input_filename, const std::string &output_filename,
+                      const std::string &password);
+    bool decrypt_file(const std::string &input_filename, const std::string &output_filename,
+                      const std::string &password);
 };
 
 #endif  // SRC_ENCRYPTION_VFS_H

@@ -89,6 +89,7 @@ bool VersioningVfs::handle_hook(const std::string &pathname, struct fuse_file_in
 
     auto underscorePos = command.find('_');
 
+    // TODO write responses
     if (underscorePos != std::string::npos) {
         auto subArg = command.substr(underscorePos + 1);
         command = command.substr(0, underscorePos);
@@ -104,12 +105,12 @@ bool VersioningVfs::handle_versioned_command(const std::string &command, const s
                                              struct fuse_file_info *fi) {
     if (command == "restore") {
         restore_version(arg_path, std::stoi(subArg));
-        printf("Restored version %s of file %s\n", subArg.c_str(), arg_path.c_str());
+        Log::Info("Restored version %s of file %s\n", subArg.c_str(), arg_path.c_str());
         return true;
 
     } else if (command == "delete") {
         delete_version(arg_path, std::stoi(subArg));
-        printf("Deleted version %s of file %s\n", subArg.c_str(), arg_path.c_str());
+        Log::Info("Deleted version %s of file %s\n", subArg.c_str(), arg_path.c_str());
         return true;
     }
 
@@ -120,14 +121,15 @@ bool VersioningVfs::handle_non_versioned_command(const std::string &command, con
                                                  const std::string &pathname, struct fuse_file_info *fi) {
     if (command == "deleteAll") {
         delete_all_versions(arg_path);
-
-        printf("Deleted all versions of file %s\n", arg_path.c_str());
+        Log::Info("Deleted all versions of file %s\n", arg_path.c_str());
         return true;
 
     } else if (command == "list") {
         auto versions = list_suffixed(arg_path);
 
-        printf("Listed versions of file %s\n", arg_path.c_str());
+        Log::Info("Listed versions of file %s\n", arg_path.c_str());
+
+        // TODO write to a file
         for (const std::string &version : versions) {
             printf("%s\n", version.c_str());
         }
@@ -194,8 +196,9 @@ std::vector<std::string> VersioningVfs::subfiles(const std::string &pathname) co
 
 void VersioningVfs::restore_version(const std::string &pathname, int version) {
     int max_version = get_max_version(pathname);
-    CustomVfs::rename(pathname, pathname + version_suffix + std::to_string(max_version + 1), 0);
 
+    // NOTE do I really want to get rid of it?
+    CustomVfs::rename(pathname, pathname + version_suffix + std::to_string(max_version + 1), 0);
     CustomVfs::rename(pathname + version_suffix + std::to_string(version), pathname, 0);
 
     Log::Info("Restored version %d of file %s", version, pathname.c_str());

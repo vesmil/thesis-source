@@ -14,11 +14,7 @@ enum class Level {
     FATAL,
 };
 
-/**
- * @brief Log a message to stdout
- *
- * @note Used mainly as a placeholder for a more advanced logging system in the future
- */
+namespace {
 template <typename... Args>
 void Log(Level level, const char *format, Args... args) {
     switch (level) {
@@ -42,6 +38,7 @@ void Log(Level level, const char *format, Args... args) {
     printf(format, args...);
     printf("\n");
 }
+}  // namespace
 
 template <typename... Args>
 void Info(const char *format, Args... args) {

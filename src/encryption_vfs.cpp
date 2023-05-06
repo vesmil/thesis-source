@@ -35,6 +35,15 @@ bool EncryptionVfs::handle_hook(const std::string &path, fuse_file_info *fi) {
 int EncryptionVfs::open(const std::string &pathname, struct fuse_file_info *fi) {
     auto realPath = get_fs_path(pathname);
 
+    std::vector<std::string> related_files = CustomVfs::get_related_files(realPath);
+    for (const auto &related_file : related_files) {
+        std::string realPath = CustomVfs::get_fs_path(related_file);
+
+        // TODO check if encrypted...
+
+        // std::string encryptedPath = CustomVfs::get_fs_path(related_file + ".enc");
+    }
+
     return CustomVfs::open(pathname, fi);
 }
 

@@ -38,7 +38,10 @@ void create_command_file(std::string command, const std::string& filepath, const
         in.close();
     } else {
         std::cerr << "Unable to get response" << std::endl;
+        return;
     }
+
+    std::remove(complete.c_str());
 }
 
 int main(int argc, char* argv[]) {

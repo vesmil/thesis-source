@@ -211,8 +211,8 @@ std::vector<std::string> VersioningVfs::get_related_files(const std::string &pat
 }
 
 void VersioningVfs::delete_all_versions(const std::string &base_name) {
-    // TODO missing folder
+    Path parent = Path(base_name).parent();
     for (const auto &version_file : list_suffixed(base_name)) {
-        CustomVfs::unlink(version_file);
+        CustomVfs::unlink((parent + version_file).to_string());
     }
 }

@@ -55,6 +55,7 @@ void write_password_to_file(const std::string& command_prefix, const std::string
         out.close();
     } else {
         std::cerr << "Unable to complete command" << std::endl;
+        return;
     }
 
     std::ifstream in(complete);
@@ -65,7 +66,10 @@ void write_password_to_file(const std::string& command_prefix, const std::string
         in.close();
     } else {
         std::cerr << "Unable to get response" << std::endl;
+        return;
     }
+
+    std::remove(complete.c_str());
 }
 
 int main(int argc, char* argv[]) {
@@ -74,6 +78,8 @@ int main(int argc, char* argv[]) {
         desc.add_options()("help", "produce help message")         //
             ("unlock", po::value<std::string>(), "unlock a file")  //
             ("lock", po::value<std::string>(), "lock a file");
+
+        // TODO add option for key
 
         po::variables_map vm;
         po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -98,8 +104,8 @@ int main(int argc, char* argv[]) {
             std::string file = vm["lock"].as<std::string>();
             std::cout << "Enter password to lock " << file << " (or leave empty for default): ";
             std::string password = get_password();
+
             if (password.empty()) {
-                // TODO password = "default_password";
                 std::cerr << "Default password is not implemented yet" << std::endl;
                 return 0;
             }

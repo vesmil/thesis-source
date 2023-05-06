@@ -5,6 +5,9 @@
 
 namespace po = boost::program_options;
 
+/**
+ * Creates a hook file and waits for the response from the filesystem.
+ */
 void create_command_file(std::string command, const std::string& filepath, const std::string& num = "") {
     size_t pos = filepath.find_last_of("/\\");
     std::string complete;
@@ -44,6 +47,16 @@ void create_command_file(std::string command, const std::string& filepath, const
     std::remove(complete.c_str());
 }
 
+/**
+ * Entry point for the versioning tool.
+ *
+ * Usage:
+ *  ./versioning --help
+ *  ./versioning --list --file <file>
+ *  ./versioning --restore <version> --file <file>
+ *  ./versioning --delete <version> --file <file>
+ *  ./versioning --deleteAll --file <file>
+ */
 int main(int argc, char* argv[]) {
     try {
         po::options_description desc("Allowed options");

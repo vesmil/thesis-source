@@ -4,6 +4,16 @@
 #include "sodium.h"
 #include "vfs_decorator.h"
 
+/**
+ * EncryptionVfs is a decorator for CustomVfs that encrypts and decrypts files
+ *
+ * TODO
+ *  * explain high-level how it works
+ *  * implement files
+ *  * implement directories
+ *  * implement hooks
+ *  ...
+ */
 class EncryptionVfs : public VfsDecorator {
 public:
     explicit EncryptionVfs(CustomVfs &wrapped_vfs);

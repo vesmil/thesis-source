@@ -3,6 +3,11 @@
 
 #include "vfs_decorator.h"
 
+/**
+ * VFS decorator that supports versioning
+ *
+ * TODO explain high-level how it works
+ */
 class VersioningVfs : public VfsDecorator {
 public:
     explicit VersioningVfs(CustomVfs &wrapped_vfs) : VfsDecorator(wrapped_vfs) {}

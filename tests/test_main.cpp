@@ -7,7 +7,9 @@
 #include <thread>
 
 #include "custom_vfs.h"
+#include "encryption_vfs.h"
 #include "test_config.h"
+#include "versioning_vfs.h"
 
 void execute_system_command(const std::string& command, bool check_result = true) {
     int result;
@@ -53,12 +55,15 @@ int main(int argc, char** argv) {
 
     std::filesystem::create_directory(mountpoint);
 
-    CustomVfs fuseWrapper(TestConfig::inst().mountpoint);
-    TestConfig::inst().vfs = &fuseWrapper;
+    CustomVfs customVfs(TestConfig::inst().mountpoint);
+    VersioningVfs versioned(customVfs);
+    EncryptionVfs encrypted(versioned);
+    
+    TestConfig::inst().vfs = &encrypted;
 
     // Mount filesystem
     char* fuse_argv[] = {argv[0], const_cast<char*>(TestConfig::inst().mountpoint.c_str())};
-    auto fuse_thread = std::thread(&CustomVfs::main, &fuseWrapper, 2, fuse_argv);
+    auto fuse_thread = std::thread(&CustomVfs::main, &encrypted, 2, fuse_argv);
 
     testing::InitGoogleTest(&argc, argv);
     int test_results = RUN_ALL_TESTS();

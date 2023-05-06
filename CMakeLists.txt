@@ -33,6 +33,6 @@ target_link_libraries(customvfs_exec PRIVATE customvfs)
 # Tests
 find_package(GTest REQUIRED)
 
-add_executable(customvfs_tests tests/test_main.cpp tests/basic_tests.cpp tests/test_config.h tests/complex_tests.cpp tests/path_tests.cpp)
+add_executable(customvfs_tests tests/test_main.cpp tests/basic_tests.cpp tests/test_config.h tests/versioning_tests.cpp tests/path_tests.cpp tests/encryption_tests.cpp)
 target_link_libraries(customvfs_tests PRIVATE GTest::GTest GTest::Main customvfs)
 target_include_directories(customvfs_tests PRIVATE ${GTEST_INCLUDE_DIRS})

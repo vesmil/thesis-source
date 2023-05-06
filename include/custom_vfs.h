@@ -1,16 +1,11 @@
 #ifndef SRC_CUSTOM_VFS_H
 #define SRC_CUSTOM_VFS_H
 
-#include <cstring>
-#include <iostream>
-#include <map>
-#include <memory>
-#include <queue>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "fuse_wrapper.h"
+#include "path.h"
 
 /**
  * A custom filesystem based on storing files into backing folder
@@ -72,6 +67,7 @@ protected:
 private:
     // Converts a path to its real path in the backing directory
     [[nodiscard]] std::string to_backing(const std::string &pathname) const;
+    [[nodiscard]] static Path initial_backing_path(const std::string &backing, const std::string &vfs_name);
 
     template <typename Func, typename... Args>
     static int posix_call_result(Func operation, Args... args) {
@@ -82,8 +78,8 @@ private:
         return result;
     }
 
-    std::string backing_dir;
-    const std::string mount_path;
+    Path backing_dir;
+    const Path mount_path;
 };
 
 #endif

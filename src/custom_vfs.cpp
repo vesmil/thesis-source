@@ -15,38 +15,41 @@
 #include "common/logging.h"
 #include "path.h"
 
-CustomVfs::CustomVfs(const std::string &path, const std::string &backing) : mount_path(path) {
+CustomVfs::CustomVfs(const std::string &path, const std::string &backing) : mount_path(Path::to_absolute(path)) {
     if (!std::filesystem::exists(path)) {
-        std::filesystem::create_directory(path);
-    }
-
-    if (backing.empty()) {
-        std::string name = Path::get_basename(path);
-        backing_dir = Config::base.backing_location + Config::base.backing_prefix + name;
-
-        if (::access(Config::base.backing_location.c_str(), W_OK) != 0) {
-            Log::Warn("Backing directory (%s) is not writable, using home directory",
-                      Config::base.backing_location.c_str());
-
-            std::string home_dir = getenv("HOME");
-            backing_dir = home_dir + "/" + Config::base.backing_prefix + name;
+        Log::Debug("Creating mount path %s", path.c_str());
+        if (!std::filesystem::create_directory(path)) {
+            Log::Fatal("Mount path %s could not be created", path.c_str());
+            throw std::runtime_error("Mount path could not be created");
         }
-    } else {
-        backing_dir = backing;
     }
 
-    Log::Info("Creating backing directory %s", backing_dir.c_str());
-    std::filesystem::create_directory(backing_dir);
+    std::string name = Path::get_basename(path);
+    backing_dir = initial_backing_path(backing, name);
 
-    if (!std::filesystem::exists(path)) {
-        Log::Fatal("Mount path %s could not be created", path.c_str());
-        throw std::runtime_error("Backing directory could not be created");
+    if (!std::filesystem::exists(backing_dir.to_string())) {
+        Log::Info("Creating backing directory %s", backing_dir.to_string().c_str());
+        if (!std::filesystem::create_directory(backing_dir.to_string())) {
+            Log::Fatal("Mount path %s could not be created", path.c_str());
+            throw std::runtime_error("Backing directory could not be created");
+        }
+    }
+}
+
+Path CustomVfs::initial_backing_path(const std::string &backing, const std::string &vfs_name) {
+    if (!backing.empty()) {
+        return Path::to_absolute(backing);
     }
 
-    if (!std::filesystem::exists(backing_dir)) {
-        Log::Fatal("Backing path %s could not be created", backing_dir.c_str());
-        throw std::runtime_error("Backing directory could not be created");
+    if (::access(Config::base.backing_location.c_str(), W_OK) != 0) {
+        Log::Warn("Backing directory (%s) is not writable, using home directory",
+                  Config::base.backing_location.c_str());
+
+        std::string home_dir = getenv("HOME");
+        return Path(home_dir) / (Config::base.backing_prefix + vfs_name);
     }
+
+    return Path(Config::base.backing_location) / (Config::base.backing_prefix + vfs_name);
 }
 
 void CustomVfs::init() {
@@ -185,7 +188,11 @@ int CustomVfs::readdir(const std::string &pathname, off_t off, struct fuse_file_
 
 int CustomVfs::fill_dir(const std::string &name, const struct stat *stbuf, off_t off,
                         FuseWrapper::fill_dir_flags flags) {
-    return FuseWrapper::fill_dir(name, stbuf, off, flags);
+    if (name.substr(0, Config::base.internal_prefix.length()) != Config::base.internal_prefix) {
+        return FuseWrapper::fill_dir(name, stbuf, off, flags);
+    }
+
+    return 0;
 }
 
 std::vector<std::string> CustomVfs::subfiles(const std::string &pathname) const {
@@ -201,15 +208,15 @@ std::vector<std::string> CustomVfs::subfiles(const std::string &pathname) const 
 }
 
 std::string CustomVfs::to_backing(const std::string &pathname) const {
-    return backing_dir + pathname;
+    return backing_dir / pathname;
 }
 
 std::string CustomVfs::get_fs_path(const std::string &pathname) const {
-    return mount_path + pathname;
+    return (mount_path / pathname);
 }
 
 std::vector<std::string> CustomVfs::get_related_files(const std::string &pathname) const {
-    return {mount_path + pathname};
+    return {mount_path / pathname};
 }
 
 int CustomVfs::copy_file(const std::string &source, const std::string &destination) {

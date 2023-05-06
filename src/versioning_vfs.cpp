@@ -94,10 +94,10 @@ bool VersioningVfs::handle_hook(const std::string &pathname, struct fuse_file_in
         auto subArg = command.substr(underscorePos + 1);
         command = command.substr(0, underscorePos);
 
-        return handle_versioned_command(command, subArg, (parent + arg).to_string(), pathname, fi);
+        return handle_versioned_command(command, subArg, (parent / arg).to_string(), pathname, fi);
     }
 
-    return handle_non_versioned_command(command, (parent + arg).to_string(), pathname, fi);
+    return handle_non_versioned_command(command, (parent / arg).to_string(), pathname, fi);
 }
 
 bool VersioningVfs::handle_versioned_command(const std::string &command, const std::string &subArg,
@@ -213,6 +213,6 @@ std::vector<std::string> VersioningVfs::get_related_files(const std::string &pat
 void VersioningVfs::delete_all_versions(const std::string &base_name) {
     Path parent = Path(base_name).parent();
     for (const auto &version_file : list_suffixed(base_name)) {
-        CustomVfs::unlink((parent + version_file).to_string());
+        CustomVfs::unlink((parent / version_file).to_string());
     }
 }

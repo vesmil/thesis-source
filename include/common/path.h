@@ -1,10 +1,13 @@
 #ifndef SRC_PATH_H
 #define SRC_PATH_H
+
 #include <algorithm>
+#include <filesystem>
 
 class Path {
 public:
     explicit Path(const std::string& path) : path_(normalize(path)) {}
+    Path() = default;
 
     [[nodiscard]] Path parent() const {
         auto last_slash = path_.rfind('/');
@@ -15,6 +18,10 @@ public:
         } else {
             return Path(path_.substr(0, last_slash));
         }
+    }
+
+    [[nodiscard]] static Path to_absolute(const std::string& path) {
+        return Path(std::filesystem::absolute(path).generic_string());
     }
 
     [[nodiscard]] Path basename() const {
@@ -42,20 +49,24 @@ public:
         return path_;
     }
 
-    Path operator+(const std::string& other) const {
+    operator std::string() const {  // NOLINT(google-explicit-constructor)
+        return path_;
+    }
+
+    Path operator/(const std::string& other) const {
         return Path(path_ + normalize(other));
     }
 
-    Path operator+(const Path& other) const {
+    Path operator/(const Path& other) const {
         return Path(path_ + normalize(other.path_));
     }
 
-    Path& operator+=(const std::string& other) {
+    Path& operator/=(const std::string& other) {
         path_ += normalize(other);
         return *this;
     }
 
-    Path& operator+=(const Path& other) {
+    Path& operator/=(const Path& other) {
         path_ += normalize(other.path_);
         return *this;
     }

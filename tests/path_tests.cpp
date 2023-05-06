@@ -32,10 +32,11 @@ TEST(CommonLibs, pathlib_edge) {
 TEST(CommonLibs, pathlib_addition) {
     Path path("/test/something/dir");
 
-    EXPECT_EQ((path + "/test/"), "/test/something/dir/test");
-    EXPECT_EQ((path + "test"), "/test/something/dir/test");
+    EXPECT_EQ((path / "/test/"), "/test/something/dir/test");
+    EXPECT_EQ((path / "test"), "/test/something/dir/test");
 
-    path += "/test/";
+    path = Path("/test/something/dir/");
+    path /= "/test/";
     EXPECT_EQ(path, "/test/something/dir/test");
 }
 

@@ -97,7 +97,7 @@ int main(int argc, char* argv[]) {
             std::string file = vm["unlock"].as<std::string>();
             std::cout << "Enter password to unlock " << file << ": ";
             std::string password = get_password();
-            write_password_to_file("#unlock-", file, password);
+            write_password_to_file("#unlockPass-", file, password);
         }
 
         if (vm.count("lock")) {
@@ -110,7 +110,7 @@ int main(int argc, char* argv[]) {
                 return 0;
             }
 
-            write_password_to_file("#lock-", file, password);
+            write_password_to_file("#lockPass-", file, password);
         }
     } catch (std::exception& e) {
         std::cerr << "error: " << e.what() << std::endl;

@@ -1,9 +1,11 @@
 #include <boost/program_options.hpp>
 #include <filesystem>
+#include <iostream>
 
 #include "common/config.h"
 #include "custom_vfs.h"
 #include "encryption_vfs.h"
+#include "logging.h"
 #include "versioning_vfs.h"
 
 /**
@@ -30,13 +32,13 @@ bool validate_arguments(const boost::program_options::variables_map& vm,
     }
 
     if (!vm.count("mountpoint")) {
-        std::cerr << "Mountpoint not specified" << std::endl;
+        Log::Fatal("Mountpoint is required");
         return false;
     }
 
     std::string mountpoint = vm["mountpoint"].as<std::string>();
     if (!std::filesystem::is_directory(mountpoint)) {
-        std::cerr << "Warning: mountpoint is not a directory - " << mountpoint << std::endl;
+        Log::Warn("Mountpoint %s is not a directory, it will be created", mountpoint.c_str());
     }
 
     return true;
@@ -99,18 +101,23 @@ int main(int argc, char* argv[]) {
     }
 
     std::string mountpoint = vm["mountpoint"].as<std::string>();
+
     bool test_mode = vm.count("test") > 0;
+
+    if (test_mode) {
+        Log::Info("Sorry, test mode has been disabled.");
+    }
 
     if (vm.count("config")) {
         Config::Parser::ParseFile(vm["config"].as<std::string>());
+        Log::Info("Sorry, config is not implemented yet.");
     }
 
     if (vm.count("backing")) {}
 
-    // TODO force absolute path
     CustomVfs custom_vfs(mountpoint);
     VersioningVfs versioned(custom_vfs);
-    // EncryptionVfs encrypted(versioned);
+    EncryptionVfs encrypted(versioned);
 
     std::string fuse_args;
     if (vm.count("fuse-args")) {
@@ -118,12 +125,7 @@ int main(int argc, char* argv[]) {
     }
 
     auto fuse_argv = prepare_fuse_arguments(fuse_args, mountpoint, argv[0]);
-    versioned.main(static_cast<int>(fuse_argv.size()), fuse_argv.data());
-
-    if (test_mode) {
-        // might need to be run in separate thread
-        // create test files
-    }
+    encrypted.main(static_cast<int>(fuse_argv.size()), fuse_argv.data());
 
     return 0;
 }

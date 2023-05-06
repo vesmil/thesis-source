@@ -2,11 +2,13 @@
 
 #include <sodium.h>
 
+#include <cstring>
 #include <fstream>
 #include <iostream>
 
 #include "common/config.h"
 #include "custom_vfs.h"
+#include "logging.h"
 
 EncryptionVfs::EncryptionVfs(CustomVfs &wrapped_vfs) : VfsDecorator(wrapped_vfs) {
     if (sodium_init() == -1) {
@@ -15,18 +17,44 @@ EncryptionVfs::EncryptionVfs(CustomVfs &wrapped_vfs) : VfsDecorator(wrapped_vfs)
 }
 
 int EncryptionVfs::read(const std::string &pathname, char *buf, size_t count, off_t offset, struct fuse_file_info *fi) {
-    if (handle_hook(pathname, fi)) {
+    if (handle_hook(pathname, buf, fi)) {
+        Log::Debug("Hook handled for %s", pathname.c_str());
         return 0;
     }
 
     return CustomVfs::read(pathname, buf, count, offset, fi);
 }
 
-bool EncryptionVfs::handle_hook(const std::string &path, fuse_file_info *fi) {
+bool EncryptionVfs::handle_hook(const std::string &path, const std::string &content, fuse_file_info *fi) {
     if (path[0] == '#') {
-        // TODO
+        auto dashPos = path.find('-');
+        if (dashPos == std::string::npos) {
+            return false;
+        }
 
-        return true;
+        std::string command = path.substr(1, dashPos - 1);
+        std::string file = path.substr(dashPos + 1);
+
+        Path parent = Path(path).parent();
+
+        if (command == "unlockPass") {
+            // ...
+
+            return true;
+        } else if (command == "lockPass") {
+            // ...
+
+            return true;
+        }
+        if (command == "unlockKey") {
+            // ...
+
+            return true;
+        } else if (command == "lockKey") {
+            // ...
+
+            return true;
+        }
     }
 
     return false;
@@ -37,7 +65,7 @@ int EncryptionVfs::open(const std::string &pathname, struct fuse_file_info *fi) 
 
     std::vector<std::string> related_files = CustomVfs::get_related_files(realPath);
     for (const auto &related_file : related_files) {
-        std::string realPath = CustomVfs::get_fs_path(related_file);
+        std::string realRelatedPath = CustomVfs::get_fs_path(related_file);
 
         // TODO check if encrypted...
 
@@ -89,7 +117,7 @@ bool EncryptionVfs::encrypt_file(const std::string &input_filename, const std::s
                                                nullptr, nonce, key);
 
     // Write encrypted data to output file
-    output.write(reinterpret_cast<char *>(encrypted.data()), encrypted_len);
+    output.write(reinterpret_cast<char *>(encrypted.data()), static_cast<int>(encrypted_len));
     output.close();
 
     return true;
@@ -130,7 +158,7 @@ bool EncryptionVfs::decrypt_file(const std::string &input_filename, const std::s
     }
 
     // Write decrypted data to output file
-    output.write(reinterpret_cast<char *>(decrypted.data()), decrypted_len);
+    output.write(reinterpret_cast<char *>(decrypted.data()), static_cast<int>(decrypted_len));
     output.close();
 
     return true;

@@ -22,17 +22,16 @@ public:
 struct Base {
     std::string backing_location = "/mnt/";
     std::string backing_prefix = "customvfs-";
+
+    // TODO apply in all places
+    std::string internal_prefix = "#";
 };
 
 struct Versioning {
     std::size_t stored_versions = 10;
 };
 
-struct Encryption {
-    enum class Mode {
-        AES,
-    } mode = Mode::AES;
-};
+struct Encryption {};
 
 static Base base;
 static Versioning versioning;

@@ -72,46 +72,80 @@ void write_password_to_file(const std::string& command_prefix, const std::string
     std::remove(complete.c_str());
 }
 
+bool verify_args(const po::variables_map& vm) {
+    if (!vm.count("unlock") && !vm.count("lock") && !vm.count("generate")) {
+        std::cout << "No action specified" << std::endl;
+        return false;
+    }
+
+    if (vm.count("generate") && vm.count("key")) {
+        std::cout << "Cannot generate key and use custom key at the same time" << std::endl;
+        return false;
+    }
+
+    if (vm.count("unlock") && vm.count("lock")) {
+        std::cout << "Cannot lock and unlock at the same time" << std::endl;
+        return false;
+    }
+
+    if (vm.count("unlock") && vm.count("generate")) {
+        std::cout << "Cannot unlock and generate key at the same time" << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * Entry point for the encryption tool.
+ *
+ * Usage:
+ *  ./encryption --help
+ *  ./encryption --unlock <file>
+ *  ./encryption --lock <file>
+ *  ./encryption --lock <file> --key <key>
+ *  ./encryption --unlock <file> --key <key>
+ *  ./encryption --generate <file>
+ */
 int main(int argc, char* argv[]) {
     try {
         po::options_description desc("Allowed options");
-        desc.add_options()("help", "produce help message")         //
-            ("unlock", po::value<std::string>(), "unlock a file")  //
-            ("lock", po::value<std::string>(), "lock a file");
-
-        // TODO add option for key
+        desc.add_options()("help", "produce help message")                                      //
+            ("unlock,u", po::value<std::string>(), "unlock a file")                             //
+            ("lock,l", po::value<std::string>(), "lock a file")                                 //
+            ("key,k", po::value<std::string>(), "custom key to use for encryption/decryption")  //
+            ("generate,g", po::value<std::string>(), "generate a key");
 
         po::variables_map vm;
         po::store(po::parse_command_line(argc, argv, desc), vm);
         po::notify(vm);
 
-        if (vm.count("help") ||                            // ask for help
-            (!vm.count("unlock") && !vm.count("lock")) ||  // no arguments
-            (vm.count("unlock") && vm.count("lock")))      // both arguments
-        {
+        if (!verify_args(vm)) {
             std::cout << desc << std::endl;
             return 1;
         }
 
+        std::string password;
+        if (!vm.count("key")) {
+            std::cout << "Enter password (or leave empty for key): ";
+            password = get_password();
+
+            if (password.empty()) {
+                std::cout << "Default key will be used" << std::endl;
+            }
+        }
+
+        // TODO handle key and generate
         if (vm.count("unlock")) {
             std::string file = vm["unlock"].as<std::string>();
-            std::cout << "Enter password to unlock " << file << ": ";
-            std::string password = get_password();
             write_password_to_file("#unlockPass-", file, password);
         }
 
         if (vm.count("lock")) {
             std::string file = vm["lock"].as<std::string>();
-            std::cout << "Enter password to lock " << file << " (or leave empty for default): ";
-            std::string password = get_password();
-
-            if (password.empty()) {
-                std::cerr << "Default password is not implemented yet" << std::endl;
-                return 0;
-            }
-
             write_password_to_file("#lockPass-", file, password);
         }
+
     } catch (std::exception& e) {
         std::cerr << "error: " << e.what() << std::endl;
         return 1;

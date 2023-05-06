@@ -207,6 +207,10 @@ std::vector<std::string> CustomVfs::subfiles(const std::string &pathname) const 
     return files;
 }
 
+bool CustomVfs::is_directory(const std::string &pathname) const {
+    return std::filesystem::is_directory(to_backing(pathname));
+}
+
 std::string CustomVfs::to_backing(const std::string &pathname) const {
     return backing_dir / pathname;
 }

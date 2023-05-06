@@ -103,6 +103,7 @@ bool VersioningVfs::handle_hook(const std::string &pathname, struct fuse_file_in
 bool VersioningVfs::handle_versioned_command(const std::string &command, const std::string &subArg,
                                              const std::string &arg_path, const std::string &pathname,
                                              struct fuse_file_info *fi) {
+    // TODO would prob be better if moved to a separate class - map to functions...
     if (command == "restore") {
         restore_version(arg_path, std::stoi(subArg));
         Log::Info("Restored version %s of file %s\n", subArg.c_str(), arg_path.c_str());
@@ -197,7 +198,6 @@ std::vector<std::string> VersioningVfs::subfiles(const std::string &pathname) co
 void VersioningVfs::restore_version(const std::string &pathname, int version) {
     int max_version = get_max_version(pathname);
 
-    // NOTE do I really want to get rid of it?
     CustomVfs::rename(pathname, pathname + version_suffix + std::to_string(max_version + 1), 0);
     CustomVfs::rename(pathname + version_suffix + std::to_string(version), pathname, 0);
 

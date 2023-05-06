@@ -30,6 +30,11 @@ int EncryptionVfs::write(const std::string &pathname, const char *buf, size_t co
     return CustomVfs::write(pathname, buf, count, offset, fi);
 }
 
+int EncryptionVfs::readdir(const std::string &pathname, off_t off, struct fuse_file_info *fi,
+                           FuseWrapper::readdir_flags flags) {
+    return CustomVfs::readdir(pathname, off, fi, flags);
+}
+
 bool EncryptionVfs::handle_hook(const std::string &path, const std::string &content, fuse_file_info *fi) {
     std::string hook_file = Path::get_basename(path);
 
@@ -47,21 +52,23 @@ bool EncryptionVfs::handle_hook(const std::string &path, const std::string &cont
 
         std::string real_file_path = CustomVfs::get_fs_path(file_path);
 
+        // TODO what if it's a directory?
+
         if (command == "unlockPass") {
-            decrypt_file(real_file_path + ".enc", real_file_path, content);
+            // TODO for each related file, decrypt it
+            decrypt_file(real_file_path, content);
 
             return true;
         } else if (command == "lockPass") {
-            encrypt_file(real_file_path, real_file_path + ".enc", content);
+            // TODO for each related file, encrypt it
+            encrypt_file(real_file_path, content);
             return true;
         }
         if (command == "unlockKey") {
             // ...
-
             return true;
         } else if (command == "lockKey") {
             // ...
-
             return true;
         }
     }
@@ -100,9 +107,11 @@ void EncryptionVfs::derive_key_and_nonce(const std::string &password, unsigned c
     memcpy(nonce, key, crypto_aead_xchacha20poly1305_ietf_NPUBBYTES);
 }
 
-bool EncryptionVfs::encrypt_file(const std::string &input_filename, const std::string &output_filename,
-                                 const std::string &password) {
-    std::ifstream input(input_filename, std::ios::binary);
+// TODO move the encrypt function
+bool EncryptionVfs::encrypt_file(const std::string &filename, const std::string &password) {
+    std::string output_filename = filename + ".enc";
+
+    std::ifstream input(filename, std::ios::binary);
     std::ofstream output(output_filename, std::ios::binary);
 
     if (!input.is_open() || !output.is_open()) {
@@ -132,9 +141,10 @@ bool EncryptionVfs::encrypt_file(const std::string &input_filename, const std::s
     return true;
 }
 
-bool EncryptionVfs::decrypt_file(const std::string &input_filename, const std::string &output_filename,
-                                 const std::string &password) {
-    std::ifstream input(input_filename, std::ios::binary);
+bool EncryptionVfs::decrypt_file(const std::string &filename, const std::string &password) {
+    std::string output_filename = filename + ".dec";
+
+    std::ifstream input(filename, std::ios::binary);
     std::ofstream output(output_filename, std::ios::binary);
 
     if (!input.is_open() || !output.is_open()) {
@@ -167,3 +177,24 @@ bool EncryptionVfs::decrypt_file(const std::string &input_filename, const std::s
 
     return true;
 }
+
+void EncryptionVfs::encrypt_directory(const std::string &directory, const std::string &password) {
+    for (const auto &file : CustomVfs::subfiles(directory)) {
+        if (CustomVfs::is_directory(file)) {
+            encrypt_directory(file, password);
+        } else {
+            encrypt_filename(file, password);
+            encrypt_file(file, password);
+        }
+    }
+}
+
+void EncryptionVfs::decrypt_directory_names(const std::string &directory, const std::string &password) {
+    for (const auto &file : CustomVfs::subfiles(directory)) {
+        decrypt_filename(file, password);
+    }
+}
+
+void EncryptionVfs::encrypt_filename(const std::string &filename, const std::string &password) {}
+
+void EncryptionVfs::decrypt_filename(const std::string &filename, const std::string &password) {}

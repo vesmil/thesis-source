@@ -55,14 +55,14 @@ public:
     int opendir(const std::string &pathname, struct fuse_file_info *fi) override;
     int releasedir(const std::string &pathname, struct fuse_file_info *fi) override;
 
-    // Note - cold be potentially removed
-    [[nodiscard]] virtual std::vector<std::string> subfiles(const std::string &pathname) const;
-
 protected:
     [[nodiscard]] std::string get_fs_path(const std::string &pathname) const;
     [[nodiscard]] virtual std::vector<std::string> get_related_files(const std::string &pathname) const;
 
     int copy_file(const std::string &source, const std::string &destination);
+
+    [[nodiscard]] virtual std::vector<std::string> subfiles(const std::string &pathname) const;
+    [[nodiscard]] bool is_directory(const std::string &pathname) const;
 
 private:
     // Converts a path to its real path in the backing directory

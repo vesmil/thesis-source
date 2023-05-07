@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "prefix_parser.h"
+#include "common/prefix_parser.h"
 
 TEST(Prefix, parse_simple) {
     std::string path = "/test/something/dir";

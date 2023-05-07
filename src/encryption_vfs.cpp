@@ -7,9 +7,10 @@
 #include <iostream>
 
 #include "common/config.h"
+#include "common/logging.h"
+#include "common/prefix_parser.h"
 #include "custom_vfs.h"
 #include "encryptor.h"
-#include "logging.h"
 
 EncryptionVfs::EncryptionVfs(CustomVfs &wrapped_vfs) : VfsDecorator(wrapped_vfs) {
     if (sodium_init() == -1) {
@@ -57,6 +58,8 @@ bool EncryptionVfs::handle_hook(const std::string &path, const std::string &cont
 
         // TODO what if it's a directory?
 
+        // TODO remove pass suffix - always look into directory
+
         if (command == "unlockPass") {
             // TODO for each related file, decrypt it
             decrypt_file(real_file_path, content);
@@ -81,6 +84,7 @@ bool EncryptionVfs::handle_hook(const std::string &path, const std::string &cont
 
 int EncryptionVfs::open(const std::string &pathname, struct fuse_file_info *fi) {
     std::vector<std::string> related_files = get_wrapped().get_related_files(pathname);
+
     for (const auto &related_file : related_files) {
         std::string realRelatedPath = get_wrapped().get_fs_path(related_file);
 
@@ -109,7 +113,9 @@ void EncryptionVfs::derive_key_and_nonce(const std::string &password, unsigned c
 }
 
 bool EncryptionVfs::encrypt_file(const std::string &filename, const std::string &password) {
-    std::string output_filename = filename + ".enc";
+    Logging::Debug("Encrypting file %s", filename.c_str());
+
+    std::string output_filename = PrefixParser::apply_prefix(filename, prefix);
 
     std::ifstream input(filename, std::ios::binary);
     std::ofstream output(output_filename, std::ios::binary);
@@ -125,14 +131,17 @@ bool EncryptionVfs::encrypt_file(const std::string &filename, const std::string 
     input.close();
     output.close();
 
+    get_wrapped().unlink(filename);
+
     return success;
 }
 
 bool EncryptionVfs::decrypt_file(const std::string &filename, const std::string &password) {
-    std::string output_filename = filename + ".dec";
+    Logging::Debug("Decrypting file %s", filename.c_str());
+    std::string input_filename = PrefixParser::apply_prefix(filename, prefix);
 
-    std::ifstream input(filename, std::ios::binary);
-    std::ofstream output(output_filename, std::ios::binary);
+    std::ifstream input(input_filename, std::ios::binary);
+    std::ofstream output(filename, std::ios::binary);
 
     if (!input.is_open() || !output.is_open()) {
         return false;
@@ -145,6 +154,7 @@ bool EncryptionVfs::decrypt_file(const std::string &filename, const std::string 
     input.close();
     output.close();
 
+    get_wrapped().unlink(input_filename);
     return success;
 }
 
@@ -157,6 +167,8 @@ void EncryptionVfs::encrypt_directory(const std::string &directory, const std::s
             encrypt_file(file, password);
         }
     }
+
+    // TODO mark directory as encrypted
 }
 
 void EncryptionVfs::decrypt_directory_names(const std::string &directory, const std::string &password) {
@@ -165,6 +177,25 @@ void EncryptionVfs::decrypt_directory_names(const std::string &directory, const 
     }
 }
 
-void EncryptionVfs::encrypt_filename(const std::string &filename, const std::string &password) {}
+void EncryptionVfs::encrypt_filename(const std::string &filename, const std::string &password) {
+    std::string encrypted_filename;
 
-void EncryptionVfs::decrypt_filename(const std::string &filename, const std::string &password) {}
+    Encryptor encryptor(password);
+    encryptor.encrypt_string(filename, encrypted_filename);
+
+    PrefixParser::apply_prefix(filename, prefix, {"encname"});
+    get_wrapped().rename(filename, encrypted_filename, 0);
+}
+
+void EncryptionVfs::decrypt_filename(const std::string &filename, const std::string &password) {
+    if (PrefixParser::args_from_prefix(filename, prefix)[0] != "encname") {
+        return;
+    }
+
+    std::string decrypted_filename = PrefixParser::get_nonprefixed(filename);
+
+    Encryptor encryptor(password);
+    encryptor.decrypt_string(decrypted_filename, decrypted_filename);
+
+    get_wrapped().rename(filename, decrypted_filename, 0);
+}

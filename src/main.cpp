@@ -3,9 +3,9 @@
 #include <iostream>
 
 #include "common/config.h"
+#include "common/logging.h"
 #include "custom_vfs.h"
 #include "encryption_vfs.h"
-#include "logging.h"
 #include "versioning_vfs.h"
 
 /**

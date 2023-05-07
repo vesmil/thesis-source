@@ -13,8 +13,8 @@
 
 #include "common/config.h"
 #include "common/logging.h"
+#include "common/path.h"
 #include "common/prefix_parser.h"
-#include "path.h"
 
 CustomVfs::CustomVfs(const std::string &path, const std::string &backing) : mount_path(Path::to_absolute(path)) {
     if (!std::filesystem::exists(path)) {

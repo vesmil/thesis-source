@@ -4,8 +4,8 @@
 #include <string>
 #include <vector>
 
+#include "common/path.h"
 #include "fuse_wrapper.h"
-#include "path.h"
 
 /**
  * A custom filesystem based on storing files into backing folder

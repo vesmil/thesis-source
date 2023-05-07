@@ -8,6 +8,7 @@
 
 #include "common/config.h"
 #include "custom_vfs.h"
+#include "encryptor.h"
 #include "logging.h"
 
 EncryptionVfs::EncryptionVfs(CustomVfs &wrapped_vfs) : VfsDecorator(wrapped_vfs) {
@@ -107,10 +108,7 @@ void EncryptionVfs::derive_key_and_nonce(const std::string &password, unsigned c
     memcpy(nonce, key, crypto_aead_xchacha20poly1305_ietf_NPUBBYTES);
 }
 
-// TODO move the encrypt function
 bool EncryptionVfs::encrypt_file(const std::string &filename, const std::string &password) {
-    // TODO get rid of .enc
-
     std::string output_filename = filename + ".enc";
 
     std::ifstream input(filename, std::ios::binary);
@@ -120,27 +118,14 @@ bool EncryptionVfs::encrypt_file(const std::string &filename, const std::string 
         return false;
     }
 
-    // Derive key and nonce
-    unsigned char key[crypto_aead_xchacha20poly1305_ietf_KEYBYTES];
-    unsigned char nonce[crypto_aead_xchacha20poly1305_ietf_NPUBBYTES];
+    Encryptor encryptor(password);
 
-    derive_key_and_nonce(password, key, nonce);
+    bool success = encryptor.encrypt_stream(input, output);
 
-    // Read input file
-    std::vector<unsigned char> buf(std::istreambuf_iterator<char>(input), {});
     input.close();
-
-    // Encrypt the file
-    std::vector<unsigned char> encrypted(buf.size() + crypto_aead_xchacha20poly1305_ietf_ABYTES);
-    unsigned long long encrypted_len;
-    crypto_aead_xchacha20poly1305_ietf_encrypt(encrypted.data(), &encrypted_len, buf.data(), buf.size(), nullptr, 0,
-                                               nullptr, nonce, key);
-
-    // Write encrypted data to output file
-    output.write(reinterpret_cast<char *>(encrypted.data()), static_cast<int>(encrypted_len));
     output.close();
 
-    return true;
+    return success;
 }
 
 bool EncryptionVfs::decrypt_file(const std::string &filename, const std::string &password) {
@@ -153,31 +138,14 @@ bool EncryptionVfs::decrypt_file(const std::string &filename, const std::string 
         return false;
     }
 
-    unsigned char key[crypto_aead_xchacha20poly1305_ietf_KEYBYTES];
-    unsigned char nonce[crypto_aead_xchacha20poly1305_ietf_NPUBBYTES];
-    derive_key_and_nonce(password, key, nonce);
+    Encryptor encryptor(password);
 
-    std::vector<unsigned char> buf(std::istreambuf_iterator<char>(input), {});
+    bool success = encryptor.decrypt_stream(input, output);
+
     input.close();
-
-    if (buf.size() < crypto_aead_xchacha20poly1305_ietf_ABYTES) {
-        std::cerr << "Invalid ciphertext." << std::endl;
-        return false;
-    }
-
-    std::vector<unsigned char> decrypted(buf.size() - crypto_aead_xchacha20poly1305_ietf_ABYTES);
-    unsigned long long decrypted_len;
-    if (crypto_aead_xchacha20poly1305_ietf_decrypt(decrypted.data(), &decrypted_len, nullptr, buf.data(), buf.size(),
-                                                   nullptr, 0, nonce, key) != 0) {
-        std::cerr << "Decryption failed. Possibly due to an incorrect password or corrupted data." << std::endl;
-        return false;
-    }
-
-    // Write decrypted data to output file
-    output.write(reinterpret_cast<char *>(decrypted.data()), static_cast<int>(decrypted_len));
     output.close();
 
-    return true;
+    return success;
 }
 
 void EncryptionVfs::encrypt_directory(const std::string &directory, const std::string &password) {

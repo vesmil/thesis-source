@@ -142,6 +142,13 @@ int CustomVfs::mkdir(const std::string &pathname, mode_t mode) {
 }
 
 int CustomVfs::rmdir(const std::string &pathname) {
+    for (const auto &entry : subfiles(pathname)) {
+        if (entry[0] == '#') {
+            // TODO or could include suffix
+            unlink(entry);
+        }
+    }
+
     return posix_call_result(::rmdir, to_backing(pathname).c_str());
 }
 

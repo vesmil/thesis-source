@@ -46,6 +46,8 @@ int VersioningVfs::write(const std::string &pathname, const char *buf, size_t co
 
     struct stat st {};
     getattr(pathname, &st);
+
+    // TODO doesn't work like that - pathname will be empty at this moment
     get_wrapped().rename(pathname, new_version_path, 0);
 
     get_wrapped().mknod(pathname, st.st_mode, st.st_rdev);
@@ -53,13 +55,6 @@ int VersioningVfs::write(const std::string &pathname, const char *buf, size_t co
 }
 
 int VersioningVfs::unlink(const std::string &pathname) {
-    // Deletes all stored versions
-    if (get_wrapped().is_directory(pathname)) {
-        for (const std::string &subfile : get_wrapped().subfiles(pathname)) {
-            get_wrapped().unlink(Path(pathname) / subfile);
-        }
-    }
-
     int max_version = get_max_version(pathname);
     auto stored_path = pathname + version_suffix + std::to_string(max_version + 1);
 

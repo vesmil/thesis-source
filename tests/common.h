@@ -41,23 +41,34 @@ inline void clean_mountpoint() {
     }
 }
 
+#include <fstream>
+#include <string>
+
 inline std::string read_file(const std::string& path) {
     std::ifstream file(path);
     std::string content;
     std::string line;
-    while (std::getline(file, line)) {
-        content += line;
+
+    if (file.is_open()) {
+        while (std::getline(file, line)) {
+            content += line + '\n';
+        }
+        file.close();
     }
+
     return content;
 }
 
 inline bool write_file(const std::string& path, const std::string& content) {
     std::ofstream file(path);
+
     if (!file.is_open()) {
         return false;
     }
+
     file << content;
     file.close();
+
     return true;
 }
 

@@ -28,7 +28,7 @@ CustomVfs::CustomVfs(const std::string &path, const std::string &backing) : moun
     backing_dir = initial_backing_path(backing, name);
 
     if (!std::filesystem::exists(backing_dir.to_string())) {
-        Log::Info("Creating backing directory %s", backing_dir.to_string().c_str());
+        Log::Info("Creating backing directory %s", backing_dir.c_str());
         if (!std::filesystem::create_directory(backing_dir.to_string())) {
             Log::Fatal("Mount path %s could not be created", path.c_str());
             throw std::runtime_error("Backing directory could not be created");

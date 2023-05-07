@@ -49,6 +49,10 @@ public:
         return path_;
     }
 
+    [[nodiscard]] const char* c_str() const {
+        return path_.c_str();
+    }
+
     operator std::string() const {  // NOLINT(google-explicit-constructor)
         return path_;
     }

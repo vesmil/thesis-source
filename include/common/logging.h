@@ -15,30 +15,53 @@ enum class Level {
 };
 
 namespace {
+
+std::string file;
+
+template <typename... Args>
+void log_printf(const char *format, Args... args) {
+    if (file.empty()) {
+        printf(format, args...);
+    } else {
+        FILE *f = fopen(file.c_str(), "a");
+        if (f == nullptr) {
+            printf("Failed to open log file %s\n", file.c_str());
+            return;
+        }
+
+        fprintf(f, format, args...);
+        fclose(f);
+    }
+}
+
 template <typename... Args>
 void Log(Level level, const char *format, Args... args) {
     switch (level) {
         case Level::DEBUG:
-            printf("[DEBUG] ");
+            log_printf("[DEBUG] ");
             break;
         case Level::INFO:
-            printf("[INFO] ");
+            log_printf("[INFO] ");
             break;
         case Level::WARN:
-            printf("[WARN] ");
+            log_printf("[WARN] ");
             break;
         case Level::ERROR:
-            printf("[ERROR] ");
+            log_printf("[ERROR] ");
             break;
         case Level::FATAL:
-            printf("[FATAL] ");
+            log_printf("[FATAL] ");
             break;
     }
 
-    printf(format, args...);
-    printf("\n");
+    log_printf(format, args...);
+    log_printf("\n");
 }
 }  // namespace
+
+inline void set_logging_file(const std::string &path) {
+    file = path;
+}
 
 template <typename... Args>
 void Info(const char *format, Args... args) {

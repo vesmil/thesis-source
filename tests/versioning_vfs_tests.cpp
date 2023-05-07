@@ -1,0 +1,30 @@
+#include <gtest/gtest.h>
+
+#include "common.h"
+
+TEST(CustomVfs, restore_version) {
+    Common::clean_mountpoint();
+
+    std::string test_folder = Path(TestConfig::inst().mountpoint) / "test_folder";
+    std::filesystem::create_directory(test_folder);
+
+    std::string filepath = Path(test_folder) / "test.txt";
+
+    std::string content = "Hello World!";
+    Common::write_file(filepath, content);
+
+    std::string file_content = Common::read_file(filepath);
+    EXPECT_EQ(file_content, content);
+
+    std::string content2 = "Hello World! 2";
+    Common::write_file(filepath, content2);
+
+    file_content = Common::read_file(filepath);
+    EXPECT_EQ(file_content, content2);
+
+    std::string restore_file = Path(test_folder) / "#restore_1-test.txt";
+    Common::write_file(restore_file, " ");
+
+    file_content = Common::read_file(filepath);
+    EXPECT_EQ(file_content, content);
+}

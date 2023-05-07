@@ -24,7 +24,7 @@ CustomVfs::CustomVfs(const std::string &path, const std::string &backing) : moun
         }
     }
 
-    std::string name = Path::get_basename(path);
+    std::string name = Path::string_basename(path);
     backing_dir = initial_backing_path(backing, name);
 
     if (!std::filesystem::exists(backing_dir.to_string())) {
@@ -201,7 +201,7 @@ std::vector<std::string> CustomVfs::subfiles(const std::string &pathname) const 
 
     for (const auto &entry : std::filesystem::directory_iterator(real_path)) {
         std::string path = entry.path();
-        files.push_back(Path::get_basename(path));
+        files.push_back(Path::string_basename(path));
     }
 
     return files;

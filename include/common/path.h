@@ -29,7 +29,7 @@ public:
         return last_slash == std::string::npos ? Path(path_) : Path(path_.substr(last_slash + 1));
     }
 
-    [[nodiscard]] static std::string get_parent(const std::string& path) {
+    [[nodiscard]] static std::string string_parent(const std::string& path) {
         auto last_slash = path.rfind('/');
         if (last_slash == std::string::npos || path == "/" || path.empty()) {
             return "";
@@ -40,7 +40,7 @@ public:
         }
     }
 
-    [[nodiscard]] static std::string get_basename(const std::string& path) {
+    [[nodiscard]] static std::string string_basename(const std::string& path) {
         auto last_slash = path.rfind('/');
         return last_slash == std::string::npos ? path : path.substr(last_slash + 1);
     }

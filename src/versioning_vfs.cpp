@@ -18,13 +18,13 @@ int VersioningVfs::write(const std::string &pathname, const char *buf, size_t co
         while (max_version > Config::versioning.stored_versions) {
             std::string oldest_version_path =
                 pathname + version_suffix + std::to_string(max_version - Config::versioning.stored_versions);
-            CustomVfs::unlink(oldest_version_path);
+            get_wrapped().unlink(oldest_version_path);
 
             for (size_t i = max_version - Config::versioning.stored_versions + 1; i <= max_version; i++) {
                 std::string old_version_path = pathname + version_suffix + std::to_string(i);
                 std::string new_version_path = pathname + version_suffix + std::to_string(i - 1);
 
-                CustomVfs::rename(old_version_path, new_version_path, 0);
+                get_wrapped().rename(old_version_path, new_version_path, 0);
             }
 
             max_version--;
@@ -35,21 +35,21 @@ int VersioningVfs::write(const std::string &pathname, const char *buf, size_t co
 
     if (offset != 0) {
         Log::Debug("Saving old version of %s to %s", pathname.c_str(), new_version_path.c_str());
-        if (CustomVfs::copy_file(pathname, new_version_path) == -1) {
+        if (get_wrapped().copy_file(pathname, new_version_path) == -1) {
             Log::Error("Failed to rename %s to %s", pathname.c_str(), new_version_path.c_str());
             return -1;
         }
 
         Log::Debug("Writing new version to %s", pathname.c_str());
-        return CustomVfs::write(pathname, buf, count, offset, fi);
+        return get_wrapped().write(pathname, buf, count, offset, fi);
     }
 
     struct stat st {};
     getattr(pathname, &st);
-    CustomVfs::rename(pathname, new_version_path, 0);
+    get_wrapped().rename(pathname, new_version_path, 0);
 
-    CustomVfs::mknod(pathname, st.st_mode, st.st_rdev);
-    return CustomVfs::write(pathname, buf, count, offset, fi);
+    get_wrapped().mknod(pathname, st.st_mode, st.st_rdev);
+    return get_wrapped().write(pathname, buf, count, offset, fi);
 }
 
 int VersioningVfs::unlink(const std::string &pathname) {
@@ -57,7 +57,7 @@ int VersioningVfs::unlink(const std::string &pathname) {
     auto stored_path = pathname + version_suffix + std::to_string(max_version + 1);
 
     Log::Debug("Moved old version of %s to %s", pathname.c_str(), stored_path.c_str());
-    return CustomVfs::rename(pathname, stored_path, 0);
+    return get_wrapped().rename(pathname, stored_path, 0);
 }
 
 int VersioningVfs::get_max_version(const std::string &pathname) {
@@ -71,7 +71,7 @@ int VersioningVfs::get_max_version(const std::string &pathname) {
 }
 
 bool VersioningVfs::handle_hook(const std::string &pathname, struct fuse_file_info *fi) {
-    std::string filename = Path::get_basename(pathname);
+    std::string filename = Path::string_basename(pathname);
 
     if (filename[0] != '#') {
         return false;
@@ -142,12 +142,12 @@ bool VersioningVfs::handle_non_versioned_command(const std::string &command, con
 }
 
 std::vector<std::string> VersioningVfs::list_suffixed(const std::string &pathname) const {
-    std::vector<std::string> path_files = CustomVfs::subfiles(Path::get_parent(pathname));
+    std::vector<std::string> path_files = get_wrapped().subfiles(Path::string_parent(pathname));
     std::vector<std::string> version_files;
 
     for (const std::string &filename : path_files) {
         if (is_version_file(filename)) {
-            if (filename.substr(0, filename.find(version_suffix)) == Path::get_basename(pathname)) {
+            if (filename.substr(0, filename.find(version_suffix)) == Path::string_basename(pathname)) {
                 version_files.push_back(filename);
             }
         }
@@ -157,7 +157,7 @@ std::vector<std::string> VersioningVfs::list_suffixed(const std::string &pathnam
 }
 
 void VersioningVfs::delete_version(const std::string &pathname, int version) {
-    CustomVfs::unlink(pathname + version_suffix + std::to_string(version));
+    get_wrapped().unlink(pathname + version_suffix + std::to_string(version));
 }
 
 int VersioningVfs::fill_dir(const std::string &name, const struct stat *stbuf, off_t off,
@@ -166,7 +166,7 @@ int VersioningVfs::fill_dir(const std::string &name, const struct stat *stbuf, o
         return 0;
     }
 
-    return CustomVfs::fill_dir(name, stbuf, off, flags);
+    return get_wrapped().fill_dir(name, stbuf, off, flags);
 }
 
 bool VersioningVfs::is_version_file(const std::string &pathname) const {
@@ -185,7 +185,7 @@ bool VersioningVfs::is_version_file(const std::string &pathname) const {
 std::vector<std::string> VersioningVfs::subfiles(const std::string &pathname) const {
     std::vector<std::string> files;
 
-    for (const auto &path : CustomVfs::subfiles(pathname)) {
+    for (const auto &path : get_wrapped().subfiles(pathname)) {
         if (!is_version_file(path)) {
             files.push_back(path);
         }
@@ -198,8 +198,8 @@ std::vector<std::string> VersioningVfs::subfiles(const std::string &pathname) co
 void VersioningVfs::restore_version(const std::string &pathname, int version) {
     int max_version = get_max_version(pathname);
 
-    CustomVfs::rename(pathname, pathname + version_suffix + std::to_string(max_version + 1), 0);
-    CustomVfs::rename(pathname + version_suffix + std::to_string(version), pathname, 0);
+    get_wrapped().rename(pathname, pathname + version_suffix + std::to_string(max_version + 1), 0);
+    get_wrapped().rename(pathname + version_suffix + std::to_string(version), pathname, 0);
 
     Log::Info("Restored version %d of file %s", version, pathname.c_str());
 }
@@ -213,6 +213,6 @@ std::vector<std::string> VersioningVfs::get_related_files(const std::string &pat
 void VersioningVfs::delete_all_versions(const std::string &base_name) {
     Path parent = Path(base_name).parent();
     for (const auto &version_file : list_suffixed(base_name)) {
-        CustomVfs::unlink((parent / version_file).to_string());
+        get_wrapped().unlink((parent / version_file).to_string());
     }
 }

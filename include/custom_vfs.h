@@ -55,7 +55,7 @@ public:
     int opendir(const std::string &pathname, struct fuse_file_info *fi) override;
     int releasedir(const std::string &pathname, struct fuse_file_info *fi) override;
 
-protected:
+    // Misc
     [[nodiscard]] std::string get_fs_path(const std::string &pathname) const;
     [[nodiscard]] virtual std::vector<std::string> get_related_files(const std::string &pathname) const;
 

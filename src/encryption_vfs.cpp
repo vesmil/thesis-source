@@ -17,7 +17,7 @@ EncryptionVfs::EncryptionVfs(CustomVfs &wrapped_vfs) : VfsDecorator(wrapped_vfs)
 }
 
 int EncryptionVfs::read(const std::string &pathname, char *buf, size_t count, off_t offset, struct fuse_file_info *fi) {
-    return CustomVfs::read(pathname, buf, count, offset, fi);
+    return get_wrapped().read(pathname, buf, count, offset, fi);
 }
 
 int EncryptionVfs::write(const std::string &pathname, const char *buf, size_t count, off_t offset,
@@ -27,16 +27,16 @@ int EncryptionVfs::write(const std::string &pathname, const char *buf, size_t co
         return 0;
     }
 
-    return CustomVfs::write(pathname, buf, count, offset, fi);
+    return get_wrapped().write(pathname, buf, count, offset, fi);
 }
 
 int EncryptionVfs::readdir(const std::string &pathname, off_t off, struct fuse_file_info *fi,
                            FuseWrapper::readdir_flags flags) {
-    return CustomVfs::readdir(pathname, off, fi, flags);
+    return get_wrapped().readdir(pathname, off, fi, flags);
 }
 
 bool EncryptionVfs::handle_hook(const std::string &path, const std::string &content, fuse_file_info *fi) {
-    std::string hook_file = Path::get_basename(path);
+    std::string hook_file = Path::string_basename(path);
 
     if (hook_file[0] == '#') {
         auto dashPos = hook_file.find('-');
@@ -50,7 +50,7 @@ bool EncryptionVfs::handle_hook(const std::string &path, const std::string &cont
         Path parent = Path(path).parent();
         std::string file_path = parent / file;
 
-        std::string real_file_path = CustomVfs::get_fs_path(file_path);
+        std::string real_file_path = get_wrapped().get_fs_path(file_path);
 
         // TODO what if it's a directory?
 
@@ -77,22 +77,20 @@ bool EncryptionVfs::handle_hook(const std::string &path, const std::string &cont
 }
 
 int EncryptionVfs::open(const std::string &pathname, struct fuse_file_info *fi) {
-    auto realPath = get_fs_path(pathname);
-
-    std::vector<std::string> related_files = CustomVfs::get_related_files(realPath);
+    std::vector<std::string> related_files = get_wrapped().get_related_files(pathname);
     for (const auto &related_file : related_files) {
-        std::string realRelatedPath = CustomVfs::get_fs_path(related_file);
+        std::string realRelatedPath = get_wrapped().get_fs_path(related_file);
 
         // TODO check if encrypted...
 
-        // std::string encryptedPath = CustomVfs::get_fs_path(related_file + ".enc");
+        // std::string encryptedPath = get_wrapped().get_fs_path(related_file + ".enc");
     }
 
-    return CustomVfs::open(pathname, fi);
+    return get_wrapped().open(pathname, fi);
 }
 
 int EncryptionVfs::release(const std::string &pathname, struct fuse_file_info *fi) {
-    return CustomVfs::release(pathname, fi);
+    return get_wrapped().release(pathname, fi);
 }
 
 void EncryptionVfs::derive_key_and_nonce(const std::string &password, unsigned char *key, unsigned char *nonce) {
@@ -179,8 +177,8 @@ bool EncryptionVfs::decrypt_file(const std::string &filename, const std::string 
 }
 
 void EncryptionVfs::encrypt_directory(const std::string &directory, const std::string &password) {
-    for (const auto &file : CustomVfs::subfiles(directory)) {
-        if (CustomVfs::is_directory(file)) {
+    for (const auto &file : get_wrapped().subfiles(directory)) {
+        if (get_wrapped().is_directory(file)) {
             encrypt_directory(file, password);
         } else {
             encrypt_filename(file, password);
@@ -190,7 +188,7 @@ void EncryptionVfs::encrypt_directory(const std::string &directory, const std::s
 }
 
 void EncryptionVfs::decrypt_directory_names(const std::string &directory, const std::string &password) {
-    for (const auto &file : CustomVfs::subfiles(directory)) {
+    for (const auto &file : get_wrapped().subfiles(directory)) {
         decrypt_filename(file, password);
     }
 }

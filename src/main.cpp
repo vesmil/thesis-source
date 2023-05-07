@@ -12,12 +12,13 @@
  * Sets up options_description object.
  */
 void setup_options(boost::program_options::options_description& desc) {
-    desc.add_options()("help,h", "produce this help message")                                             //
-        ("mountpoint,m", boost::program_options::value<std::string>(), "Directory to access the vfs")     //
-        ("backing,b", boost::program_options::value<std::string>(), "Directory used to store the data.")  //
-        ("config,c", boost::program_options::value<std::string>(), "configuration file")                  //
-        ("test,t", "Create test files inside mount directory.")                                           //
-        ("fuse-args,f", boost::program_options::value<std::string>(), "FUSE arguments");
+    desc.add_options()("help,h", "produce this help message")                                          //
+        ("mountpoint,m", boost::program_options::value<std::string>(), "Directory to access the vfs")  //
+        ("backing,b", boost::program_options::value<std::string>()->default_value(""),
+         "Directory used to store the data.")                                             //
+        ("config,c", boost::program_options::value<std::string>(), "configuration file")  //
+        ("test,t", "Create test files inside mount directory.")                           //
+        ("fuse-args,f", boost::program_options::value<std::string>()->default_value(""), "FUSE arguments");
 }
 
 /**
@@ -105,7 +106,7 @@ int main(int argc, char* argv[]) {
     bool test_mode = vm.count("test") > 0;
 
     if (test_mode) {
-        Log::Info("Sorry, test mode has been disabled.");
+        Log::set_logging_file(Path(mountpoint).parent() / "test.log");
     }
 
     if (vm.count("config")) {
@@ -113,9 +114,9 @@ int main(int argc, char* argv[]) {
         Log::Info("Sorry, config is not implemented yet.");
     }
 
-    if (vm.count("backing")) {}
+    std::string backing_dir = vm["backing"].as<std::string>();
 
-    CustomVfs custom_vfs(mountpoint);
+    CustomVfs custom_vfs(mountpoint, backing_dir);
     VersioningVfs versioned(custom_vfs);
     EncryptionVfs encrypted(versioned);
 

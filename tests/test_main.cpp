@@ -27,5 +27,7 @@ int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     int test_results = RUN_ALL_TESTS();
 
+    Common::clean_mountpoint();
+    
     return test_results;
 }

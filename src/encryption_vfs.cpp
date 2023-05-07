@@ -23,7 +23,7 @@ int EncryptionVfs::read(const std::string &pathname, char *buf, size_t count, of
 int EncryptionVfs::write(const std::string &pathname, const char *buf, size_t count, off_t offset,
                          struct fuse_file_info *fi) {
     if (handle_hook(pathname, buf, fi)) {
-        Log::Debug("Hook handled for %s", pathname.c_str());
+        Logging::Debug("Hook handled for %s", pathname.c_str());
         return 0;
     }
 
@@ -98,7 +98,7 @@ void EncryptionVfs::derive_key_and_nonce(const std::string &password, unsigned c
     if (crypto_pwhash(key, crypto_aead_xchacha20poly1305_ietf_KEYBYTES, password.c_str(), password.length(), salt,
                       crypto_pwhash_OPSLIMIT_INTERACTIVE, crypto_pwhash_MEMLIMIT_INTERACTIVE,
                       crypto_pwhash_ALG_DEFAULT) != 0) {
-        Log::Fatal("Key derivation failed.");
+        Logging::Fatal("Key derivation failed.");
         return;
     }
 

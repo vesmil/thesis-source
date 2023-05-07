@@ -9,102 +9,31 @@ public:
     explicit Path(const std::string& path) : path_(normalize(path)) {}
     Path() = default;
 
-    [[nodiscard]] Path parent() const {
-        auto last_slash = path_.rfind('/');
-        if (last_slash == std::string::npos || path_ == "/" || path_.empty()) {
-            return Path("");
-        } else if (last_slash == 0) {
-            return Path("/");
-        } else {
-            return Path(path_.substr(0, last_slash));
-        }
-    }
+    [[nodiscard]] Path parent() const;
+    [[nodiscard]] Path basename() const;
 
-    [[nodiscard]] static Path to_absolute(const std::string& path) {
-        return Path(std::filesystem::absolute(path).generic_string());
-    }
+    [[nodiscard]] static Path to_absolute(const std::string& path);
 
-    [[nodiscard]] Path basename() const {
-        auto last_slash = path_.rfind('/');
-        return last_slash == std::string::npos ? Path(path_) : Path(path_.substr(last_slash + 1));
-    }
+    [[nodiscard]] static std::string string_parent(const std::string& path);
+    [[nodiscard]] static std::string string_basename(const std::string& path);
 
-    [[nodiscard]] static std::string string_parent(const std::string& path) {
-        auto last_slash = path.rfind('/');
-        if (last_slash == std::string::npos || path == "/" || path.empty()) {
-            return "";
-        } else if (last_slash == 0) {
-            return "/";
-        } else {
-            return path.substr(0, last_slash);
-        }
-    }
+    [[nodiscard]] std::string to_string() const;
+    [[nodiscard]] const char* c_str() const;
 
-    [[nodiscard]] static std::string string_basename(const std::string& path) {
-        auto last_slash = path.rfind('/');
-        return last_slash == std::string::npos ? path : path.substr(last_slash + 1);
-    }
+    operator std::string() const;  // NOLINT(google-explicit-constructor)
 
-    [[nodiscard]] std::string to_string() const {
-        return path_;
-    }
+    Path operator/(const std::string& other) const;
+    Path operator/(const Path& other) const;
+    Path& operator/=(const std::string& other);
+    Path& operator/=(const Path& other);
+    bool operator==(const std::string& other) const;
+    bool operator==(const Path& other) const;
+    bool operator!=(const std::string& other) const;
 
-    [[nodiscard]] const char* c_str() const {
-        return path_.c_str();
-    }
-
-    operator std::string() const {  // NOLINT(google-explicit-constructor)
-        return path_;
-    }
-
-    Path operator/(const std::string& other) const {
-        return Path(path_ + normalize(other));
-    }
-
-    Path operator/(const Path& other) const {
-        return Path(path_ + normalize(other.path_));
-    }
-
-    Path& operator/=(const std::string& other) {
-        path_ += normalize(other);
-        return *this;
-    }
-
-    Path& operator/=(const Path& other) {
-        path_ += normalize(other.path_);
-        return *this;
-    }
-
-    bool operator==(const std::string& other) const {
-        return path_ == normalize(other);
-    }
-
-    bool operator==(const Path& other) const {
-        return path_ == other.path_;
-    }
-
-    bool operator!=(const std::string& other) const {
-        return !(*this == other);
-    }
-
-    bool operator!=(const Path& other) const {
-        return !(*this == other);
-    }
+    bool operator!=(const Path& other) const;
 
 private:
-    static std::string normalize(const std::string& path) {
-        if (path.empty()) return path;
-        if (path == "/") return path;
-
-        std::string result = path;
-        if (result[0] != '/') {
-            result.insert(result.begin(), '/');
-        }
-        if (result.back() == '/') {
-            result.pop_back();
-        }
-        return result;
-    }
+    static std::string normalize(const std::string& path);
 
     std::string path_;
 };

@@ -17,9 +17,9 @@
 
 CustomVfs::CustomVfs(const std::string &path, const std::string &backing) : mount_path(Path::to_absolute(path)) {
     if (!std::filesystem::exists(path)) {
-        Log::Debug("Creating mount path %s", path.c_str());
+        Logging::Debug("Creating mount path %s", path.c_str());
         if (!std::filesystem::create_directory(path)) {
-            Log::Fatal("Mount path %s could not be created", path.c_str());
+            Logging::Fatal("Mount path %s could not be created", path.c_str());
             throw std::runtime_error("Mount path could not be created");
         }
     }
@@ -28,9 +28,9 @@ CustomVfs::CustomVfs(const std::string &path, const std::string &backing) : moun
     backing_dir = initial_backing_path(backing, name);
 
     if (!std::filesystem::exists(backing_dir.to_string())) {
-        Log::Info("Creating backing directory %s", backing_dir.c_str());
+        Logging::Info("Creating backing directory %s", backing_dir.c_str());
         if (!std::filesystem::create_directory(backing_dir.to_string())) {
-            Log::Fatal("Mount path %s could not be created", path.c_str());
+            Logging::Fatal("Mount path %s could not be created", path.c_str());
             throw std::runtime_error("Backing directory could not be created");
         }
     }
@@ -42,8 +42,8 @@ Path CustomVfs::initial_backing_path(const std::string &backing, const std::stri
     }
 
     if (::access(Config::base.backing_location.c_str(), W_OK) != 0) {
-        Log::Warn("Backing directory (%s) is not writable, using home directory",
-                  Config::base.backing_location.c_str());
+        Logging::Warn("Backing directory (%s) is not writable, using home directory",
+                      Config::base.backing_location.c_str());
 
         std::string home_dir = getenv("HOME");
         return Path(home_dir) / (Config::base.backing_prefix + vfs_name);

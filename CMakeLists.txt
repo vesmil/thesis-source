@@ -16,7 +16,7 @@ add_subdirectory(libs)
 add_subdirectory(tools)
 
 # Sources
-set(CUSTOMVFS_SOURCES src/custom_vfs.cpp src/encryption_vfs.cpp src/versioning_vfs.cpp src/config.cpp src/encryptor.cpp)
+set(CUSTOMVFS_SOURCES src/custom_vfs.cpp src/encryption_vfs.cpp src/versioning_vfs.cpp src/common/config.cpp src/encryptor.cpp src/common/logging.cpp src/common/path.cpp)
 
 # CustomVFS library
 add_library(customvfs STATIC ${CUSTOMVFS_SOURCES})

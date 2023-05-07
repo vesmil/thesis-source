@@ -8,7 +8,7 @@
 int VersioningVfs::write(const std::string &pathname, const char *buf, size_t count, off_t offset,
                          struct fuse_file_info *fi) {
     if (handle_hook(pathname, fi)) {
-        Log::Debug("Hook handled for %s", pathname.c_str());
+        Logging::Debug("Hook handled for %s", pathname.c_str());
         return 0;
     }
 
@@ -34,13 +34,13 @@ int VersioningVfs::write(const std::string &pathname, const char *buf, size_t co
     std::string new_version_path = pathname + version_suffix + std::to_string(max_version + 1);
 
     if (offset != 0) {
-        Log::Debug("Saving old version of %s to %s", pathname.c_str(), new_version_path.c_str());
+        Logging::Debug("Saving old version of %s to %s", pathname.c_str(), new_version_path.c_str());
         if (get_wrapped().copy_file(pathname, new_version_path) == -1) {
-            Log::Error("Failed to rename %s to %s", pathname.c_str(), new_version_path.c_str());
+            Logging::Error("Failed to rename %s to %s", pathname.c_str(), new_version_path.c_str());
             return -1;
         }
 
-        Log::Debug("Writing new version to %s", pathname.c_str());
+        Logging::Debug("Writing new version to %s", pathname.c_str());
         return get_wrapped().write(pathname, buf, count, offset, fi);
     }
 
@@ -53,10 +53,17 @@ int VersioningVfs::write(const std::string &pathname, const char *buf, size_t co
 }
 
 int VersioningVfs::unlink(const std::string &pathname) {
+    // Deletes all stored versions
+    if (get_wrapped().is_directory(pathname)) {
+        for (const std::string &subfile : get_wrapped().subfiles(pathname)) {
+            get_wrapped().unlink(Path(pathname) / subfile);
+        }
+    }
+
     int max_version = get_max_version(pathname);
     auto stored_path = pathname + version_suffix + std::to_string(max_version + 1);
 
-    Log::Debug("Moved old version of %s to %s", pathname.c_str(), stored_path.c_str());
+    Logging::Debug("Moved old version of %s to %s", pathname.c_str(), stored_path.c_str());
     return get_wrapped().rename(pathname, stored_path, 0);
 }
 
@@ -106,12 +113,12 @@ bool VersioningVfs::handle_versioned_command(const std::string &command, const s
     // TODO would prob be better if moved to a separate class - map to functions...
     if (command == "restore") {
         restore_version(arg_path, std::stoi(subArg));
-        Log::Info("Restored version %s of file %s\n", subArg.c_str(), arg_path.c_str());
+        Logging::Info("Restored version %s of file %s\n", subArg.c_str(), arg_path.c_str());
         return true;
 
     } else if (command == "delete") {
         delete_version(arg_path, std::stoi(subArg));
-        Log::Info("Deleted version %s of file %s\n", subArg.c_str(), arg_path.c_str());
+        Logging::Info("Deleted version %s of file %s\n", subArg.c_str(), arg_path.c_str());
         return true;
     }
 
@@ -122,13 +129,13 @@ bool VersioningVfs::handle_non_versioned_command(const std::string &command, con
                                                  const std::string &pathname, struct fuse_file_info *fi) {
     if (command == "deleteAll") {
         delete_all_versions(arg_path);
-        Log::Info("Deleted all versions of file %s\n", arg_path.c_str());
+        Logging::Info("Deleted all versions of file %s\n", arg_path.c_str());
         return true;
 
     } else if (command == "list") {
         auto versions = list_suffixed(arg_path);
 
-        Log::Info("Listed versions of file %s\n", arg_path.c_str());
+        Logging::Info("Listed versions of file %s\n", arg_path.c_str());
 
         // TODO write to a file
         for (const std::string &version : versions) {
@@ -201,7 +208,7 @@ void VersioningVfs::restore_version(const std::string &pathname, int version) {
     get_wrapped().rename(pathname, pathname + version_suffix + std::to_string(max_version + 1), 0);
     get_wrapped().rename(pathname + version_suffix + std::to_string(version), pathname, 0);
 
-    Log::Info("Restored version %d of file %s", version, pathname.c_str());
+    Logging::Info("Restored version %d of file %s", version, pathname.c_str());
 }
 
 std::vector<std::string> VersioningVfs::get_related_files(const std::string &pathname) const {

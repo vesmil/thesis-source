@@ -16,7 +16,7 @@ public:
     int write(const std::string &pathname, const char *buf, size_t count, off_t offset,
               struct fuse_file_info *fi) override;
 
-    /// Hide the last version
+    /// Just hides the last version, also allows deleting folder
     int unlink(const std::string &pathname) override;
 
     /// Hides from readdir if a version file

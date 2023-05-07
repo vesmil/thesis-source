@@ -33,7 +33,11 @@ namespace Common {
 
 inline void clean_mountpoint() {
     for (const auto& entry : std::filesystem::directory_iterator(TestConfig::inst().mountpoint.to_string())) {
-        EXPECT_TRUE(std::filesystem::remove_all(entry.path())) << "Failed to remove " << entry.path();
+        try {
+            EXPECT_TRUE(std::filesystem::remove_all(entry.path())) << "Failed to remove " << entry.path();
+        } catch (const std::filesystem::filesystem_error& e) {
+            FAIL() << e.what();
+        }
     }
 }
 

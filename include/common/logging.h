@@ -2,92 +2,88 @@
 #define SRC_LOGGING_H
 
 #include <cstdio>
+#include <string>
 
 /// Logging isn't visible with normal usage - it should use file instead
-namespace Log {
+class Logging {
+public:
+    static void set_logging_file(const std::string &path);
 
-enum class Level {
-    DEBUG,
-    INFO,
-    WARN,
-    ERROR,
-    FATAL,
-};
+    template <typename... Args>
+    static void Info(const char *format, Args... args) {
+        Log(Level::INFO, format, args...);
+    }
 
-namespace {
+    template <typename... Args>
+    static void Debug(const char *format, Args... args) {
+        Log(Level::DEBUG, format, args...);
+    }
 
-std::string file;
+    template <typename... Args>
+    static void Warn(const char *format, Args... args) {
+        Log(Level::WARN, format, args...);
+    }
 
-template <typename... Args>
-void log_printf(const char *format, Args... args) {
-    if (file.empty()) {
-        printf(format, args...);
-    } else {
-        FILE *f = fopen(file.c_str(), "a");
-        if (f == nullptr) {
-            printf("Failed to open log file %s\n", file.c_str());
-            return;
+    template <typename... Args>
+    static void Error(const char *format, Args... args) {
+        Log(Level::ERROR, format, args...);
+    }
+
+    template <typename... Args>
+    static void Fatal(const char *format, Args... args) {
+        Log(Level::FATAL, format, args...);
+    }
+
+    enum class Level {
+        DEBUG,
+        INFO,
+        WARN,
+        ERROR,
+        FATAL,
+    };
+
+private:
+    static std::string file;
+
+    template <typename... Args>
+    static void log_printf(const char *format, Args... args) {
+        if (file.empty()) {
+            printf(format, args...);
+        } else {
+            FILE *f = fopen(file.c_str(), "a");
+            if (f == nullptr) {
+                printf("Failed to open log file %s\n", file.c_str());
+                return;
+            }
+
+            fprintf(f, format, args...);
+            fclose(f);
+        }
+    }
+
+    template <typename... Args>
+    static void Log(Level level, const char *format, Args... args) {
+        switch (level) {
+            case Level::DEBUG:
+                log_printf("[DEBUG] ");
+                break;
+            case Level::INFO:
+                log_printf("[INFO] ");
+                break;
+            case Level::WARN:
+                log_printf("[WARN] ");
+                break;
+            case Level::ERROR:
+                log_printf("[ERROR] ");
+                break;
+            case Level::FATAL:
+                log_printf("[FATAL] ");
+                break;
         }
 
-        fprintf(f, format, args...);
-        fclose(f);
+        log_printf(format, args...);
+        log_printf("\n");
     }
-}
-
-template <typename... Args>
-void Log(Level level, const char *format, Args... args) {
-    switch (level) {
-        case Level::DEBUG:
-            log_printf("[DEBUG] ");
-            break;
-        case Level::INFO:
-            log_printf("[INFO] ");
-            break;
-        case Level::WARN:
-            log_printf("[WARN] ");
-            break;
-        case Level::ERROR:
-            log_printf("[ERROR] ");
-            break;
-        case Level::FATAL:
-            log_printf("[FATAL] ");
-            break;
-    }
-
-    log_printf(format, args...);
-    log_printf("\n");
-}
-}  // namespace
-
-inline void set_logging_file(const std::string &path) {
-    file = path;
-}
-
-template <typename... Args>
-void Info(const char *format, Args... args) {
-    Log(Level::INFO, format, args...);
-}
-
-template <typename... Args>
-void Debug(const char *format, Args... args) {
-    Log(Level::DEBUG, format, args...);
-}
-
-template <typename... Args>
-void Warn(const char *format, Args... args) {
-    Log(Level::WARN, format, args...);
-}
-
-template <typename... Args>
-void Error(const char *format, Args... args) {
-    Log(Level::ERROR, format, args...);
-}
-
-template <typename... Args>
-void Fatal(const char *format, Args... args) {
-    Log(Level::FATAL, format, args...);
-}
-
-}  // namespace Log
+};
 
 #endif  // SRC_LOGGING_H

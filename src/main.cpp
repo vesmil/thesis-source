@@ -33,13 +33,13 @@ bool validate_arguments(const boost::program_options::variables_map& vm,
     }
 
     if (!vm.count("mountpoint")) {
-        Log::Fatal("Mountpoint is required");
+        Logging::Fatal("Mountpoint is required");
         return false;
     }
 
     std::string mountpoint = vm["mountpoint"].as<std::string>();
     if (!std::filesystem::is_directory(mountpoint)) {
-        Log::Warn("Mountpoint %s is not a directory, it will be created", mountpoint.c_str());
+        Logging::Warn("Mountpoint %s is not a directory, it will be created", mountpoint.c_str());
     }
 
     return true;
@@ -106,12 +106,12 @@ int main(int argc, char* argv[]) {
     bool test_mode = vm.count("test") > 0;
 
     if (test_mode) {
-        Log::set_logging_file(Path(mountpoint).parent() / "test.log");
+        Logging::set_logging_file(Path(mountpoint).parent() / "test.log");
     }
 
     if (vm.count("config")) {
         Config::Parser::ParseFile(vm["config"].as<std::string>());
-        Log::Info("Sorry, config is not implemented yet.");
+        Logging::Info("Sorry, config is not implemented yet.");
     }
 
     std::string backing_dir = vm["backing"].as<std::string>();

@@ -5,7 +5,7 @@ stages:
   - build
   - test
 
-format: 
+format:
   stage: format
   script:
     - apt-get update && apt-get install -y clang-format git
@@ -32,5 +32,5 @@ test:
   script:
     - apt-get update && apt-get install -y libfuse-dev libgtest-dev libsodium-dev libboost-program-options-dev
     - cd build
-    - ./customvfs --mountpoint /tmp/customvfs
+    - ./customvfs_exec --mountpoint /tmp/customvfs
     - ./customvfs_tests --mountpoint /tmp/customvfs

@@ -24,5 +24,5 @@ jobs:
       - name: Test
         run: |
           cd build
-          ./customvfs --mountpoint /tmp/customvfs
+          ./customvfs_exec --mountpoint /tmp/customvfs
           ./customvfs_tests --mountpoint /tmp/customvfs

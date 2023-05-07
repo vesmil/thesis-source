@@ -1,76 +1,39 @@
-name: CI
+name: Format, build and test
 
-on: [push, pull_request]
+on: [ push, pull_request ]
 
 jobs:
-  format:
+  build_and_test:
     runs-on: ubuntu-latest
     container:
       image: ubuntu:latest
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
 
-    - name: Install dependencies
-      run: |
-        apt-get update && apt-get install -y clang-format git
+      - name: Install format dependencies
+        run: |
+          apt-get update && apt-get install -y clang-format git
 
-    - name: Format
-      run: clang-format -i src/*.cpp include/*.h
+      - name: Format
+        run: clang-format -i src/*.cpp include/*.h
 
-    - name: Check for changes
-      run: git diff --exit-code
+      - name: Check for changes
+        run: |
+          git diff --quiet || (echo "Formatting changes detected. Please run 'clang-format -i src/*.cpp include/*.h' and commit the changes." && exit 1)
 
-  build:
-    needs: format
-    runs-on: ubuntu-latest
-    container:
-      image: ubuntu:latest
+      - name: Install build and test dependencies
+        run: |
+          apt-get update && apt-get install -y clang cmake libfuse-dev libgtest-dev libsodium-dev pkg-config libboost-program-options-dev
 
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
+      - name: Build
+        run: |
+          mkdir build && cd build
+          cmake ../ && make
 
-    - name: Install dependencies
-      run: |
-        apt-get update && apt-get install -y clang cmake libfuse-dev libgtest-dev libsodium-dev pkg-config libboost-program-options-dev
-
-    - name: Build
-      run: |
-        mkdir build && cd build
-        cmake ../ && make
-
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v2
-      with:
-        name: build
-        path: build/
-        retention-days: 7
-
-  test:
-    needs: build
-    runs-on: ubuntu-latest
-    container:
-      image: ubuntu:latest
-
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-
-    - name: Download artifacts
-      uses: actions/download-artifact@v2
-      with:
-        name: build
-        path: build/
-
-    - name: Install dependencies
-      run: |
-        apt-get update && apt-get install -y libfuse-dev libgtest-dev libsodium-dev libboost-program-options-dev
-
-    - name: Test
-      run: |
-        cd build
-        ./customvfs --mountpoint /tmp/customvfs
-        ./customvfs_tests --mountpoint /tmp/customvfs
-
+      - name: Test
+        run: |
+          cd build
+          ./customvfs --mountpoint /tmp/customvfs -f "-d -f"
+          ./customvfs_tests --mountpoint /tmp/customvfs

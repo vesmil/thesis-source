@@ -29,14 +29,14 @@ protected:
     [[nodiscard]] std::vector<std::string> get_related_files(const std::string &pathname) const override;
 
 private:
-    std::string const version_suffix = "#v";
+    std::string const prefix = "VERSION";
 
     [[nodiscard]] bool is_version_file(const std::string &pathname) const;
     int get_max_version(const std::string &pathname);
 
     bool handle_hook(const std::string &pathname, struct fuse_file_info *fi);
 
-    [[nodiscard]] std::vector<std::string> list_suffixed(const std::string &pathname) const;
+    [[nodiscard]] std::vector<std::string> list_helper_files(const std::string &pathname) const;
 
     void restore_version(const std::string &pathname, int version);
     void delete_version(const std::string &pathname, int version);

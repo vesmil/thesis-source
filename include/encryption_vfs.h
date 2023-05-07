@@ -28,16 +28,16 @@ public:
     int release(const std::string &pathname, struct fuse_file_info *fi) override;
 
 private:
+    std::string const prefix = "ENCRYPTION";
+
     bool handle_hook(const std::string &path, const std::string &content, fuse_file_info *fi);
 
     static void derive_key_and_nonce(const std::string &password, unsigned char *key, unsigned char *nonce);
 
     bool encrypt_file(const std::string &filename, const std::string &password);
     bool decrypt_file(const std::string &filename, const std::string &password);
-
     void encrypt_directory(const std::string &directory, const std::string &password);
     void encrypt_filename(const std::string &filename, const std::string &password);
-
     void decrypt_directory_names(const std::string &directory, const std::string &password);
     void decrypt_filename(const std::string &filename, const std::string &password);
 };

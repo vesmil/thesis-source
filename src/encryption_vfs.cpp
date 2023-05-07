@@ -38,6 +38,8 @@ int EncryptionVfs::readdir(const std::string &pathname, off_t off, struct fuse_f
 bool EncryptionVfs::handle_hook(const std::string &path, const std::string &content, fuse_file_info *fi) {
     std::string hook_file = Path::string_basename(path);
 
+    // TODO use prefixed...
+
     if (hook_file[0] == '#') {
         auto dashPos = hook_file.find('-');
         if (dashPos == std::string::npos) {
@@ -107,6 +109,8 @@ void EncryptionVfs::derive_key_and_nonce(const std::string &password, unsigned c
 
 // TODO move the encrypt function
 bool EncryptionVfs::encrypt_file(const std::string &filename, const std::string &password) {
+    // TODO get rid of .enc
+
     std::string output_filename = filename + ".enc";
 
     std::ifstream input(filename, std::ios::binary);

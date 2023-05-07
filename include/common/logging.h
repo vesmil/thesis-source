@@ -47,8 +47,10 @@ private:
 
     template <typename... Args>
     static void log_printf(const char *format, Args... args) {
+        // TODO solve warning
+        
         if (file.empty()) {
-            printf("%s", format, args...);
+            printf(format, args...);
         } else {
             FILE *f = fopen(file.c_str(), "a");
             if (f == nullptr) {
@@ -56,7 +58,7 @@ private:
                 return;
             }
 
-            fprintf(f, "%s", format, args...);
+            fprintf(f, format, args...);
             fclose(f);
         }
     }

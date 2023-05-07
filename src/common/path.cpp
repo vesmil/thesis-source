@@ -48,12 +48,18 @@ std::string Path::to_string() const {
     return path_;
 }
 
-Path Path::operator/(const std::string& other) const {
-    return Path(path_ + normalize(other));
-}
 Path Path::operator/(const Path& other) const {
+    if (other.path_.empty()) return Path(path_);
+    if (path_.empty()) return Path(other.path_);
+    if (path_ == "/") return Path(other.path_);
+
     return Path(path_ + normalize(other.path_));
 }
+
+Path Path::operator/(const std::string& other) const {
+    return Path(path_) / Path(other);
+}
+
 Path& Path::operator/=(const std::string& other) {
     path_ += normalize(other);
     return *this;

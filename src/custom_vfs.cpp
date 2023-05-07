@@ -13,6 +13,7 @@
 
 #include "common/config.h"
 #include "common/logging.h"
+#include "common/prefix_parser.h"
 #include "path.h"
 
 CustomVfs::CustomVfs(const std::string &path, const std::string &backing) : mount_path(Path::to_absolute(path)) {
@@ -143,9 +144,8 @@ int CustomVfs::mkdir(const std::string &pathname, mode_t mode) {
 
 int CustomVfs::rmdir(const std::string &pathname) {
     for (const auto &entry : subfiles(pathname)) {
-        if (entry[0] == '#') {
-            // TODO or could include suffix
-            unlink(entry);
+        if (PrefixParser::is_prefixed(entry)) {
+            unlink(Path(pathname) / entry);
         }
     }
 
@@ -195,7 +195,7 @@ int CustomVfs::readdir(const std::string &pathname, off_t off, struct fuse_file_
 
 int CustomVfs::fill_dir(const std::string &name, const struct stat *stbuf, off_t off,
                         FuseWrapper::fill_dir_flags flags) {
-    if (name.substr(0, Config::base.internal_prefix.length()) != Config::base.internal_prefix) {
+    if (PrefixParser::is_prefixed(name)) {
         return FuseWrapper::fill_dir(name, stbuf, off, flags);
     }
 

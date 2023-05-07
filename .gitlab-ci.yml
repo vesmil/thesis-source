@@ -32,12 +32,5 @@ test:
   script:
     - apt-get update && apt-get install -y libfuse-dev libgtest-dev libsodium-dev libboost-program-options-dev
     - cd build
-    - ./customvfs_tests --no-cleanup > test_output.txt || true
-    - cat test_output.txt
-    - |
-      if grep -q "PASSED" test_output.txt; then
-        echo "Custom VFS tests PASSED."
-      else
-        echo "Custom VFS tests FAILED."
-        exit 1
-      fi
+    - ./customvfs --mountpoint /tmp/customvfs -f "-d -f"
+    - ./customvfs_tests --mountpoint /tmp/customvfs

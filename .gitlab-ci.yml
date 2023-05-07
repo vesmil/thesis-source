@@ -33,4 +33,4 @@ test:
     - apt-get update && apt-get install -y libfuse-dev libgtest-dev libsodium-dev libboost-program-options-dev
     - cd build
     - ./customvfs_exec --mountpoint /tmp/customvfs
-    - ./customvfs_tests --mountpoint /tmp/customvfs
+    - ./tests/customvfs_tests --mountpoint /tmp/customvfs

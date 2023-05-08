@@ -7,6 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ubuntu:latest
+      options: --privileged
 
     steps:
       - name: Checkout
@@ -14,7 +15,11 @@ jobs:
 
       - name: Install build and test dependencies
         run: |
-          apt-get update && apt-get install -y clang cmake libfuse-dev libgtest-dev libsodium-dev pkg-config libboost-program-options-dev
+          apt-get update && apt-get install -y clang cmake libfuse-dev libgtest-dev libsodium-dev pkg-config libboost-program-options-dev kmod
+
+      - name: Load FUSE kernel module
+        run: |
+          modprobe fuse
 
       - name: Build
         run: |

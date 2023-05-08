@@ -13,19 +13,19 @@
  */
 class VfsDecorator : public CustomVfs {
 public:
-    explicit VfsDecorator(CustomVfs &wrapped_vfs) : CustomVfs(wrapped_vfs), vfs_(wrapped_vfs) {}
+    explicit VfsDecorator(CustomVfs &wrapped_vfs) : CustomVfs(wrapped_vfs), wrapped_vfs(wrapped_vfs) {}
 
 protected:
     [[nodiscard]] CustomVfs &get_wrapped() {
-        return vfs_;
+        return wrapped_vfs;
     }
 
     [[nodiscard]] const CustomVfs &get_wrapped() const {
-        return vfs_;
+        return wrapped_vfs;
     }
 
 private:
-    CustomVfs &vfs_;
+    CustomVfs &wrapped_vfs;
 };
 
 #endif  // SRC_VFS_DECORATOR_H

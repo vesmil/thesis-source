@@ -41,42 +41,37 @@ bool EncryptionVfs::handle_hook(const std::string &path, const std::string &cont
     std::string hook_file = Path::string_basename(path);
 
     // TODO use prefixed...
+    if (hook_file[0] != '#') return false;
 
-    if (hook_file[0] == '#') {
-        auto dashPos = hook_file.find('-');
-        if (dashPos == std::string::npos) {
-            return false;
-        }
+    auto dashPos = hook_file.find('-');
+    if (dashPos == std::string::npos) {
+        return false;
+    }
 
-        std::string command = hook_file.substr(1, dashPos - 1);
-        std::string file = hook_file.substr(dashPos + 1);
+    std::string command = hook_file.substr(1, dashPos - 1);
+    std::string file = hook_file.substr(dashPos + 1);
 
-        Path parent = Path(path).parent();
-        std::string file_path = parent / file;
+    Path parent = Path(path).parent();
+    std::string file_path = parent / file;
 
-        std::string real_file_path = get_wrapped().get_fs_path(file_path);
+    // TODO what if it's a directory?
 
-        // TODO what if it's a directory?
+    // TODO remove pass suffix - always look into directory
 
-        // TODO remove pass suffix - always look into directory
+    if (command == "unlockPass") {
+        decrypt_file(file_path, content);
 
-        if (command == "unlockPass") {
-            // TODO for each related file, decrypt it
-            decrypt_file(real_file_path, content);
-
-            return true;
-        } else if (command == "lockPass") {
-            // TODO for each related file, encrypt it
-            encrypt_file(real_file_path, content);
-            return true;
-        }
-        if (command == "unlockKey") {
-            // ...
-            return true;
-        } else if (command == "lockKey") {
-            // ...
-            return true;
-        }
+        return true;
+    } else if (command == "lockPass") {
+        encrypt_file(file_path, content);
+        return true;
+    }
+    if (command == "unlockKey") {
+        // ...
+        return true;
+    } else if (command == "lockKey") {
+        // ...
+        return true;
     }
 
     return false;
@@ -113,35 +108,47 @@ void EncryptionVfs::derive_key_and_nonce(const std::string &password, unsigned c
 }
 
 bool EncryptionVfs::encrypt_file(const std::string &filename, const std::string &password) {
-    Logging::Debug("Encrypting file %s", filename.c_str());
+    bool success = true;
 
-    std::string output_filename = PrefixParser::apply_prefix(filename, prefix);
+    for (const std::string &file : get_wrapped().get_related_files(filename)) {
+        Logging::Debug("Encrypting file %s", file.c_str());
 
-    std::ifstream input(filename, std::ios::binary);
-    std::ofstream output(output_filename, std::ios::binary);
+        std::string fs_file_path = get_wrapped().get_fs_path(file);
+        std::string output_filename = PrefixParser::apply_prefix(fs_file_path, prefix);
 
-    if (!input.is_open() || !output.is_open()) {
-        return false;
+        // This needs to access the file system - prob use backing TODO
+        std::ifstream input(fs_file_path, std::ios::binary);
+        std::ofstream output(output_filename, std::ios::binary);
+
+        if (!input.is_open()) {
+            continue;
+        }
+
+        if (!output.is_open()) {
+            continue;
+        }
+
+        Encryptor encryptor(password);
+
+        success &= encryptor.encrypt_stream(input, output);
+
+        input.close();
+        output.close();
+
+        CustomVfs::unlink(file);
     }
-
-    Encryptor encryptor(password);
-
-    bool success = encryptor.encrypt_stream(input, output);
-
-    input.close();
-    output.close();
-
-    get_wrapped().unlink(filename);
 
     return success;
 }
 
 bool EncryptionVfs::decrypt_file(const std::string &filename, const std::string &password) {
     Logging::Debug("Decrypting file %s", filename.c_str());
+    std::string result_fs_path = get_wrapped().get_fs_path(filename);
     std::string input_filename = PrefixParser::apply_prefix(filename, prefix);
 
+    // TODO this also needs access to core file
     std::ifstream input(input_filename, std::ios::binary);
-    std::ofstream output(filename, std::ios::binary);
+    std::ofstream output(result_fs_path, std::ios::binary);
 
     if (!input.is_open() || !output.is_open()) {
         return false;
@@ -154,7 +161,7 @@ bool EncryptionVfs::decrypt_file(const std::string &filename, const std::string 
     input.close();
     output.close();
 
-    get_wrapped().unlink(input_filename);
+    CustomVfs::unlink(input_filename);
     return success;
 }
 

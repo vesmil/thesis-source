@@ -170,6 +170,11 @@ int CustomVfs::release(const std::string &pathname, struct fuse_file_info *fi) {
     return posix_call_result(::close, static_cast<int>(fi->fh));
 }
 
+int CustomVfs::flush(const std::string &pathname, struct fuse_file_info *fi) {
+    int fd = static_cast<int>(fi->fh);
+    return posix_call_result(::fsync, fd);
+}
+
 int CustomVfs::readdir(const std::string &pathname, off_t off, struct fuse_file_info *fi, readdir_flags flags) {
     std::string real_path = to_backing(pathname);
     struct stat stbuf {};
@@ -224,6 +229,14 @@ std::string CustomVfs::to_backing(const std::string &pathname) const {
 
 std::string CustomVfs::get_fs_path(const std::string &pathname) const {
     return (mount_path / pathname);
+}
+
+std::string CustomVfs::get_vfs_path(const std::string &pathname) const {
+    if (pathname.substr(0, mount_path.to_string().length()) != mount_path.to_string()) {
+        throw std::runtime_error("Path is not in the mounted directory");
+    }
+
+    return pathname.substr(mount_path.to_string().length());
 }
 
 std::vector<std::string> CustomVfs::get_related_files(const std::string &pathname) const {

@@ -15,26 +15,16 @@ int VersioningVfs::write(const std::string &pathname, const char *buf, size_t co
 
     int max_version = get_max_version(pathname);
     std::string new_version_path = PrefixParser::apply_prefix(pathname, prefix, {std::to_string(max_version + 1)});
+    Logging::Debug("Saving old version of %s to %s", pathname.c_str(), new_version_path.c_str());
 
-    if (offset != 0) {
-        Logging::Debug("Saving old version of %s to %s", pathname.c_str(), new_version_path.c_str());
-        if (get_wrapped().copy_file(pathname, new_version_path) == -1) {
-            Logging::Error("Failed to rename %s to %s", pathname.c_str(), new_version_path.c_str());
-            return -1;
-        }
+    int res = get_wrapped().write(pathname, buf, count, offset, fi);
 
-        Logging::Debug("Writing new version to %s", pathname.c_str());
-        return get_wrapped().write(pathname, buf, count, offset, fi);
+    if (get_wrapped().copy_file(pathname, new_version_path) == -1) {
+        Logging::Error("Failed to rename %s to %s", pathname.c_str(), new_version_path.c_str());
+        return -1;
     }
 
-    struct stat st {};
-    getattr(pathname, &st);
-
-    // TODO doesn't work like that - pathname will be empty at this moment
-    get_wrapped().rename(pathname, new_version_path, 0);
-
-    get_wrapped().mknod(pathname, st.st_mode, st.st_rdev);
-    return get_wrapped().write(pathname, buf, count, offset, fi);
+    return res;
 }
 
 int VersioningVfs::unlink(const std::string &pathname) {

@@ -39,6 +39,7 @@ public:
     int chmod(const std::string &pathname, mode_t mode) override;
     int open(const std::string &pathname, struct fuse_file_info *fi) override;
     int release(const std::string &pathname, struct fuse_file_info *fi) override;
+    int flush(const std::string &pathname, struct fuse_file_info *fi) override;
 
     // Links
     int symlink(const std::string &target, const std::string &linkpath) override;
@@ -57,6 +58,8 @@ public:
 
     // Misc
     [[nodiscard]] std::string get_fs_path(const std::string &pathname) const;
+    [[nodiscard]] std::string get_vfs_path(const std::string &pathname) const;
+
     [[nodiscard]] virtual std::vector<std::string> get_related_files(const std::string &pathname) const;
 
     int copy_file(const std::string &source, const std::string &destination);

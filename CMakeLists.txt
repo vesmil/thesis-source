@@ -4,21 +4,16 @@ set(CMAKE_CXX_STANDARD 17)
 
 # Libs
 include(FindPkgConfig)
-
-if(APPLE)
-    set(FUSE_PKG_NAME "macfuse")
-elseif(WIN32)
-    set(FUSE_PKG_NAME "winfsp")
-else()
-    set(FUSE_PKG_NAME "fuse")
-endif()
-
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
 find_package(fuse REQUIRED)
-find_package(Sodium REQUIRED)
-find_package(Boost COMPONENTS program_options REQUIRED)
 
+find_package(Sodium REQUIRED)
+if (NOT sodium_FOUND)
+    pkg_search_module(LIBSODIUM REQUIRED libsodium)
+endif ()
+
+find_package(Boost COMPONENTS program_options REQUIRED)
 include_directories(/usr/local/include)
 
 # FUSE C++ wrapper

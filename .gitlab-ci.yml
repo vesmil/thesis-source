@@ -1,12 +1,5 @@
 image: ubuntu:latest
 
-variables:
-  DOCKER_DRIVER: overlay2
-  DOCKER_TLS_CERTDIR: ""
-
-services:
-  - docker:dind
-
 stages:
   - format
   - build
@@ -32,13 +25,15 @@ build:
       - build/
     expire_in: 1 week
 
+# Next stage is missing
+# - ./customvfs_exec --mountpoint /tmp/customvfs
+# That would need a runner with /dev/fuse mounted and the container to be privileged
+
 test:
   stage: test
   dependencies:
     - build
   script:
-    - apt-get update && apt-get install -y libfuse-dev libgtest-dev libsodium-dev libboost-program-options-dev kmod
-    - modprobe fuse
+    - apt-get update && apt-get install -y libfuse-dev libgtest-dev libsodium-dev libboost-program-options-dev
     - cd build
-    - ./customvfs_exec --mountpoint /tmp/customvfs
-    - ./tests/customvfs_tests --mountpoint /tmp/customvfs
+    - ./tests/customvfs_tests --no-fuse

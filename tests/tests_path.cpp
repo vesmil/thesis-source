@@ -2,7 +2,7 @@
 
 #include "common/path.h"
 
-TEST(CommonLibs, pathlib_simple) {
+TEST(Path, pathlib_simple) {
     Path path("/test/something/dir");
     EXPECT_EQ(Path::string_parent(path.to_string()), "/test/something");
     EXPECT_EQ(Path::string_basename(path.to_string()), "dir");
@@ -11,7 +11,7 @@ TEST(CommonLibs, pathlib_simple) {
     EXPECT_EQ(path.basename().to_string(), "/dir");
 }
 
-TEST(CommonLibs, pathlib_simple2) {
+TEST(Path, pathlib_simple2) {
     Path path("/dir/");
     EXPECT_EQ(Path::string_parent(path.to_string()), "/");
     EXPECT_EQ(Path::string_basename(path.to_string()), "dir");
@@ -20,7 +20,7 @@ TEST(CommonLibs, pathlib_simple2) {
     EXPECT_EQ(path.basename().to_string(), "/dir");
 }
 
-TEST(CommonLibs, pathlib_edge) {
+TEST(Path, pathlib_edge) {
     Path path("/");
     EXPECT_EQ(Path::string_parent(path.to_string()), "");
     EXPECT_EQ(Path::string_basename(path.to_string()), "");
@@ -29,7 +29,7 @@ TEST(CommonLibs, pathlib_edge) {
     EXPECT_EQ(path.basename().to_string(), "");
 }
 
-TEST(CommonLibs, pathlib_addition) {
+TEST(Path, pathlib_addition) {
     Path path("/test/something/dir");
 
     EXPECT_EQ((path / "/test/"), "/test/something/dir/test");
@@ -40,7 +40,7 @@ TEST(CommonLibs, pathlib_addition) {
     EXPECT_EQ(path, "/test/something/dir/test");
 }
 
-TEST(CommonLibs, pathlib_equal) {
+TEST(Path, pathlib_equal) {
     Path path("/test/something/dir");
 
     EXPECT_EQ(path, "/test/something/dir");

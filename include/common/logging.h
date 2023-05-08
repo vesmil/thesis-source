@@ -47,8 +47,6 @@ private:
 
     template <typename... Args>
     static void log_printf(const char *format, Args... args) {
-        // TODO solve warning
-        
         if (file.empty()) {
             printf(format, args...);
         } else {

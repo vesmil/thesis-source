@@ -7,12 +7,7 @@
 /**
  * EncryptionVfs is a decorator for CustomVfs that encrypts and decrypts files
  *
- * TODO
- *  * explain high-level how it works
- *  * implement files
- *  * implement directories
- *  * implement hooks
- *  ...
+ * It works by intercepting the read and write calls and encrypting/decrypting the content upon registering hooks
  */
 class EncryptionVfs : public VfsDecorator {
 public:
@@ -35,8 +30,10 @@ private:
 
     bool encrypt_file(const std::string &filename, const std::string &password);
     bool decrypt_file(const std::string &filename, const std::string &password);
+
     void encrypt_directory(const std::string &directory, const std::string &password);
     void encrypt_filename(const std::string &filename, const std::string &password);
+
     void decrypt_directory_names(const std::string &directory, const std::string &password);
     void decrypt_filename(const std::string &filename, const std::string &password);
 };

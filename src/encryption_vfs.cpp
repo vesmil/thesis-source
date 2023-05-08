@@ -41,7 +41,6 @@ int EncryptionVfs::readdir(const std::string &pathname, off_t off, struct fuse_f
 bool EncryptionVfs::handle_hook(const std::string &path, const std::string &content, fuse_file_info *fi) {
     std::string hook_file = Path::string_basename(path);
 
-    // TODO use prefixed...
     if (hook_file[0] != '#') return false;
 
     auto dashPos = hook_file.find('-');
@@ -56,8 +55,6 @@ bool EncryptionVfs::handle_hook(const std::string &path, const std::string &cont
     std::string file_path = parent / file;
 
     // TODO what if it's a directory?
-
-    // TODO remove pass suffix - always look into directory
 
     if (command == "unlockPass") {
         decrypt_file(file_path, content);
@@ -81,12 +78,6 @@ bool EncryptionVfs::handle_hook(const std::string &path, const std::string &cont
 int EncryptionVfs::open(const std::string &pathname, struct fuse_file_info *fi) {
     if (is_encrypted(pathname)) {
         // TODO check key
-        /*
-        std::vector<std::string> related_files = get_wrapped().get_related_files(pathname);
-        for (const auto &related_file : related_files) {
-            std::string realRelatedPath = get_wrapped().get_fs_path(related_file);
-        }
-        */
     }
 
     return get_wrapped().open(pathname, fi);

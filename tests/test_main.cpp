@@ -22,15 +22,13 @@ int main(int argc, char** argv) {
         }
 
         if (std::string(argv[i]) == "--no-fuse" || std::string(argv[i]) == "-n") {
-            if (i + 1 < argc) {
-                no_fuse = true;
-                argc -= 1;
+            no_fuse = true;
+            argc -= 1;
 
-                for (int j = i; j < argc; j++) {
-                    argv[j] = argv[j + 1];
-                }
+            for (int j = i; j < argc; j++) {
+                argv[j] = argv[j + 1];
             }
-
+            
             break;
         }
     }

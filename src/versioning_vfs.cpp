@@ -174,8 +174,13 @@ void VersioningVfs::restore_version(const std::string &pathname, int version) {
 }
 
 std::vector<std::string> VersioningVfs::get_related_files(const std::string &pathname) const {
-    auto version_files = list_helper_files(pathname);
-    version_files.push_back(pathname);
+    Path parent = Path(pathname).parent();
+    std::vector<std::string> version_files;
+
+    for (auto &version_file : list_helper_files(pathname)) {
+        version_file = PrefixParser::get_nonprefixed(version_file);
+        version_files.push_back((parent / version_file).to_string());
+    }
 
     return version_files;
 }

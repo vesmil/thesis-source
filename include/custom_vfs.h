@@ -59,8 +59,10 @@ public:
     // Misc
     [[nodiscard]] std::string get_fs_path(const std::string &pathname) const;
 
-    [[nodiscard]] std::ofstream get_ofstream(const std::string &path, std::ios_base::openmode mode) const;
-    [[nodiscard]] std::ifstream get_ifstream(const std::string &path, std::ios_base::openmode mode) const;
+    [[nodiscard]] std::unique_ptr<std::ofstream> get_ofstream(const std::string &path,
+                                                              std::ios_base::openmode mode) const;
+    [[nodiscard]] std::unique_ptr<std::ifstream> get_ifstream(const std::string &path,
+                                                              std::ios_base::openmode mode) const;
 
     [[nodiscard]] virtual std::vector<std::string> get_related_files(const std::string &pathname) const;
 
@@ -68,6 +70,7 @@ public:
 
     [[nodiscard]] virtual std::vector<std::string> subfiles(const std::string &pathname) const;
     [[nodiscard]] bool is_directory(const std::string &pathname) const;
+    [[nodiscard]] bool exists(const std::string &pathname) const;
 
 private:
     // Converts a path to its real path in the backing directory

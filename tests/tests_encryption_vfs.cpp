@@ -24,7 +24,8 @@ TEST(EncryptionVfs, pass_lock) {
     Common::write_file(passfile, pass);
 
     file_content = Common::read_file(filepath);
-    EXPECT_NE(file_content, content);
+
+    EXPECT_NE(file_content, "Hello World!\n");
 
     passfile = Path(test_folder) / "#unlockPass-test.txt";
     Common::write_file(passfile, pass);

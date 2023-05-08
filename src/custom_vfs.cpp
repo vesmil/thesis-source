@@ -232,12 +232,12 @@ std::string CustomVfs::get_fs_path(const std::string &pathname) const {
     return (mount_path / pathname);
 }
 
-std::ifstream CustomVfs::get_ifstream(const std::string &path, std::ios_base::openmode mode) const {
-    return std::ifstream(to_backing(path), mode);
+std::unique_ptr<std::ifstream> CustomVfs::get_ifstream(const std::string &path, std::ios_base::openmode mode) const {
+    return std::make_unique<std::ifstream>(to_backing(path), mode);
 }
 
-std::ofstream CustomVfs::get_ofstream(const std::string &path, std::ios_base::openmode mode) const {
-    return std::ofstream(to_backing(path), mode);
+std::unique_ptr<std::ofstream> CustomVfs::get_ofstream(const std::string &path, std::ios_base::openmode mode) const {
+    return std::make_unique<std::ofstream>(to_backing(path), mode);
 }
 
 std::vector<std::string> CustomVfs::get_related_files(const std::string &pathname) const {
@@ -247,4 +247,8 @@ std::vector<std::string> CustomVfs::get_related_files(const std::string &pathnam
 int CustomVfs::copy_file(const std::string &source, const std::string &destination) {
     std::filesystem::copy_file(to_backing(source), to_backing(destination));
     return 0;
+}
+
+bool CustomVfs::exists(const std::string &pathname) const {
+    return std::filesystem::exists(to_backing(pathname));
 }

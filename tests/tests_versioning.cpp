@@ -25,6 +25,8 @@ TEST(VersioningVfs, restore_version) {
     std::string restore_file = Path(test_folder) / "#restore_1-test.txt";
     Common::write_file(restore_file, " ");
 
+    std::string response = Common::read_file(restore_file);
+
     file_content = Common::read_file(filepath);
     EXPECT_EQ(file_content, content);
 }
@@ -52,8 +54,12 @@ TEST(VersioningVfs, delete_version) {
     std::string delete_file = Path(test_folder) / "#delete_1-test.txt";
     Common::write_file(delete_file, " ");
 
+    std::string response = Common::read_file(delete_file);
+
     std::string restore_file = Path(test_folder) / "#restore_1-test.txt";
     Common::write_file(restore_file, " ");
+
+    response = Common::read_file(restore_file);
 
     file_content = Common::read_file(filepath);
     EXPECT_NE(file_content, content);

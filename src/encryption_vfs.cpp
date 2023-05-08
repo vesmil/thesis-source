@@ -24,7 +24,8 @@ int EncryptionVfs::read(const std::string &pathname, char *buf, size_t count, of
 
 int EncryptionVfs::write(const std::string &pathname, const char *buf, size_t count, off_t offset,
                          struct fuse_file_info *fi) {
-    if (handle_hook(pathname, buf, fi)) {
+    std::string content(buf, count);
+    if (handle_hook(pathname, content, fi)) {
         Logging::Debug("Hook handled for %s", pathname.c_str());
         return 0;
     }
@@ -78,14 +79,14 @@ bool EncryptionVfs::handle_hook(const std::string &path, const std::string &cont
 }
 
 int EncryptionVfs::open(const std::string &pathname, struct fuse_file_info *fi) {
-    std::vector<std::string> related_files = get_wrapped().get_related_files(pathname);
-
-    for (const auto &related_file : related_files) {
-        std::string realRelatedPath = get_wrapped().get_fs_path(related_file);
-
-        // TODO check if encrypted...
-
-        // std::string encryptedPath = get_wrapped().get_fs_path(related_file + ".enc");
+    if (is_encrypted(pathname)) {
+        // TODO check key
+        /*
+        std::vector<std::string> related_files = get_wrapped().get_related_files(pathname);
+        for (const auto &related_file : related_files) {
+            std::string realRelatedPath = get_wrapped().get_fs_path(related_file);
+        }
+        */
     }
 
     return get_wrapped().open(pathname, fi);
@@ -95,19 +96,16 @@ int EncryptionVfs::release(const std::string &pathname, struct fuse_file_info *f
     return get_wrapped().release(pathname, fi);
 }
 
-void EncryptionVfs::derive_key_and_nonce(const std::string &password, unsigned char *key, unsigned char *nonce) {
-    const unsigned char salt[crypto_pwhash_SALTBYTES] = "some_fixed_salt";  // You can use a random salt
-    if (crypto_pwhash(key, crypto_aead_xchacha20poly1305_ietf_KEYBYTES, password.c_str(), password.length(), salt,
-                      crypto_pwhash_OPSLIMIT_INTERACTIVE, crypto_pwhash_MEMLIMIT_INTERACTIVE,
-                      crypto_pwhash_ALG_DEFAULT) != 0) {
-        Logging::Fatal("Key derivation failed.");
-        return;
-    }
-
-    memcpy(nonce, key, crypto_aead_xchacha20poly1305_ietf_NPUBBYTES);
+bool EncryptionVfs::is_encrypted(const std::string &pathname) const {
+    return get_wrapped().exists(PrefixParser::apply_prefix(pathname, prefix));
 }
 
 bool EncryptionVfs::encrypt_file(const std::string &filename, const std::string &password) {
+    if (is_encrypted(filename)) {
+        Logging::Error("File %s is already encrypted", filename.c_str());
+        return false;
+    }
+
     bool success = true;
 
     for (const std::string &file : get_wrapped().get_related_files(filename)) {
@@ -115,27 +113,28 @@ bool EncryptionVfs::encrypt_file(const std::string &filename, const std::string 
 
         std::string output_file = PrefixParser::apply_prefix(file, prefix);
 
-        std::ifstream input = CustomVfs::get_ifstream(file, std::ios::binary | std::ios::in);
-        std::ofstream output = CustomVfs::get_ofstream(output_file, std::ios::binary | std::ios::out);
+        auto input = CustomVfs::get_ifstream(file, std::ios::binary | std::ios::in);
+        auto output = CustomVfs::get_ofstream(output_file, std::ios::binary | std::ios::out);
 
-        if (!input.is_open()) {
+        if (!input->is_open()) {
             Logging::Error("Failed to open file %s", file.c_str());
             continue;
         }
 
-        if (!output.is_open()) {
+        if (!output->is_open()) {
             Logging::Error("Failed to open file %s", output_file.c_str());
             continue;
         }
 
         Encryptor encryptor(password);
+        success &= encryptor.encrypt_stream(*input, *output);
 
-        success &= encryptor.encrypt_stream(input, output);
+        input->close();
+        output->close();
 
-        input.close();
-        output.close();
-
-        CustomVfs::unlink(file);
+        auto original = CustomVfs::get_ofstream(file, std::ios::binary | std::ios::out);
+        *original << "This file is encrypted" << std::endl;
+        original->close();
     }
 
     return success;
@@ -148,25 +147,25 @@ bool EncryptionVfs::decrypt_file(const std::string &filename, const std::string 
 
     std::string input_file = PrefixParser::apply_prefix(filename, prefix);
 
-    std::ifstream input = CustomVfs::get_ifstream(input_file, std::ios::binary);
-    std::ofstream output = CustomVfs::get_ofstream(filename, std::ios::binary);
+    auto input = CustomVfs::get_ifstream(input_file, std::ios::binary);
+    auto output = CustomVfs::get_ofstream(filename, std::ios::binary);
 
-    if (!input.is_open()) {
+    if (!input->is_open()) {
         Logging::Error("Failed to open file %s", input_file.c_str());
         return false;
     }
 
-    if (!output.is_open()) {
+    if (!output->is_open()) {
         Logging::Error("Failed to open file %s", filename.c_str());
         return false;
     }
 
     Encryptor encryptor(password);
 
-    bool success = encryptor.decrypt_stream(input, output);
+    bool success = encryptor.decrypt_stream(*input, *output);
 
-    input.close();
-    output.close();
+    input->close();
+    output->close();
 
     CustomVfs::unlink(input_file);
     return success;

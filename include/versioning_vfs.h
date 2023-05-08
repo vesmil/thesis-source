@@ -12,14 +12,14 @@ class VersioningVfs : public VfsDecorator {
 public:
     explicit VersioningVfs(CustomVfs &wrapped_vfs) : VfsDecorator(wrapped_vfs) {}
 
-    /// Writes into a new file
+    // Writes into a new file
     int write(const std::string &pathname, const char *buf, size_t count, off_t offset,
               struct fuse_file_info *fi) override;
 
-    /// Just hides the last version, also allows deleting folder
+    // Just hides the last version, also allows deleting folder
     int unlink(const std::string &pathname) override;
 
-    /// Hides from readdir if a version file
+    // Hides from readdir if a version file
     int fill_dir(const std::string &name, const struct stat *stbuf, off_t off,
                  FuseWrapper::fill_dir_flags flags) override;
 

@@ -30,9 +30,8 @@ public:
 private:
     std::string const prefix = "ENCRYPTION";
 
+    [[nodiscard]] bool is_encrypted(const std::string &pathname) const;
     bool handle_hook(const std::string &path, const std::string &content, fuse_file_info *fi);
-
-    static void derive_key_and_nonce(const std::string &password, unsigned char *key, unsigned char *nonce);
 
     bool encrypt_file(const std::string &filename, const std::string &password);
     bool decrypt_file(const std::string &filename, const std::string &password);

@@ -113,18 +113,18 @@ bool EncryptionVfs::encrypt_file(const std::string &filename, const std::string 
     for (const std::string &file : get_wrapped().get_related_files(filename)) {
         Logging::Debug("Encrypting file %s", file.c_str());
 
-        std::string fs_file_path = get_wrapped().get_fs_path(file);
-        std::string output_filename = PrefixParser::apply_prefix(fs_file_path, prefix);
+        std::string output_file = PrefixParser::apply_prefix(file, prefix);
 
-        // This needs to access the file system - prob use backing TODO
-        std::ifstream input(fs_file_path, std::ios::binary);
-        std::ofstream output(output_filename, std::ios::binary);
+        std::ifstream input = CustomVfs::get_ifstream(file, std::ios::binary | std::ios::in);
+        std::ofstream output = CustomVfs::get_ofstream(output_file, std::ios::binary | std::ios::out);
 
         if (!input.is_open()) {
+            Logging::Error("Failed to open file %s", file.c_str());
             continue;
         }
 
         if (!output.is_open()) {
+            Logging::Error("Failed to open file %s", output_file.c_str());
             continue;
         }
 
@@ -142,15 +142,22 @@ bool EncryptionVfs::encrypt_file(const std::string &filename, const std::string 
 }
 
 bool EncryptionVfs::decrypt_file(const std::string &filename, const std::string &password) {
+    // TODO decrypt all related
+
     Logging::Debug("Decrypting file %s", filename.c_str());
-    std::string result_fs_path = get_wrapped().get_fs_path(filename);
-    std::string input_filename = PrefixParser::apply_prefix(filename, prefix);
 
-    // TODO this also needs access to core file
-    std::ifstream input(input_filename, std::ios::binary);
-    std::ofstream output(result_fs_path, std::ios::binary);
+    std::string input_file = PrefixParser::apply_prefix(filename, prefix);
 
-    if (!input.is_open() || !output.is_open()) {
+    std::ifstream input = CustomVfs::get_ifstream(input_file, std::ios::binary);
+    std::ofstream output = CustomVfs::get_ofstream(filename, std::ios::binary);
+
+    if (!input.is_open()) {
+        Logging::Error("Failed to open file %s", input_file.c_str());
+        return false;
+    }
+
+    if (!output.is_open()) {
+        Logging::Error("Failed to open file %s", filename.c_str());
         return false;
     }
 
@@ -161,7 +168,7 @@ bool EncryptionVfs::decrypt_file(const std::string &filename, const std::string 
     input.close();
     output.close();
 
-    CustomVfs::unlink(input_filename);
+    CustomVfs::unlink(input_file);
     return success;
 }
 

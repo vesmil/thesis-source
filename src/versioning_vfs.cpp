@@ -167,11 +167,6 @@ std::vector<std::string> VersioningVfs::subfiles(const std::string &pathname) co
 }
 
 void VersioningVfs::restore_version(const std::string &pathname, int version) {
-    int max_version = get_max_version(pathname);
-
-    std::string new_path = PrefixParser::apply_prefix(pathname, prefix, {std::to_string(max_version + 1)});
-    get_wrapped().rename(pathname, new_path, 0);
-
     std::string restored_path = PrefixParser::apply_prefix(pathname, prefix, {std::to_string(version)});
     get_wrapped().rename(restored_path, pathname, 0);
 

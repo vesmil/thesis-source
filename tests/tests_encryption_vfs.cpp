@@ -5,7 +5,7 @@
 
 #include "common.h"
 
-TEST(CustomVfs, pass_lock) {
+TEST(EncryptionVfs, pass_lock) {
     Common::clean_mountpoint();
 
     std::string test_folder = Path(TestConfig::inst().mountpoint) / "enc_folder";

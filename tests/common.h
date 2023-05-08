@@ -3,6 +3,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <sstream>
 #include <string>
 
 #include "custom_vfs.h"
@@ -41,22 +42,22 @@ inline void clean_mountpoint() {
     }
 }
 
-#include <fstream>
-#include <string>
-
 inline std::string read_file(const std::string& path) {
     std::ifstream file(path);
-    std::string content;
+    std::stringstream content;
     std::string line;
 
     if (file.is_open()) {
         while (std::getline(file, line)) {
-            content += line + '\n';
+            content << line;
+            if (!file.eof()) {
+                content << '\n';
+            }
         }
         file.close();
     }
 
-    return content;
+    return content.str();
 }
 
 inline bool write_file(const std::string& path, const std::string& content) {

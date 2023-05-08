@@ -58,7 +58,9 @@ public:
 
     // Misc
     [[nodiscard]] std::string get_fs_path(const std::string &pathname) const;
-    [[nodiscard]] std::string get_vfs_path(const std::string &pathname) const;
+
+    [[nodiscard]] std::ofstream get_ofstream(const std::string &path, std::ios_base::openmode mode) const;
+    [[nodiscard]] std::ifstream get_ifstream(const std::string &path, std::ios_base::openmode mode) const;
 
     [[nodiscard]] virtual std::vector<std::string> get_related_files(const std::string &pathname) const;
 

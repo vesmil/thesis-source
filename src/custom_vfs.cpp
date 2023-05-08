@@ -144,7 +144,8 @@ int CustomVfs::mkdir(const std::string &pathname, mode_t mode) {
 
 int CustomVfs::rmdir(const std::string &pathname) {
     for (const auto &entry : subfiles(pathname)) {
-        if (PrefixParser::is_prefixed(entry)) {
+        if (entry[0] == '#') {
+            // TODO if (PrefixParser::is_prefixed(entry)) {
             unlink(Path(pathname) / entry);
         }
     }
@@ -231,12 +232,12 @@ std::string CustomVfs::get_fs_path(const std::string &pathname) const {
     return (mount_path / pathname);
 }
 
-std::string CustomVfs::get_vfs_path(const std::string &pathname) const {
-    if (pathname.substr(0, mount_path.to_string().length()) != mount_path.to_string()) {
-        throw std::runtime_error("Path is not in the mounted directory");
-    }
+std::ifstream CustomVfs::get_ifstream(const std::string &path, std::ios_base::openmode mode) const {
+    return std::ifstream(to_backing(path), mode);
+}
 
-    return pathname.substr(mount_path.to_string().length());
+std::ofstream CustomVfs::get_ofstream(const std::string &path, std::ios_base::openmode mode) const {
+    return std::ofstream(to_backing(path), mode);
 }
 
 std::vector<std::string> CustomVfs::get_related_files(const std::string &pathname) const {

@@ -54,7 +54,6 @@ bool Encryptor::decrypt_string(const std::string &input, std::string &output) {
 }
 
 bool Encryptor::encrypt_stream(std::istream &input, std::ostream &output) {
-    // Derive key and nonce
     unsigned char key[crypto_aead_xchacha20poly1305_ietf_KEYBYTES];
     unsigned char nonce[crypto_aead_xchacha20poly1305_ietf_NPUBBYTES];
 

@@ -53,7 +53,10 @@ std::vector<std::string> PrefixParser::args_from_prefix(const std::string& prefi
 
 bool PrefixParser::is_prefixed(const std::string& path) {
     std::string base = Path::string_basename(path);
-    return std::count(base.begin(), base.end(), '#') % 2 == 0;
+    std::size_t hash_count = std::count(base.begin(), base.end(), '#');
+
+    // TODO
+    return hash_count % 2 == 0 && hash_count != 0;
 }
 
 std::string PrefixParser::get_nonprefixed(const std::string& prefixed_path) {

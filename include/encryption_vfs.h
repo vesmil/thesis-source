@@ -30,11 +30,11 @@ private:
 
     bool encrypt_file(const std::string &filename, const std::string &password);
     bool decrypt_file(const std::string &filename, const std::string &password);
-
     void encrypt_directory(const std::string &directory, const std::string &password);
     void encrypt_filename(const std::string &filename, const std::string &password);
 
-    void decrypt_directory_names(const std::string &directory, const std::string &password);
+    bool directory_command(const std::string &command, const std::string &path, const std::string &pass);
+    void decrypt_directory(const std::string &directory, const std::string &password);
     void decrypt_filename(const std::string &filename, const std::string &password);
 };
 

@@ -200,7 +200,7 @@ int CustomVfs::readdir(const std::string &pathname, off_t off, struct fuse_file_
 
 int CustomVfs::fill_dir(const std::string &name, const struct stat *stbuf, off_t off,
                         FuseWrapper::fill_dir_flags flags) {
-    if (PrefixParser::is_prefixed(name)) {
+    if (!PrefixParser::is_prefixed(name)) {
         return FuseWrapper::fill_dir(name, stbuf, off, flags);
     }
 
@@ -220,7 +220,8 @@ std::vector<std::string> CustomVfs::subfiles(const std::string &pathname) const 
 }
 
 bool CustomVfs::is_directory(const std::string &pathname) const {
-    return std::filesystem::is_directory(to_backing(pathname));
+    std::string backing_path = to_backing(pathname);
+    return std::filesystem::is_directory(backing_path);
 }
 
 std::string CustomVfs::to_backing(const std::string &pathname) const {

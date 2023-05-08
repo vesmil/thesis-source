@@ -38,8 +38,16 @@ bool validate_arguments(const boost::program_options::variables_map& vm,
     }
 
     std::string mountpoint = vm["mountpoint"].as<std::string>();
-    if (!std::filesystem::is_directory(mountpoint)) {
-        Logging::Warn("Mountpoint %s is not a directory, it will be created", mountpoint.c_str());
+
+    try {
+        if (!std::filesystem::is_directory(mountpoint)) {
+            Logging::Warn("Mountpoint %s is not a directory, it will be created", mountpoint.c_str());
+        }
+    } catch (...) {
+        Logging::Info("Couldn't decide whether %s is a directory.", mountpoint.c_str());
+        Logging::Fatal("Mountpoint %s is most likely still occupied by previous VFS.", mountpoint.c_str());
+
+        return false;
     }
 
     return true;

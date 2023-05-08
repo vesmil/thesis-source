@@ -51,13 +51,13 @@ TEST(EncryptionVfs, password_folder_lock) {
     Common::write_file(filepath2, content2);
 
     std::string pass = "test";
-    std::string passfile = Path(TestConfig::inst().mountpoint) / "#lockPass-enc_folder";
+    std::string passfile = Path(TestConfig::inst().mountpoint) / "#lockPass-enc_folder_2";
     Common::write_file(passfile, pass);
 
     std::string file_content = Common::read_file(filepath);
     EXPECT_NE(file_content, "Hello World!\n");
 
-    passfile = Path(TestConfig::inst().mountpoint) / "#unlockPass-enc_folder";
+    passfile = Path(TestConfig::inst().mountpoint) / "#unlockPass-enc_folder_2";
     Common::write_file(passfile, pass);
 
     file_content = Common::read_file(filepath);

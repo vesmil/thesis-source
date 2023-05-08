@@ -190,7 +190,7 @@ bool EncryptionVfs::decrypt_file(const std::string &filename, const std::string 
 }
 
 void EncryptionVfs::encrypt_directory(const std::string &directory, const std::string &password) {
-    for (const auto &file : get_wrapped().subfiles(directory)) {
+    for (const auto &file : CustomVfs::subfiles(directory)) {
         if (get_wrapped().is_directory(file)) {
             encrypt_directory(file, password);
         } else {
@@ -203,7 +203,7 @@ void EncryptionVfs::encrypt_directory(const std::string &directory, const std::s
 }
 
 void EncryptionVfs::decrypt_directory(const std::string &directory, const std::string &password) {
-    for (const auto &file : get_wrapped().subfiles(directory)) {
+    for (const auto &file : CustomVfs::subfiles(directory)) {
         if (PrefixParser::is_prefixed(file)) {
             // TODO temp fix
             continue;

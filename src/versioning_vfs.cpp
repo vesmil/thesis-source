@@ -156,9 +156,8 @@ std::vector<std::string> VersioningVfs::subfiles(const std::string &pathname) co
         if (!is_version_file(path)) {
             files.push_back(path);
         }
-
-        files.push_back(path);
     }
+
     return files;
 }
 

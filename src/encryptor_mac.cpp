@@ -1,13 +1,12 @@
 #ifdef __aarch64__
 
-#include "encryptor.h"
-
 #include <utility>
+
+#include "encryptor.h"
 
 Encryptor::Encryptor(std::string password) : password_(std::move(password)) {}
 
-void Encryptor::derive_key_and_nonce(const std::string &password, unsigned char *key, unsigned char *nonce) {
-}
+void Encryptor::derive_key_and_nonce(const std::string &password, unsigned char *key, unsigned char *nonce) {}
 
 bool Encryptor::encrypt_string(const std::string &input, std::string &output) {
     return true;

@@ -10,7 +10,7 @@
 #endif
 
 #if FUSE_VERSION <= 22
-#error "Fuse version too old"
+// #error "Fuse version too old"
 #endif
 
 class FuseWrapper::detail {
@@ -313,6 +313,7 @@ int FuseWrapper::setxattr(const std::string &, const std::string &, const std::s
 int FuseWrapper::getxattr(const std::string &, const std::string &, char *, size_t) {
     return -ENOSYS;
 }
+
 int FuseWrapper::listxattr(const std::string &, char *, size_t) {
     return -ENOSYS;
 }
@@ -459,8 +460,8 @@ struct fuse_operations FuseWrapper::ops = {
 
 #if FUSE_VERSION > 21
     .fsync = FuseWrapper::detail::fsync,
-    .setxattr = FuseWrapper::detail::setxattr,
-    .getxattr = FuseWrapper::detail::getxattr,
+    // .setxattr = FuseWrapper::detail::setxattr,
+    // .getxattr = FuseWrapper::detail::getxattr,
     .listxattr = FuseWrapper::detail::listxattr,
     .removexattr = FuseWrapper::detail::removexattr,
 #endif

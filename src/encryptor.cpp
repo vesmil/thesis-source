@@ -1,3 +1,5 @@
+#ifndef __aarch64__
+
 #include "encryptor.h"
 
 #include <utility>
@@ -92,3 +94,5 @@ bool Encryptor::decrypt_stream(std::istream &input, std::ostream &output) {
 
     return true;
 }
+
+#endif

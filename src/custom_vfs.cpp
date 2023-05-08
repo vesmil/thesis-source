@@ -2,7 +2,6 @@
 
 #include <dirent.h>
 #include <fcntl.h>
-#include <fuse_lowlevel.h>
 #include <sys/stat.h>
 #include <sys/statvfs.h>
 #include <unistd.h>

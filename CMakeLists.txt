@@ -19,6 +19,8 @@ find_package(fuse REQUIRED)
 find_package(Sodium REQUIRED)
 find_package(Boost COMPONENTS program_options REQUIRED)
 
+include_directories(/usr/local/include)
+
 # FUSE C++ wrapper
 add_subdirectory(libs)
 
@@ -26,7 +28,7 @@ add_subdirectory(libs)
 add_subdirectory(tools)
 
 # Sources
-set(CUSTOMVFS_SOURCES src/custom_vfs.cpp src/encryption_vfs.cpp src/versioning_vfs.cpp src/common/config.cpp src/encryptor.cpp src/common/logging.cpp src/common/path.cpp src/common/prefix_parser.cpp include/common/prefix_parser.h)
+set(CUSTOMVFS_SOURCES src/custom_vfs.cpp src/encryption_vfs.cpp src/versioning_vfs.cpp src/common/config.cpp src/encryptor.cpp src/common/logging.cpp src/common/path.cpp src/common/prefix_parser.cpp include/common/prefix_parser.h src/encryptor_mac.cpp)
 
 # CustomVFS library
 add_library(customvfs STATIC ${CUSTOMVFS_SOURCES})

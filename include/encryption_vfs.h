@@ -1,6 +1,9 @@
 #ifndef SRC_ENCRYPTION_VFS_H
 #define SRC_ENCRYPTION_VFS_H
 
+#include <fstream>
+#include <string>
+
 #include "sodium.h"
 #include "vfs_decorator.h"
 
@@ -34,6 +37,12 @@ private:
 
     void encrypt_directory(const std::string &directory, const std::string &password);
     void decrypt_directory(const std::string &directory, const std::string &password);
+
+    std::vector<std::string> prepare_files(const std::string &filename, bool with_related);
+    
+    std::pair<std::unique_ptr<std::ifstream>, std::unique_ptr<std::ofstream>> open_files(
+        const std::string &input_file, const std::string &output_file, std::ios_base::openmode input_mode,
+        std::ios_base::openmode output_mode);
 };
 
 #endif  // SRC_ENCRYPTION_VFS_H

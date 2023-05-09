@@ -154,6 +154,8 @@ std::vector<std::string> VersioningVfs::get_related_files(const std::string &pat
         version_files.push_back((parent / version_file).to_string());
     }
 
+    version_files.push_back(pathname);
+
     return version_files;
 }
 

@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 
 #include <filesystem>
-#include <fstream>
 
 #include "common.h"
 #include "hook-generation/encryption.h"

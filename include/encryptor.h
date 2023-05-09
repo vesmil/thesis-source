@@ -5,24 +5,30 @@
 #include <fstream>
 #include <iostream>
 #include <string>
-#include <vector>
 
 #include "sodium.h"
 
 class Encryptor {
 public:
-    explicit Encryptor(std::string password);
-
-    bool encrypt_string(const std::string &input, std::string &output);
-    bool decrypt_string(const std::string &input, std::string &output);
+    static Encryptor from_password(const std::string &password);
+    static Encryptor from_filepath(const std::string &filePath);
+    static Encryptor random();
 
     bool encrypt_stream(std::istream &input, std::ostream &output);
     bool decrypt_stream(std::istream &input, std::ostream &output);
 
-private:
-    static void derive_key_and_nonce(const std::string &password, unsigned char *key, unsigned char *nonce);
+    void generate_file(const std::string &filePath);
 
-    std::string password_;
+private:
+    Encryptor(const std::string &str, bool isPassword);
+    Encryptor();
+
+    void init_password(const std::string &password);
+
+    void init_file(const std::string &filePath);
+
+    unsigned char key[crypto_aead_xchacha20poly1305_ietf_KEYBYTES]{};
+    unsigned char nonce[crypto_aead_xchacha20poly1305_ietf_NPUBBYTES]{};
 };
 
 #endif  // SRC_ENCRYPTOR_H

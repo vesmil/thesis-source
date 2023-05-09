@@ -36,6 +36,29 @@ TEST(Prefix, parse_multiple) {
     EXPECT_EQ(resultVector2, args2);
 }
 
+TEST(Prefix, is_prefixed) {
+    EXPECT_TRUE(PrefixParser::is_prefixed("/test/something/#TEST-aaa-123-xxx#dir"));
+    EXPECT_TRUE(PrefixParser::is_prefixed("/test/something/#TEST-aaa-123-xxx##TEST2-bbb-456-yyy#dir"));
+    EXPECT_FALSE(PrefixParser::is_prefixed("/test/something/dir"));
+    EXPECT_FALSE(PrefixParser::is_prefixed("/test/something/#TEST#dir#"));
+}
+
+TEST(Prefix, remove_specific) {
+    std::string path = "/test/something/#TEST-aaa-123-xxx#dir";
+    std::string prefix = "TEST";
+
+    std::string result = PrefixParser::remove_specific_prefix(path, prefix);
+
+    EXPECT_EQ(result, "/test/something/dir");
+
+    std::string path2 = "/test/something/#TEST-aaa-123-xxx##TEST2-bbb-456-yyy#dir";
+    std::string prefix2 = "TEST2";
+
+    std::string result2 = PrefixParser::remove_specific_prefix(path2, prefix2);
+
+    EXPECT_EQ(result2, "/test/something/#TEST-aaa-123-xxx#dir");
+}
+
 TEST(Prefix, empty_arg) {
     std::string path = "/test/something/dir";
     std::string prefix = "TEST";

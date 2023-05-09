@@ -1,8 +1,5 @@
-//
-// Created by vesmil on 7.5.23.
-//
-
 #include "common/prefix_parser.h"
+
 std::string PrefixParser::apply_prefix(const std::string& path, const std::string& module_name,
                                        const std::vector<std::string>& args) {
     Path parent = Path(path).parent();
@@ -20,6 +17,16 @@ std::string PrefixParser::apply_prefix(const std::string& path, const std::strin
     }
 
     return parent / (module_prefix + "#" + basename);
+}
+
+std::string PrefixParser::remove_specific_prefix(std::string path, const std::string& prefix) {
+    auto prefix_start = path.find(prefix);
+    if (prefix_start == std::string::npos) {
+        return path;
+    }
+
+    auto prefix_end = path.find('#', prefix_start + prefix.size());
+    return path.substr(0, prefix_start - 1) + path.substr(prefix_end + 1);
 }
 
 std::vector<std::string> PrefixParser::args_from_prefix(const std::string& prefixed_path,
@@ -53,10 +60,11 @@ std::vector<std::string> PrefixParser::args_from_prefix(const std::string& prefi
 
 bool PrefixParser::is_prefixed(const std::string& path) {
     std::string base = Path::string_basename(path);
-    std::size_t hash_count = std::count(base.begin(), base.end(), '#');
 
-    // TODO
-    return hash_count % 2 == 0 && hash_count != 0;
+    std::size_t hash_count = std::count(base.begin(), base.end(), '#');
+    std::size_t hyphen_count = std::count(base.begin(), base.end(), '-');
+
+    return hash_count % 2 == 0 && hash_count > 0 && hyphen_count >= hash_count / 2;
 }
 
 std::string PrefixParser::get_nonprefixed(const std::string& prefixed_path) {
@@ -78,4 +86,17 @@ std::string PrefixParser::get_nonprefixed(const std::string& prefixed_path) {
     }
 
     return result;
+}
+
+bool PrefixParser::contains_prefix(const std::string& path, const std::string& module_name) {
+    std::string base = Path::string_basename(path);
+
+    if (!is_prefixed(path)) {
+        return false;
+    }
+
+    std::string prefix_1 = "#" + module_name + "#";
+    std::string prefix_2 = "#" + module_name + "-";
+
+    return base.find(prefix_1) != std::string::npos || base.find(prefix_2) != std::string::npos;
 }

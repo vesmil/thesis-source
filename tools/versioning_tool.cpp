@@ -3,44 +3,25 @@
 #include <iostream>
 #include <string>
 
+#include "../include/common/prefix_parser.h"
+
 namespace po = boost::program_options;
+
+static const std::string PREFIX = "VERSION";
 
 /**
  * Creates a hook file and waits for the response from the filesystem.
  */
 void create_command_file(std::string command, const std::string& filepath, const std::string& num = "") {
-    size_t pos = filepath.find_last_of("/\\");
-    std::string complete;
-
-    if (!num.empty()) {
-        command += "_" + num;
-    }
-
-    if (pos != std::string::npos) {
-        std::string path = filepath.substr(0, pos);
-        std::string file = filepath.substr(pos + 1);
-        complete = path + "/" + "#" + command + "-" + file;
-    } else {
-        complete = "#" + command + "-" + filepath;
-    }
+    auto complete = PrefixParser::apply_prefix(PREFIX, filepath, {std::move(command), num});
 
     std::ofstream out(complete);
+
     if (out.is_open()) {
         out << " ";
         out.close();
     } else {
         std::cerr << "Unable to complete command" << std::endl;
-        return;
-    }
-
-    std::ifstream in(complete);
-    if (in.is_open()) {
-        std::string line;
-        std::getline(in, line);
-        std::cout << line << std::endl;
-        in.close();
-    } else {
-        std::cerr << "Unable to get response" << std::endl;
         return;
     }
 

@@ -14,31 +14,24 @@ int VersioningVfs::write(const std::string &pathname, const char *buf, size_t co
     }
 
     int max_version = get_max_version(pathname);
+
     std::string new_version_path = PrefixParser::apply_prefix(pathname, prefix, {std::to_string(max_version + 1)});
     Logging::Debug("Saving old version of %s to %s", pathname.c_str(), new_version_path.c_str());
 
     int res = get_wrapped().write(pathname, buf, count, offset, fi);
 
     if (get_wrapped().copy_file(pathname, new_version_path) == -1) {
-        Logging::Error("Failed to rename %s to %s", pathname.c_str(), new_version_path.c_str());
+        Logging::Error("Failed to store version of %s to %s", pathname.c_str(), new_version_path.c_str());
         return -1;
     }
 
     return res;
 }
 
-int VersioningVfs::unlink(const std::string &pathname) {
-    int max_version = get_max_version(pathname);
-    std::string stored_path = PrefixParser::apply_prefix(pathname, prefix, {std::to_string(max_version + 1)});
-
-    Logging::Debug("Moved old version of %s to %s", pathname.c_str(), stored_path.c_str());
-    return get_wrapped().rename(pathname, stored_path, 0);
-}
-
 int VersioningVfs::get_max_version(const std::string &pathname) {
     int max_version = 0;
 
-    for (const std::string &version_file : list_helper_files(pathname)) {
+    for (const std::string &version_file : get_helper_names(pathname)) {
         std::string version_string = PrefixParser::args_from_prefix(version_file, prefix)[0];
         max_version = std::max(max_version, std::stoi(version_string));
     }
@@ -47,32 +40,21 @@ int VersioningVfs::get_max_version(const std::string &pathname) {
 }
 
 bool VersioningVfs::handle_hook(const std::string &pathname, struct fuse_file_info *fi) {
-    std::string filename = Path::string_basename(pathname);
-
-    if (filename[0] != '#') {
+    if (!PrefixParser::contains_prefix(pathname, prefix)) {
         return false;
     }
 
-    auto dashPos = filename.find('-');
-    if (dashPos == std::string::npos) {
+    auto nonPrefixed = PrefixParser::remove_specific_prefix(pathname, prefix);
+    auto args = PrefixParser::args_from_prefix(pathname, prefix);
+
+    if (args.size() == 2) {
+        return handle_versioned_command(args[0], args[1], nonPrefixed, pathname, fi);
+    } else if (args.size() == 1) {
+        return handle_non_versioned_command(args[0], nonPrefixed, pathname);
+    } else {
+        Logging::Error("Invalid number of arguments in versioning prefix: %s", pathname.c_str());
         return false;
     }
-
-    std::string command = filename.substr(1, dashPos - 1);
-    std::string arg = filename.substr(dashPos + 1);
-
-    Path parent = Path(pathname).parent();
-
-    auto underscorePos = command.find('_');
-
-    if (underscorePos != std::string::npos) {
-        auto subArg = command.substr(underscorePos + 1);
-        command = command.substr(0, underscorePos);
-
-        return handle_versioned_command(command, subArg, (parent / arg).to_string(), pathname, fi);
-    }
-
-    return handle_non_versioned_command(command, (parent / arg).to_string(), pathname, fi);
 }
 
 bool VersioningVfs::handle_versioned_command(const std::string &command, const std::string &subArg,
@@ -93,41 +75,22 @@ bool VersioningVfs::handle_versioned_command(const std::string &command, const s
 }
 
 bool VersioningVfs::handle_non_versioned_command(const std::string &command, const std::string &arg_path,
-                                                 const std::string &pathname, struct fuse_file_info *fi) {
+                                                 const std::string &pathname) {
     if (command == "deleteAll") {
         delete_all_versions(arg_path);
         Logging::Info("Deleted all versions of file %s\n", arg_path.c_str());
         return true;
 
     } else if (command == "list") {
-        auto versions = list_helper_files(arg_path);
+        auto versions = get_helper_names(arg_path);
 
-        Logging::Info("Listed versions of file %s\n", arg_path.c_str());
-
-        // TODO write to a file
-        for (const std::string &version : versions) {
-            printf("%s\n", version.c_str());
-        }
+        // write all to pathname
+        // auto stream = get_wrapped().get_ifstream(pathname)
 
         return true;
     }
 
     return false;
-}
-
-std::vector<std::string> VersioningVfs::list_helper_files(const std::string &pathname) const {
-    std::vector<std::string> path_files = get_wrapped().subfiles(Path::string_parent(pathname));
-    std::vector<std::string> version_files;
-
-    for (const std::string &filename : path_files) {
-        if (is_version_file(filename)) {
-            if (Path::string_basename(PrefixParser::get_nonprefixed(filename)) == Path::string_basename(pathname)) {
-                version_files.push_back(filename);
-            }
-        }
-    }
-
-    return version_files;
 }
 
 void VersioningVfs::delete_version(const std::string &pathname, int version) {
@@ -168,12 +131,26 @@ void VersioningVfs::restore_version(const std::string &pathname, int version) {
     Logging::Info("Restored version %d of file %s", version, pathname.c_str());
 }
 
+std::vector<std::string> VersioningVfs::get_helper_names(const std::string &pathname) const {
+    std::vector<std::string> path_files = get_wrapped().subfiles(Path::string_parent(pathname));
+    std::vector<std::string> version_files;
+
+    for (const std::string &filename : path_files) {
+        if (is_version_file(filename)) {
+            if (Path::string_basename(PrefixParser::get_nonprefixed(filename)) == Path::string_basename(pathname)) {
+                version_files.push_back(filename);
+            }
+        }
+    }
+
+    return version_files;
+}
+
 std::vector<std::string> VersioningVfs::get_related_files(const std::string &pathname) const {
     Path parent = Path(pathname).parent();
     std::vector<std::string> version_files;
 
-    for (auto &version_file : list_helper_files(pathname)) {
-        version_file = PrefixParser::get_nonprefixed(version_file);
+    for (auto &version_file : get_helper_names(pathname)) {
         version_files.push_back((parent / version_file).to_string());
     }
 
@@ -182,7 +159,10 @@ std::vector<std::string> VersioningVfs::get_related_files(const std::string &pat
 
 void VersioningVfs::delete_all_versions(const std::string &base_name) {
     Path parent = Path(base_name).parent();
-    for (const auto &version_file : list_helper_files(base_name)) {
-        get_wrapped().unlink((parent / version_file).to_string());
+
+    for (const auto &version_file : get_related_files(base_name)) {
+        get_wrapped().unlink(version_file);
     }
+
+    get_wrapped().unlink(base_name);
 }

@@ -5,8 +5,12 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <utility>
+
+#include "../include/common/prefix_parser.h"
 
 namespace po = boost::program_options;
+static const std::string PREFIX = "ENCRYPTION";
 
 /**
  * Sets terminal echo - used to hide password input.
@@ -33,43 +37,49 @@ std::string get_password() {
     return password;
 }
 
+bool perform_command(std::string command, const std::string& filename) {
+    std::string prefixed_file = PrefixParser::apply_prefix(PREFIX, filename, {std::move(command)});
+
+    std::ofstream out(prefixed_file);
+    if (out.is_open()) {
+        out << " ";
+        out.close();
+    } else {
+        std::cerr << "Unable to perform command" << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
+bool perform_command_arg(const std::string& command, const std::string& filename, const std::string& arg) {
+    std::string prefixed_file = PrefixParser::apply_prefix(PREFIX, filename, {command, arg});
+
+    std::ofstream out(prefixed_file);
+    if (out.is_open()) {
+        out << " ";
+        out.close();
+    } else {
+        std::cerr << "Unable to perform command" << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
 /**
  * Writes password to file.
  */
-void write_password_to_file(const std::string& command_prefix, const std::string& filename,
-                            const std::string& password) {
-    size_t pos = filename.find_last_of("/\\");
-    std::string complete;
+void password_command(const std::string& command_prefix, const std::string& filename, const std::string& password) {
+    std::string prefixed_file = PrefixParser::apply_prefix(PREFIX, filename, {command_prefix});
 
-    if (pos != std::string::npos) {
-        std::string path = filename.substr(0, pos);
-        std::string file = filename.substr(pos + 1);
-        complete = path + "/" + command_prefix + file;
-    } else {
-        complete = command_prefix + filename;
-    }
-
-    std::ofstream out(complete);
+    std::ofstream out(prefixed_file);
     if (out.is_open()) {
         out << password;
         out.close();
     } else {
-        std::cerr << "Unable to complete command" << std::endl;
-        return;
+        std::cerr << "Unable to unlock file" << std::endl;
     }
-
-    std::ifstream in(complete);
-    if (in.is_open()) {
-        std::string line;
-        std::getline(in, line);
-        std::cout << line << std::endl;
-        in.close();
-    } else {
-        std::cerr << "Unable to get response" << std::endl;
-        return;
-    }
-
-    std::remove(complete.c_str());
 }
 
 bool verify_args(const po::variables_map& vm) {
@@ -93,6 +103,10 @@ bool verify_args(const po::variables_map& vm) {
         return false;
     }
 
+    if (vm.count("set-key-path") && vm.count("generate") || vm.count("set-key-path") && vm.count("key")) {
+        std::cout << "Cannot set key path and generate key or use custom key at the same time" << std::endl;
+    }
+
     return true;
 }
 
@@ -105,7 +119,9 @@ bool verify_args(const po::variables_map& vm) {
  *  ./encryption --lock <file>
  *  ./encryption --lock <file> --key <key>
  *  ./encryption --unlock <file> --key <key>
+ *
  *  ./encryption --generate <file>
+ *  ./encryption --set-key-path <file>
  */
 int main(int argc, char* argv[]) {
     try {
@@ -114,7 +130,9 @@ int main(int argc, char* argv[]) {
             ("unlock,u", po::value<std::string>(), "unlock a file")                             //
             ("lock,l", po::value<std::string>(), "lock a file")                                 //
             ("key,k", po::value<std::string>(), "custom key to use for encryption/decryption")  //
-            ("generate,g", po::value<std::string>(), "generate a key");
+
+            ("set-key-path,s", po::value<std::string>(), "sets a default path for key")  //
+            ("generate,g", po::value<std::string>(), "generate a key into chosen file");
 
         po::variables_map vm;
         po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -126,24 +144,39 @@ int main(int argc, char* argv[]) {
         }
 
         std::string password;
-        if (!vm.count("key")) {
+
+        std::string key = vm["key"].as<std::string>();
+        bool use_key = vm.count("key");
+
+        if (!use_key) {
             std::cout << "Enter password (or leave empty for key): ";
             password = get_password();
-
-            if (password.empty()) {
-                std::cout << "Default key will be used" << std::endl;
+        } else if (vm.count("generate")) {
+            std::string file = vm["generate"].as<std::string>();
+            if (!perform_command("generate", file)) {
+                return 2;
             }
+
+            key = file;
         }
 
-        // TODO handle key and generate
-        if (vm.count("unlock")) {
+        if (vm.count("set-key-path")) {
+            std::string file = vm["set-key-path"].as<std::string>();
+            perform_command("setKeyPath", file);
+        } else if (vm.count("unlock")) {
             std::string file = vm["unlock"].as<std::string>();
-            write_password_to_file("#unlockPass-", file, password);
-        }
-
-        if (vm.count("lock")) {
+            if (use_key) {
+                perform_command_arg("unlock", file, key);
+            } else {
+                password_command("unlock", file, password);
+            }
+        } else if (vm.count("lock")) {
             std::string file = vm["lock"].as<std::string>();
-            write_password_to_file("#lockPass-", file, password);
+            if (vm.count("key")) {
+                perform_command_arg("lock", file, key);
+            } else {
+                password_command("lock", file, password);
+            }
         }
 
     } catch (std::exception& e) {

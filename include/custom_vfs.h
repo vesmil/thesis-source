@@ -7,20 +7,10 @@
 #include "common/path.h"
 #include "fuse_wrapper.h"
 
-/**
- * A custom filesystem based on storing files into backing folder
- *
- * It uses the FuseWrapper to provide a FUSE interface
- */
+/// A custom virtual filesystem based on storing files into a backing folder
 class CustomVfs : public FuseWrapper {
 public:
-    /**
-     * Create a new filesystem from a given directory
-     * The directory will be copied into the filesystem
-     *
-     * @param path The path to the directory
-     * @param create_test Whether to create example files
-     */
+    /// Create a new CustomVfs instance prepared with proper path to mount and backing folder
     explicit CustomVfs(const std::string &path, const std::string &backing = "");
 
     void init() override;
@@ -57,26 +47,37 @@ public:
     int releasedir(const std::string &pathname, struct fuse_file_info *fi) override;
 
     // Misc
-    [[nodiscard]] std::string get_fs_path(const std::string &pathname) const;
-
+    /// Returns a file stream for writing
     [[nodiscard]] std::unique_ptr<std::ofstream> get_ofstream(const std::string &path,
                                                               std::ios_base::openmode mode) const;
+
+    /// Returns a file stream for reading
     [[nodiscard]] std::unique_ptr<std::ifstream> get_ifstream(const std::string &path,
                                                               std::ios_base::openmode mode) const;
 
+    /// Returns a list of files (file-paths) which are related to a given file
     [[nodiscard]] virtual std::vector<std::string> get_related_files(const std::string &pathname) const;
 
-    int copy_file(const std::string &source, const std::string &destination);
+    /// Creates a copy of a file
+    virtual int copy_file(const std::string &source, const std::string &destination);
 
+    /// Returns a names of files in a directory
     [[nodiscard]] virtual std::vector<std::string> subfiles(const std::string &pathname) const;
+
+    /// Checks whether a path is a directory
     [[nodiscard]] bool is_directory(const std::string &pathname) const;
+
+    /// Checks whether a file or directory exists
     [[nodiscard]] bool exists(const std::string &pathname) const;
 
 private:
-    // Converts a path to its real path in the backing directory
+    /// Converts a path to its real path in the backing directory
     [[nodiscard]] std::string to_backing(const std::string &pathname) const;
+
+    /// Finds which backing directory could be used
     [[nodiscard]] static Path initial_backing_path(const std::string &backing, const std::string &vfs_name);
 
+    /// Wraps a POSIX call and returns the result or -errno
     template <typename Func, typename... Args>
     static int posix_call_result(Func operation, Args... args) {
         int result = operation(args...);
@@ -86,7 +87,10 @@ private:
         return result;
     }
 
+    /// Directory which is used for storing data
     Path backing_dir;
+
+    /// Directory where the filesystem is mounted
     const Path mount_path;
 };
 

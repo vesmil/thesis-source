@@ -13,29 +13,27 @@ class EncryptionVfs : public VfsDecorator {
 public:
     explicit EncryptionVfs(CustomVfs &wrapped_vfs);
 
-    int read(const std::string &pathname, char *buf, size_t count, off_t offset, struct fuse_file_info *fi) override;
     int write(const std::string &pathname, const char *buf, size_t count, off_t offset,
               struct fuse_file_info *fi) override;
-
-    int readdir(const std::string &pathname, off_t off, struct fuse_file_info *fi, readdir_flags flags) override;
 
     int open(const std::string &pathname, struct fuse_file_info *fi) override;
     int release(const std::string &pathname, struct fuse_file_info *fi) override;
 
 private:
+    /// Prefix for the encrypted files used by PrefixParser
     std::string const prefix = "ENCRYPTION";
 
+    /// Checks whether path corresponds to an encrypted file
     [[nodiscard]] bool is_encrypted(const std::string &pathname) const;
+
+    /// Handles encryption hooks
     bool handle_hook(const std::string &path, const std::string &content, fuse_file_info *fi);
 
-    bool encrypt_file(const std::string &filename, const std::string &password);
-    bool decrypt_file(const std::string &filename, const std::string &password);
-    void encrypt_directory(const std::string &directory, const std::string &password);
-    void encrypt_filename(const std::string &filename, const std::string &password);
+    bool encrypt_file(const std::string &filename, const std::string &password, bool with_related = true);
+    bool decrypt_file(const std::string &filename, const std::string &password, bool with_related = true);
 
-    bool directory_command(const std::string &command, const std::string &path, const std::string &pass);
+    void encrypt_directory(const std::string &directory, const std::string &password);
     void decrypt_directory(const std::string &directory, const std::string &password);
-    void decrypt_filename(const std::string &filename, const std::string &password);
 };
 
 #endif  // SRC_ENCRYPTION_VFS_H

@@ -228,10 +228,6 @@ std::string CustomVfs::to_backing(const std::string &pathname) const {
     return backing_dir / pathname;
 }
 
-std::string CustomVfs::get_fs_path(const std::string &pathname) const {
-    return (mount_path / pathname);
-}
-
 std::unique_ptr<std::ifstream> CustomVfs::get_ifstream(const std::string &path, std::ios_base::openmode mode) const {
     return std::make_unique<std::ifstream>(to_backing(path), mode);
 }

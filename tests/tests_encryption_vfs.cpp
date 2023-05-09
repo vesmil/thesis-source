@@ -4,6 +4,7 @@
 #include <fstream>
 
 #include "common.h"
+#include "hook-generation/encryption.h"
 
 TEST(EncryptionVfs, password_file_lock) {
     Common::clean_mountpoint();
@@ -20,14 +21,14 @@ TEST(EncryptionVfs, password_file_lock) {
     EXPECT_EQ(file_content, content);
 
     std::string pass = "test";
-    std::string passfile = Path(test_folder) / "#lockPass-test.txt";
+    std::string passfile = Encryption::lock_pass_hook(filepath);
     Common::write_file(passfile, pass);
 
     file_content = Common::read_file(filepath);
 
     EXPECT_NE(file_content, "Hello World!\n");
 
-    passfile = Path(test_folder) / "#unlockPass-test.txt";
+    passfile = Encryption::unlock_pass_hook(filepath);
     Common::write_file(passfile, pass);
 
     file_content = Common::read_file(filepath);
@@ -51,13 +52,13 @@ TEST(EncryptionVfs, password_folder_lock) {
     Common::write_file(filepath2, content2);
 
     std::string pass = "test";
-    std::string passfile = Path(TestConfig::inst().mountpoint) / "#lockPass-enc_folder_2";
+    std::string passfile = Encryption::lock_pass_hook(filepath);
     Common::write_file(passfile, pass);
 
     std::string file_content = Common::read_file(filepath);
     EXPECT_NE(file_content, "Hello World!\n");
 
-    passfile = Path(TestConfig::inst().mountpoint) / "#unlockPass-enc_folder_2";
+    passfile = Encryption::unlock_pass_hook(filepath);
     Common::write_file(passfile, pass);
 
     file_content = Common::read_file(filepath);

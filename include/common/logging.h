@@ -72,6 +72,11 @@ private:
         std::string format_str = get_prefix(level) + " " + format + "\n";
         fprintf(stderr, format_str.c_str(), args...);
     }
+
+    static void Log(Level level, const char *format) {
+        std::string format_str = get_prefix(level) + " " + format + "\n";
+        fprintf(stderr, "%s", format_str.c_str());
+    }
 };
 
 #endif  // SRC_LOGGING_H

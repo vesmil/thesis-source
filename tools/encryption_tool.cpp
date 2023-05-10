@@ -7,7 +7,7 @@
 #include <string>
 #include <utility>
 
-#include "../include/common/prefix_parser.h"
+#include "common/prefix_parser.h"
 
 namespace po = boost::program_options;
 static const std::string PREFIX = "ENCRYPTION";

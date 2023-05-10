@@ -3,7 +3,7 @@
 #include <iostream>
 #include <string>
 
-#include "../include/common/prefix_parser.h"
+#include "common/prefix_parser.h"
 
 namespace po = boost::program_options;
 

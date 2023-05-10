@@ -19,9 +19,6 @@ include_directories(/usr/local/include)
 # FUSE C++ wrapper
 add_subdirectory(libs)
 
-# Tools
-add_subdirectory(tools)
-
 # Sources
 set(CUSTOMVFS_SOURCES src/custom_vfs.cpp src/encryption_vfs.cpp src/versioning_vfs.cpp src/common/config.cpp src/encryptor.cpp src/common/path.cpp src/common/prefix_parser.cpp include/common/prefix_parser.h src/encryptor_mac.cpp)
 
@@ -36,6 +33,9 @@ set_target_properties(customvfs PROPERTIES LINK_FLAGS "${FUSE_LDFLAGS_OTHER}")
 # CustomVFS executable
 add_executable(customvfs_exec src/main.cpp)
 target_link_libraries(customvfs_exec PRIVATE customvfs)
+
+# Tools
+add_subdirectory(tools)
 
 # Tests
 add_subdirectory(tests)

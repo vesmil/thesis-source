@@ -12,7 +12,7 @@ namespace Config {
 /// Class to load configuration from a file
 class Parser {
 public:
-    static bool ParseFile(const std::string &path);
+    // static bool ParseFile(const std::string &path);
 };
 
 struct Base {

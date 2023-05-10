@@ -41,30 +41,30 @@ public:
     };
 
 private:
-    template <typename... Args>
-    static void Log(Level level, const char *format, Args... args) {
-        std::string prefix = "[UNKNOWN]";
-
+    static std::string get_prefix(Level level) {
         switch (level) {
             case Level::DEBUG:
-                prefix = "[DEBUG]";
-                break;
+                return "[DEBUG]";
             case Level::INFO:
-                prefix = "[INFO]";
-                break;
+                return "[INFO]";
             case Level::WARN:
-                prefix = "[WARN]";
-                break;
+                return "[WARN]";
             case Level::ERROR:
-                prefix = "[ERROR]";
-                break;
+                return "[ERROR]";
             case Level::FATAL:
-                prefix = "[FATAL]";
-                break;
+                return "[FATAL]";
         }
+    }
 
-        std::string format_str = prefix + " " + format + "\n";
+    template <typename... Args>
+    static void Log(Level level, const char *format, Args... args) {
+        std::string format_str = get_prefix(level) + " " + format + "\n";
         printf(format_str.c_str(), args...);
+    }
+
+    template <typename...>
+    static void Log(Level level, const std::string &format) {
+        Log(level, "%s", format.c_str());
     }
 };
 

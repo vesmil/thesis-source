@@ -20,7 +20,7 @@ include_directories(/usr/local/include)
 add_subdirectory(libs)
 
 # Sources
-set(CUSTOMVFS_SOURCES src/custom_vfs.cpp src/encryption_vfs.cpp src/versioning_vfs.cpp src/common/config.cpp src/encryptor.cpp src/common/path.cpp src/common/prefix_parser.cpp include/common/prefix_parser.h src/encryptor_mac.cpp)
+set(CUSTOMVFS_SOURCES src/custom_vfs.cpp src/encryption_vfs.cpp src/versioning_vfs.cpp src/encryptor.cpp src/common/path.cpp src/common/prefix_parser.cpp include/common/prefix_parser.h src/encryptor_mac.cpp)
 
 # CustomVFS library
 add_library(customvfs STATIC ${CUSTOMVFS_SOURCES})

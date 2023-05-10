@@ -348,8 +348,5 @@ bool EncryptionVfs::is_hook(const std::string &basicString) {
     if (!PrefixParser::contains_prefix(basicString, prefix)) {
         return false;
     }
-
-    // TODO mby more precise
-
     return true;
 }

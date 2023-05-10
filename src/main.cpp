@@ -2,7 +2,6 @@
 #include <filesystem>
 #include <iostream>
 
-#include "common/config.h"
 #include "common/logging.h"
 #include "custom_vfs.h"
 #include "encryption_vfs.h"
@@ -118,7 +117,7 @@ int main(int argc, char* argv[]) {
     }
 
     if (vm.count("config")) {
-        Config::Parser::ParseFile(vm["config"].as<std::string>());
+        // Config::Parser::ParseFile(vm["config"].as<std::string>());
         Logging::Info("Sorry, config is not implemented yet.");
     }
 

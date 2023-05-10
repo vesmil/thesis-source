@@ -33,23 +33,32 @@ private:
     /// Checks whether path corresponds to an encrypted file
     [[nodiscard]] bool is_encrypted(const std::string &pathname) const;
 
-    /// Handles encryption hooks - returns whether it was hook (reference tells wheter it wass successful)
-    bool handle_hook(const std::string &path, const std::string &content);
+    bool encrypt_file(const std::string &filename, const Encryptor &encryptor, bool with_related, bool using_key);
+    bool decrypt_file(const std::string &filename, const Encryptor &encryptor, bool with_related, bool using_key);
 
-    bool encrypt_file(const std::string &filename, Encryptor &encryptor, bool with_related, bool using_key);
-    bool decrypt_file(const std::string &filename, Encryptor &encryptor, bool with_related, bool using_key);
-
-    bool encrypt_directory(const std::string &directory, Encryptor &encryptor, bool using_key);
-    bool decrypt_directory(const std::string &directory, Encryptor &encryptor, bool using_key);
+    bool encrypt_directory(const std::string &directory, const Encryptor &encryptor, bool using_key);
+    bool decrypt_directory(const std::string &directory, const Encryptor &encryptor, bool using_key);
 
     bool get_default_key_encryptor(Encryptor &encryptor);
 
     std::vector<std::string> prepare_files(const std::string &filename, bool with_related);
 
-    std::pair<std::unique_ptr<std::ifstream>, std::unique_ptr<std::ofstream>> open_files(
-        const std::string &input_file, const std::string &output_file, std::ios_base::openmode input_mode,
-        std::ios_base::openmode output_mode);
+    std::pair<std::unique_ptr<std::ifstream>, std::unique_ptr<std::ofstream>> prepare_streams(
+        const std::string &input_file, const std::string &output_file);
+
+    /// Handles encryption hooks - returns whether it was successful
+    bool handle_hook(const std::string &path, const std::string &content);
     bool is_hook(const std::string &basicString);
+
+    bool handle_single_arg(const std::string &non_prefixed, const std::string &arg, const std::string &content,
+                           bool is_dir);
+    bool handle_double_arg(const std::string &non_prefixed, const std::string &arg, const std::string &key_path_arg,
+                           bool is_dir);
+
+    bool handle_encryption_action(const std::string &non_prefixed, const std::string &arg, const Encryptor &encryptor,
+                                  bool is_dir, bool use_key_file);
+    bool generate_encryption_file(const std::string &non_prefixed);
+    bool set_default_key(const std::string &key_path_arg);
 };
 
 #endif  // SRC_ENCRYPTION_VFS_H

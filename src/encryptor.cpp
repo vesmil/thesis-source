@@ -74,7 +74,7 @@ void Encryptor::generate_file(std::ostream &fileStream) {
     }
 }
 
-bool Encryptor::encrypt_stream(std::istream &input, std::ostream &output) {
+bool Encryptor::encrypt_stream(std::istream &input, std::ostream &output) const {
     std::vector<unsigned char> buf(std::istreambuf_iterator<char>(input), {});
 
     std::vector<unsigned char> encrypted(buf.size() + crypto_aead_xchacha20poly1305_ietf_ABYTES);
@@ -87,7 +87,7 @@ bool Encryptor::encrypt_stream(std::istream &input, std::ostream &output) {
     return true;
 }
 
-bool Encryptor::decrypt_stream(std::istream &input, std::ostream &output) {
+bool Encryptor::decrypt_stream(std::istream &input, std::ostream &output) const {
     std::vector<unsigned char> buf(std::istreambuf_iterator<char>(input), {});
 
     if (buf.size() < crypto_aead_xchacha20poly1305_ietf_ABYTES) {

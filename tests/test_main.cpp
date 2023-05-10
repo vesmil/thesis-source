@@ -7,6 +7,7 @@
 int main(int argc, char** argv) {
     bool no_fuse = false;
 
+    // Mountpoint or no-fuse has to be provided
     for (int i = 0; i < argc; i++) {
         if (std::string(argv[i]) == "--mountpoint" || std::string(argv[i]) == "-m") {
             if (i + 1 < argc) {
@@ -28,7 +29,7 @@ int main(int argc, char** argv) {
             for (int j = i; j < argc; j++) {
                 argv[j] = argv[j + 1];
             }
-            
+
             break;
         }
     }
@@ -39,6 +40,7 @@ int main(int argc, char** argv) {
 
     testing::InitGoogleTest(&argc, argv);
 
+    // Remove tests that require fuse
     if (no_fuse) {
         testing::GTEST_FLAG(filter) = "-EncryptionVfs.*:VersioningVfs.*:CustomVfs.*";
     }

@@ -4,34 +4,43 @@
 #include <cstdio>
 #include <string>
 
-/// Logging isn't visible with normal usage - it should use file instead
+/**
+ *  Placeholder class for logging
+ * @note Should be replace with proper logging library in the future
+ */
 class Logging {
 public:
+    ///  Log a formatted message with info level
     template <typename... Args>
     static void Info(const char *format, Args... args) {
         Log(Level::INFO, format, args...);
     }
 
+    /// @brief Log a formatted message with debug level
     template <typename... Args>
     static void Debug(const char *format, Args... args) {
         Log(Level::DEBUG, format, args...);
     }
 
+    /// @brief Log a formatted message with warn level
     template <typename... Args>
     static void Warn(const char *format, Args... args) {
         Log(Level::WARN, format, args...);
     }
 
+    /// @brief Log a formatted message with error level
     template <typename... Args>
     static void Error(const char *format, Args... args) {
         Log(Level::ERROR, format, args...);
     }
 
+    /// @brief Log a formatted message with fatal level
     template <typename... Args>
     static void Fatal(const char *format, Args... args) {
         Log(Level::FATAL, format, args...);
     }
 
+    /// @brief Supported logging levels
     enum class Level {
         DEBUG,
         INFO,
@@ -54,17 +63,14 @@ private:
             case Level::FATAL:
                 return "[FATAL]";
         }
+
+        return "[UNKNOWN]";
     }
 
     template <typename... Args>
     static void Log(Level level, const char *format, Args... args) {
         std::string format_str = get_prefix(level) + " " + format + "\n";
-        printf(format_str.c_str(), args...);
-    }
-
-    template <typename...>
-    static void Log(Level level, const std::string &format) {
-        Log(level, "%s", format.c_str());
+        fprintf(stderr, format_str.c_str(), args...);
     }
 };
 

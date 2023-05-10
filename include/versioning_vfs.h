@@ -29,34 +29,34 @@ protected:
     [[nodiscard]] std::vector<std::string> get_related_files(const std::string &pathname) const override;
 
 private:
-    /// Prefix for the version files used by PrefixParser
+    /// @brief Prefix for the version files used by PrefixParser
     std::string const prefix = Config::versioning.prefix;
 
-    /// Lists all version file names corresponding to a non-prefixed path
+    /// @brief Lists all version file names corresponding to a non-prefixed path
     [[nodiscard]] std::vector<std::string> get_helper_names(const std::string &pathname) const;
 
-    /// Checks whether path corresponds to a version file
+    /// @brief Checks whether path corresponds to a version file
     [[nodiscard]] bool is_version_file(const std::string &pathname) const;
 
-    /// Get maximum version for non-prefix path
+    /// @brief Get maximum version for non-prefix path
     [[nodiscard]] int get_max_version(const std::string &pathname);
 
-    /// Handle versioning hooks
+    /// @brief Handle versioning hooks
     bool handle_hook(const std::string &pathname);
 
-    /// Sets previous version as the current
+    /// @brief Sets previous version as the current
     void restore_version(const std::string &pathname, int version);
 
-    /// Deletes a version file
+    /// @brief Deletes a version file
     void delete_version(const std::string &pathname, int version);
 
-    /// Handles hook with version number
+    /// @brief Handles hook with version number
     bool handle_versioned_command(const std::string &command, const std::string &subArg, const std::string &arg_path);
 
-    /// Handles hook without version number
+    /// @brief Handles hook without version number
     bool handle_non_versioned_command(const std::string &command, const std::string &arg_path);
 
-    /// Deletes all versions of a file
+    /// @brief Deletes all versions of a file
     void delete_all_versions(const std::string &base_name);
 };
 

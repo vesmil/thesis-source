@@ -1,6 +1,7 @@
 #include "versioning_vfs.h"
 
 #include <algorithm>
+#include <fstream>
 
 #include "common/config.h"
 #include "common/logging.h"
@@ -86,8 +87,11 @@ bool VersioningVfs::handle_non_versioned_command(const std::string &command, con
     } else if (command == "list") {
         auto versions = get_helper_names(arg_path);
 
-        // write all to pathname
-        // auto stream = get_wrapped().get_ifstream(pathname)
+        auto stream = CustomVfs::get_ofstream(arg_path, std::ios::binary);
+        for (const auto &version : versions) {
+            *stream << version << std::endl;
+        }
+        stream->close();
 
         return true;
     }

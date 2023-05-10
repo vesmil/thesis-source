@@ -20,20 +20,23 @@ std::string PrefixParser::apply_prefix(const std::string& path, const std::strin
 }
 
 std::string PrefixParser::remove_specific_prefix(std::string path, const std::string& prefix) {
-    auto prefix_start = path.find(prefix);
+    Path parent = Path(path).parent();
+    std::string basename = Path::string_basename(path);
+
+    auto prefix_start = basename.find(prefix);
     if (prefix_start == std::string::npos) {
         return path;
     }
 
-    auto prefix_end = path.find('#', prefix_start + prefix.size());
-    return path.substr(0, prefix_start - 1) + path.substr(prefix_end + 1);
+    auto prefix_end = basename.find('#', prefix_start + prefix.size());
+    return parent / (basename.substr(0, prefix_start - 1) + basename.substr(prefix_end + 1));
 }
 
 std::vector<std::string> PrefixParser::args_from_prefix(const std::string& prefixed_path,
                                                         const std::string& module_name) {
     std::string basename = Path::string_basename(prefixed_path);
-    std::string prefix = "#" + module_name + "-";
 
+    std::string prefix = "#" + module_name + "-";
     auto prefix_start = basename.find(prefix);
     if (prefix_start == std::string::npos) {
         return {};

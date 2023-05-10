@@ -63,20 +63,22 @@ bool EncryptionVfs::handle_hook(const std::string &path, const std::string &cont
 bool EncryptionVfs::handle_single_arg(const std::string &non_prefixed, const std::string &arg,
                                       const std::string &content, bool is_dir) {
     Encryptor encryptor;
+    bool is_key = false;
 
     if (arg == "lock" || arg == "unlock") {
         encryptor = Encryptor{content};
-    } else if (arg == "lockDefault") {
+    } else if (arg == "defaultLock") {
         if (!get_default_key_encryptor(encryptor)) {
             return false;
         }
+        is_key = true;
     } else if (arg == "generate") {
         return generate_encryption_file(non_prefixed);
     } else {
         return false;
     }
 
-    return handle_encryption_action(non_prefixed, arg, encryptor, is_dir, false);
+    return handle_encryption_action(non_prefixed, arg, encryptor, is_dir, is_key);
 }
 
 bool EncryptionVfs::handle_double_arg(const std::string &non_prefixed, const std::string &arg,
@@ -118,10 +120,10 @@ bool EncryptionVfs::set_default_key(const std::string &key_path_arg) {
 
 bool EncryptionVfs::handle_encryption_action(const std::string &non_prefixed, const std::string &arg,
                                              const Encryptor &encryptor, bool is_dir, bool use_key_file) {
-    if (arg == "lock") {
+    if (arg == "lock" || arg == "defaultLock") {
         return is_dir ? encrypt_directory(non_prefixed, encryptor, use_key_file)
                       : encrypt_file(non_prefixed, encryptor, true, use_key_file);
-    } else if (arg == "unlock" || arg == "lockDefault") {
+    } else if (arg == "unlock") {
         return is_dir ? decrypt_directory(non_prefixed, encryptor, use_key_file)
                       : decrypt_file(non_prefixed, encryptor, true, use_key_file);
     }
@@ -339,7 +341,12 @@ bool EncryptionVfs::get_default_key_encryptor(Encryptor &encryptor) {
     *path_stream >> key_path;
     path_stream->close();
 
-    encryptor = Encryptor::from_file(key_path);
+    try {
+        encryptor = Encryptor::from_file(key_path);
+    } catch (const std::exception &e) {
+        Logging::Error("Failed to load key file: %s", e.what());
+        return false;
+    }
 
     return true;
 }

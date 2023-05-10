@@ -30,6 +30,7 @@ public:
     int open(const std::string &pathname, struct fuse_file_info *fi) override;
     int release(const std::string &pathname, struct fuse_file_info *fi) override;
     int flush(const std::string &pathname, struct fuse_file_info *fi) override;
+    int chown(const std::string &pathname, uid_t uid, gid_t gid) override;
 
     // Links
     int symlink(const std::string &target, const std::string &linkpath) override;
@@ -47,6 +48,7 @@ public:
     int releasedir(const std::string &pathname, struct fuse_file_info *fi) override;
 
     // Misc
+
     /// Returns a file stream for writing
     [[nodiscard]] std::unique_ptr<std::ofstream> get_ofstream(const std::string &path,
                                                               std::ios_base::openmode mode) const;

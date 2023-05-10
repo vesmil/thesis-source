@@ -6,7 +6,7 @@
 #include "common/config.h"
 #include "common/prefix_parser.h"
 
-/// Encryption tool for generating hooks
+/// @brief Encryption tool for generating hooks
 namespace EncryptionHookGenerator {
 
 inline std::string lock_pass_hook(const std::string& filename) {
@@ -40,7 +40,8 @@ inline std::string generate_key_hook(const std::string& filename) {
 inline std::string set_key_path_hook(const std::string& vfs, const std::string& key_path) {
     std::string key_path_escaped = key_path;
     std::replace(key_path_escaped.begin(), key_path_escaped.end(), '/', '|');
-    return PrefixParser::apply_prefix(vfs, Config::encryption.prefix, {"setDefault", key_path_escaped});
+
+    return PrefixParser::apply_prefix(Path(vfs) / ".", Config::encryption.prefix, {"setDefault", key_path_escaped});
 }
 
 }  // namespace EncryptionHookGenerator

@@ -102,6 +102,7 @@ std::vector<char*> prepare_fuse_arguments(const std::string& fuse_arg_str, const
     return fuse_argv;
 }
 
+/// VFS entry point
 int main(int argc, char* argv[]) {
     boost::program_options::variables_map vm;
     if (!parse_arguments(argc, argv, vm)) {
@@ -117,7 +118,6 @@ int main(int argc, char* argv[]) {
     }
 
     if (vm.count("config")) {
-        // Config::Parser::ParseFile(vm["config"].as<std::string>());
         Logging::Info("Sorry, config is not implemented yet.");
     }
 

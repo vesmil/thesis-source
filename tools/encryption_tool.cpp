@@ -5,17 +5,13 @@
 #include <fstream>
 #include <iostream>
 #include <string>
-#include <utility>
 
 #include "common/prefix_parser.h"
 #include "hook-generation/encryption.h"
 
 namespace po = boost::program_options;
-std::string const PREFIX = Config::encryption.prefix;
 
-/**
- * Sets terminal echo - used to hide password input.
- */
+/// @brief Sets terminal echo - used to hide password input.
 void set_stdin_echo(bool enable) {
     struct termios tty {};
     tcgetattr(STDIN_FILENO, &tty);
@@ -27,9 +23,7 @@ void set_stdin_echo(bool enable) {
     (void)tcsetattr(STDIN_FILENO, TCSANOW, &tty);
 }
 
-/**
- * Reads password from stdin.
- */
+/// @brief Reads password from stdin.
 std::string get_password() {
     std::string password;
     set_stdin_echo(false);
@@ -38,10 +32,10 @@ std::string get_password() {
     return password;
 }
 
-bool perform_command(std::string command, const std::string& filename) {
-    std::string prefixed_file = PrefixParser::apply_prefix(PREFIX, filename, {std::move(command)});
+/// @brief Writes to a command file
+bool perform_command(const std::string& command) {
+    std::ofstream out(command);
 
-    std::ofstream out(prefixed_file);
     if (out.is_open()) {
         out << " ";
         out.close();
@@ -50,43 +44,25 @@ bool perform_command(std::string command, const std::string& filename) {
         return false;
     }
 
-    std::remove(prefixed_file.c_str());
+    std::remove(command.c_str());
 
     return true;
 }
 
-bool perform_command_arg(const std::string& command, const std::string& filename, const std::string& arg) {
-    std::string prefixed_file = PrefixParser::apply_prefix(PREFIX, filename, {command, arg});
-
-    std::ofstream out(prefixed_file);
-    if (out.is_open()) {
-        out << " ";
-        out.close();
-    } else {
-        std::cerr << "Unable to perform command" << std::endl;
-        return false;
-    }
-
-    std::remove(prefixed_file.c_str());
-
-    return true;
-}
-
-/**
- * Writes password to file.
- */
-void password_command(const std::string& command_prefix, const std::string& filename, const std::string& password) {
-    std::string prefixed_file = PrefixParser::apply_prefix(PREFIX, filename, {command_prefix});
-
-    std::ofstream out(prefixed_file);
+/// @brief Writes password to a command file.
+void password_command(const std::string& command, const std::string& password) {
+    std::ofstream out(command);
     if (out.is_open()) {
         out << password;
         out.close();
     } else {
         std::cerr << "Unable to unlock file" << std::endl;
     }
+
+    std::remove(command.c_str());
 }
 
+/// @brief Verifies that the arguments are valid.
 bool verify_args(const po::variables_map& vm) {
     if (!vm.count("unlock") && !vm.count("lock") && !vm.count("generate")) {
         std::cout << "No action specified" << std::endl;
@@ -95,6 +71,21 @@ bool verify_args(const po::variables_map& vm) {
 
     if (vm.count("generate") && vm.count("key")) {
         std::cout << "Cannot generate key and use custom key at the same time" << std::endl;
+        return false;
+    }
+
+    if (vm.count("default-lock") && !vm.count("locks")) {
+        std::cout << "Cannot use a default lock without specifying locks" << std::endl;
+        return false;
+    }
+
+    if (vm.count("default-lock") && vm.count("unlock")) {
+        std::cout << "Cannot use a default lock and unlock at the same time" << std::endl;
+        return false;
+    }
+
+    if (vm.count("default-lock") && vm.count("key")) {
+        std::cout << "Cannot use a default key and a custom key at the same time" << std::endl;
         return false;
     }
 
@@ -116,16 +107,16 @@ bool verify_args(const po::variables_map& vm) {
 }
 
 /**
- * Entry point for the encryption tool.
+ * @brief Entry point for the encryption tool.
  *
- * Usage:
- *  ./encryption --help
- *  ./encryption --unlock <file>
- *  ./encryption --lock <file>
- *  ./encryption --lock <file> --key <key>
- *  ./encryption --unlock <file> --key <key>
- *
- *  ./encryption --generate <file>
+ * @details Usage:                           \n
+ *  ./encryption --help                      \n
+ *  ./encryption --unlock <file>             \n
+ *  ./encryption --lock <file>               \n
+ *  ./encryption --lock <file> --key <key>   \n
+ *  ./encryption --unlock <file> --key <key> \n
+ *                                           \n
+ *  ./encryption --generate <file>           \n
  *  ./encryption --set-key-path <file>
  */
 int main(int argc, char* argv[]) {
@@ -134,9 +125,10 @@ int main(int argc, char* argv[]) {
         desc.add_options()("help", "produce help message")                                      //
             ("unlock,u", po::value<std::string>(), "unlock a file")                             //
             ("lock,l", po::value<std::string>(), "lock a file")                                 //
+            ("default-lock,d", "lock a file with default key")                                  //
             ("key,k", po::value<std::string>(), "custom key to use for encryption/decryption")  //
-
-            ("set-key-path,s", po::value<std::string>(), "sets a default path for key")  //
+            ("set-key-path,s", po::value<std::vector<std::string>>(),
+             "requires two args - <vfs> and <key-path> - it sets a default path for key")  //
             ("generate,g", po::value<std::string>(), "generate a key into chosen file");
 
         po::variables_map vm;
@@ -153,35 +145,48 @@ int main(int argc, char* argv[]) {
         std::string key = vm["key"].as<std::string>();
         bool use_key = vm.count("key");
 
+        // If no key is provided, ask for password.
         if (!use_key) {
             std::cout << "Enter password (or leave empty for key): ";
             password = get_password();
         } else if (vm.count("generate")) {
             std::string file = vm["generate"].as<std::string>();
-            if (!perform_command("generate", file)) {
+
+            if (!perform_command(EncryptionHookGenerator::generate_key_hook(file))) {
                 return 2;
             }
 
             key = file;
         }
 
+        // Does the main operation.
         if (vm.count("set-key-path")) {
-            std::string file = vm["set-key-path"].as<std::string>();
-            perform_command("setKeyPath", file);
+            std::vector<std::string> paths = vm["set-key-path"].as<std::vector<std::string>>();
+            if (paths.size() != 2) {
+                std::cerr << "Invalid number of arguments for set-key-path" << std::endl;
+                std::cerr << "Usage: ./encryption --set-key-path <path-to-vfs> <path-to-key-file>" << std::endl;
+                return 1;
+            }
+
+            perform_command(EncryptionHookGenerator::set_key_path_hook(paths[0], paths[1]));
+
         } else if (vm.count("unlock")) {
             std::string file = vm["unlock"].as<std::string>();
             if (use_key) {
-                perform_command_arg("unlock", file, key);
+                perform_command(EncryptionHookGenerator::unlock_key_hook(file, key));
             } else {
-                password_command("unlock", file, password);
+                password_command(EncryptionHookGenerator::unlock_pass_hook(file), password);
             }
         } else if (vm.count("lock")) {
             std::string file = vm["lock"].as<std::string>();
             if (vm.count("key")) {
-                perform_command_arg("lock", file, key);
+                perform_command(EncryptionHookGenerator::lock_key_hook(file, key));
             } else {
-                password_command("lock", file, password);
+                password_command(EncryptionHookGenerator::lock_pass_hook(file), password);
             }
+        } else if (vm.count("default-lock")) {
+            std::string file = vm["default-lock"].as<std::string>();
+            perform_command(EncryptionHookGenerator::default_lock_hook(file));
         }
 
     } catch (std::exception& e) {

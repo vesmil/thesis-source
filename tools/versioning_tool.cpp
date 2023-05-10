@@ -3,40 +3,44 @@
 #include <iostream>
 #include <string>
 
-#include "common/prefix_parser.h"
 #include "hook-generation/versioning.h"
 
 namespace po = boost::program_options;
 
-std::string const PREFIX = Config::versioning.prefix;
-
-/**
- * Creates a hook file and waits for the response from the filesystem.
- */
-void create_command_file(std::string command, const std::string& filepath, const std::string& num = "") {
-    auto complete = PrefixParser::apply_prefix(PREFIX, filepath, {std::move(command), num});
-
-    std::ofstream out(complete);
+/// @brief Writes to a command file
+bool perform_command(const std::string& command, bool read = false) {
+    std::ofstream out(command);
 
     if (out.is_open()) {
         out << " ";
         out.close();
     } else {
-        std::cerr << "Unable to complete command" << std::endl;
-        return;
+        std::cerr << "Unable to perform command" << std::endl;
+        return false;
     }
 
-    std::remove(complete.c_str());
+    if (read) {
+        std::ifstream in(command);
+        std::string response;
+        std::getline(in, response);
+        std::cout << response << std::endl;
+
+        in.close();
+    }
+
+    std::remove(command.c_str());
+
+    return true;
 }
 
 /**
- * Entry point for the versioning tool.
+ * @brief Entry point for the versioning tool.
  *
- * Usage:
- *  ./versioning --help
- *  ./versioning --list --file <file>
- *  ./versioning --restore <version> --file <file>
- *  ./versioning --delete <version> --file <file>
+ * @details Usage:                                    \n
+ *  ./versioning --help                               \n
+ *  ./versioning --list --file <file>                 \n
+ *  ./versioning --restore <version> --file <file>    \n
+ *  ./versioning --delete <version> --file <file>     \n
  *  ./versioning --deleteAll --file <file>
  */
 int main(int argc, char* argv[]) {
@@ -69,21 +73,21 @@ int main(int argc, char* argv[]) {
         std::string file = vm["file"].as<std::string>();
 
         if (vm.count("list")) {
-            create_command_file("list", file);
+            perform_command(VersioningHookGenerator::list_hook(file), true);
         }
 
         if (vm.count("restore")) {
             int version = vm["restore"].as<int>();
-            create_command_file("restore", file, std::to_string(version));
+            perform_command(VersioningHookGenerator::restore_hook(file, std::to_string(version)));
         }
 
         if (vm.count("delete")) {
             int version = vm["delete"].as<int>();
-            create_command_file("delete", file, std::to_string(version));
+            perform_command(VersioningHookGenerator::delete_hook(file, std::to_string(version)));
         }
 
         if (vm.count("deleteAll")) {
-            create_command_file("deleteAll", file);
+            perform_command(VersioningHookGenerator::delete_all_hook(file));
         }
     } catch (std::exception& e) {
         std::cerr << "error: " << e.what() << std::endl;

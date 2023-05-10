@@ -6,30 +6,31 @@
 
 #include "path.h"
 
-/// Configuration for filesystems
+/**
+ * @brief Namespace with global configurations
+ *
+ * @note Should be replaced with a proper configuration library in the future
+ */
 namespace Config {
 
-/// Class to load configuration from a file
-class Parser {
-public:
-    // static bool ParseFile(const std::string &path);
-};
-
+/// @brief Configuration class for the base filesystem
 struct Base {
     std::string backing_location = "/mnt/";
     std::string backing_prefix = "customvfs-";
 };
 
+/// @brief Configuration class for the versioning filesystem
 struct Versioning {
     std::string prefix = "VERSION";
 };
+
+/// @brief Configuration class for the encryption filesystem
 struct Encryption {
     std::string prefix = "ENCRYPTION";
     std::string path_to_key_path = "/#ENCRYPTION-keyPath#path";
 };
 
 static Base base;
-
 static Versioning versioning;
 static Encryption encryption;
 

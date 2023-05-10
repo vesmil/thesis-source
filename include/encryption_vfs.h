@@ -12,9 +12,9 @@
 #include "vfs_decorator.h"
 
 /**
- * EncryptionVfs is a decorator for CustomVfs that encrypts and decrypts files
- *
- * It works by intercepting the read and write calls and encrypting/decrypting the content upon registering hooks
+ * @brief EncryptionVfs is a decorator for CustomVfs that encrypts and decrypts files
+ * @summary It works by intercepting the read and write calls and encrypting/decrypting the content upon registering
+ * hooks
  */
 class EncryptionVfs : public VfsDecorator {
 public:
@@ -48,15 +48,17 @@ private:
 
     /// Handles encryption hooks - returns whether it was successful
     bool handle_hook(const std::string &path, const std::string &content);
-    bool is_hook(const std::string &basicString);
+
+    /// Checks whether the path is a hook
+    [[nodiscard]] bool is_hook(const std::string &basicString);
 
     bool handle_single_arg(const std::string &non_prefixed, const std::string &arg, const std::string &content,
                            bool is_dir);
     bool handle_double_arg(const std::string &non_prefixed, const std::string &arg, const std::string &key_path_arg,
                            bool is_dir);
-
     bool handle_encryption_action(const std::string &non_prefixed, const std::string &arg, const Encryptor &encryptor,
                                   bool is_dir, bool use_key_file);
+
     bool generate_encryption_file(const std::string &non_prefixed);
     bool set_default_key(const std::string &key_path_arg);
 };

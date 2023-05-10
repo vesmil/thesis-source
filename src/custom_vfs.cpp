@@ -110,6 +110,10 @@ int CustomVfs::chmod(const std::string &pathname, mode_t mode) {
     return posix_call_result(::chmod, to_backing(pathname).c_str(), mode);
 }
 
+int CustomVfs::chown(const std::string &pathname, uid_t uid, gid_t gid) {
+    return posix_call_result(::lchown, to_backing(pathname).c_str(), uid, gid);
+}
+
 int CustomVfs::open(const std::string &pathname, struct fuse_file_info *fi) {
     int fd = ::open(to_backing(pathname).c_str(), fi->flags);
     if (fd < 0) {

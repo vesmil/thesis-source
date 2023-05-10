@@ -6,6 +6,9 @@
 
 #include "path.h"
 
+/**
+ * @brief Class to handle prefixes in file paths
+ */
 class PrefixParser {
 public:
     /**

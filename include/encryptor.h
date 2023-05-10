@@ -14,6 +14,8 @@ public:
     explicit Encryptor(std::istream &fileStream);
     Encryptor();
 
+    static Encryptor from_file(const std::string &filePath);
+
     bool encrypt_stream(std::istream &input, std::ostream &output);
     bool decrypt_stream(std::istream &input, std::ostream &output);
 

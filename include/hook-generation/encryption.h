@@ -17,12 +17,16 @@ inline std::string unlock_pass_hook(const std::string& filename) {
     return PrefixParser::apply_prefix(filename, Config::encryption.prefix, {"unlock"});
 }
 
-inline std::string lock_file_hook(const std::string& filename, const std::string& key_path) {
-    return PrefixParser::apply_prefix(filename, Config::encryption.prefix, {"lock", key_path});
+inline std::string lock_key_hook(const std::string& filename, const std::string& key_path) {
+    std::string key_path_escaped = key_path;
+    std::replace(key_path_escaped.begin(), key_path_escaped.end(), '/', '|');
+    return PrefixParser::apply_prefix(filename, Config::encryption.prefix, {"lock", key_path_escaped});
 }
 
-inline std::string unlock_file_hook(const std::string& filename, const std::string& key_path) {
-    return PrefixParser::apply_prefix(filename, Config::encryption.prefix, {"unlock", key_path});
+inline std::string unlock_key_hook(const std::string& filename, const std::string& key_path) {
+    std::string key_path_escaped = key_path;
+    std::replace(key_path_escaped.begin(), key_path_escaped.end(), '/', '|');
+    return PrefixParser::apply_prefix(filename, Config::encryption.prefix, {"unlock", key_path_escaped});
 }
 
 inline std::string generate_key_hook(const std::string& filename) {
@@ -30,7 +34,9 @@ inline std::string generate_key_hook(const std::string& filename) {
 }
 
 inline std::string set_key_path_hook(const std::string& filename, const std::string& key_path) {
-    return PrefixParser::apply_prefix(filename, Config::encryption.prefix, {"set", key_path});
+    std::string key_path_escaped = key_path;
+    std::replace(key_path_escaped.begin(), key_path_escaped.end(), '/', '|');
+    return PrefixParser::apply_prefix(filename, Config::encryption.prefix, {"set", key_path_escaped});
 }
 
 }  // namespace EncryptionHookGenerator

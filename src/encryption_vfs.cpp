@@ -28,8 +28,8 @@ int EncryptionVfs::write(const std::string &pathname, const char *buf, size_t co
             Logging::Debug("Hook handled for %s", pathname.c_str());
             return 0;
         }
-    } catch (...) {
-        Logging::Error("Exception on handle hook for %s", pathname.c_str());
+    } catch (const std::exception &e) {
+        Logging::Error("Exception on handle hook for %s - %s", pathname.c_str(), e.what());
         return -1;
     }
 
@@ -51,17 +51,17 @@ bool EncryptionVfs::handle_hook(const std::string &path, const std::string &cont
             Encryptor encryptor{content};
 
             if (is_dir) {
-                encrypt_directory(non_prefixed, encryptor);
+                encrypt_directory(non_prefixed, encryptor, false);
             } else {
-                return encrypt_file(non_prefixed, encryptor, true);
+                return encrypt_file(non_prefixed, encryptor, true, false);
             }
         } else if (args[0] == "unlock") {
             Encryptor encryptor{content};
 
             if (is_dir) {
-                decrypt_directory(non_prefixed, encryptor);
+                decrypt_directory(non_prefixed, encryptor, false);
             } else {
-                return decrypt_file(non_prefixed, encryptor, true);
+                return decrypt_file(non_prefixed, encryptor, true, false);
             }
         } else if (args[0] == "generate") {
             Encryptor encryptor{};
@@ -75,27 +75,32 @@ bool EncryptionVfs::handle_hook(const std::string &path, const std::string &cont
         return false;
     } else if (args.size() == 2) {
         if (args[0] == "lock") {
-            auto key_stream = CustomVfs::get_ifstream(args[1], std::ios::binary);
-            Encryptor encryptor{*key_stream};
-            key_stream->close();
+            std::string key_path = args[1];
+            std::replace(key_path.begin(), key_path.end(), '|', '/');
+
+            auto encryptor = Encryptor::from_file(key_path);
 
             if (is_dir) {
-                encrypt_directory(non_prefixed, encryptor);
+                encrypt_directory(non_prefixed, encryptor, true);
             } else {
-                return encrypt_file(non_prefixed, encryptor, true);
+                return encrypt_file(non_prefixed, encryptor, true, true);
             }
         } else if (args[0] == "unlock") {
-            auto key_stream = CustomVfs::get_ifstream(args[1], std::ios::binary);
-            Encryptor encryptor{*key_stream};
-            key_stream->close();
+            std::string key_path = args[1];
+            std::replace(key_path.begin(), key_path.end(), '|', '/');
+
+            auto encryptor = Encryptor::from_file(key_path);
 
             if (is_dir) {
-                decrypt_directory(non_prefixed, encryptor);
+                decrypt_directory(non_prefixed, encryptor, true);
             } else {
-                return decrypt_file(non_prefixed, encryptor, true);
+                return decrypt_file(non_prefixed, encryptor, true, true);
             }
         } else if (args[0] == "setKeyPath") {
-            CustomVfs::get_ofstream(non_prefixed, std::ios::binary)
+            std::string key_path = args[1];
+            std::replace(key_path.begin(), key_path.end(), '|', '/');
+
+            CustomVfs::get_ofstream(key_path, std::ios::binary)
                 ->write(args[1].c_str(), static_cast<int>(args[1].size()));
         }
     }
@@ -148,7 +153,7 @@ std::pair<std::unique_ptr<std::ifstream>, std::unique_ptr<std::ofstream>> Encryp
     return std::make_pair(std::move(input), std::move(output));
 }
 
-bool EncryptionVfs::encrypt_file(const std::string &filename, Encryptor &encryptor, bool with_related) {
+bool EncryptionVfs::encrypt_file(const std::string &filename, Encryptor &encryptor, bool with_related, bool using_key) {
     if (is_encrypted(filename)) {
         Logging::Error("File %s is already encrypted", filename.c_str());
         return false;
@@ -160,10 +165,16 @@ bool EncryptionVfs::encrypt_file(const std::string &filename, Encryptor &encrypt
     for (const std::string &file : encrypt_files) {
         Logging::Debug("Encrypting file %s", file.c_str());
 
-        auto [input, output] = open_files(file, PrefixParser::apply_prefix(file, prefix, {"pass"}),
+        auto [input, output] = open_files(file, PrefixParser::apply_prefix(file, prefix, {using_key ? "key" : "pass"}),
                                           std::ios::binary | std::ios::in, std::ios::binary | std::ios::out);
 
-        success &= encryptor.encrypt_stream(*input, *output);
+        bool file_success = encryptor.encrypt_stream(*input, *output);
+        success = success && file_success;
+
+        if (!success) {
+            Logging::Error("Failed to encrypt file %s", file.c_str());
+            continue;
+        }
 
         input->close();
         output->close();
@@ -176,7 +187,7 @@ bool EncryptionVfs::encrypt_file(const std::string &filename, Encryptor &encrypt
     return success;
 }
 
-bool EncryptionVfs::decrypt_file(const std::string &filename, Encryptor &encryptor, bool with_related) {
+bool EncryptionVfs::decrypt_file(const std::string &filename, Encryptor &encryptor, bool with_related, bool using_key) {
     bool success = true;
     std::vector<std::string> encrypt_files = prepare_files(filename, with_related);
 
@@ -187,10 +198,21 @@ bool EncryptionVfs::decrypt_file(const std::string &filename, Encryptor &encrypt
 
         Logging::Debug("Decrypting file %s", file.c_str());
 
-        std::string input_file = PrefixParser::apply_prefix(file, prefix, {"pass"});
+        std::string input_file = PrefixParser::apply_prefix(file, prefix, {using_key ? "key" : "pass"});
         auto [input, output] = open_files(input_file, file, std::ios::binary, std::ios::binary);
 
-        success = encryptor.decrypt_stream(*input, *output);
+        bool file_success = encryptor.decrypt_stream(*input, *output);
+        success = success && file_success;
+
+        if (!success) {
+            Logging::Error("Failed to decrypt file %s", file.c_str());
+
+            auto original = CustomVfs::get_ofstream(file, std::ios::binary | std::ios::out);
+            *original << "This file is encrypted" << std::endl;
+            original->close();
+
+            continue;
+        }
 
         input->close();
         output->close();
@@ -201,7 +223,7 @@ bool EncryptionVfs::decrypt_file(const std::string &filename, Encryptor &encrypt
     return success;
 }
 
-void EncryptionVfs::encrypt_directory(const std::string &root_directory, Encryptor &encryptor) {
+void EncryptionVfs::encrypt_directory(const std::string &root_directory, Encryptor &encryptor, bool using_key) {
     std::stack<std::string> directories;
     directories.push(root_directory);
 
@@ -218,7 +240,7 @@ void EncryptionVfs::encrypt_directory(const std::string &root_directory, Encrypt
             if (get_wrapped().is_directory(full_path)) {
                 directories.push(full_path);
             } else {
-                encrypt_file(full_path, encryptor, false);
+                encrypt_file(full_path, encryptor, false, using_key);
             }
         }
 
@@ -226,7 +248,7 @@ void EncryptionVfs::encrypt_directory(const std::string &root_directory, Encrypt
     }
 }
 
-void EncryptionVfs::decrypt_directory(const std::string &root_directory, Encryptor &encryptor) {
+void EncryptionVfs::decrypt_directory(const std::string &root_directory, Encryptor &encryptor, bool using_key) {
     std::stack<std::string> directories;
     directories.push(root_directory);
 
@@ -243,7 +265,7 @@ void EncryptionVfs::decrypt_directory(const std::string &root_directory, Encrypt
             if (get_wrapped().is_directory(full_path)) {
                 directories.push(full_path);
             } else {
-                decrypt_file(full_path, encryptor, false);
+                decrypt_file(full_path, encryptor, false, using_key);
             }
         }
 

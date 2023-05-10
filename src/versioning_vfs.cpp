@@ -82,7 +82,7 @@ bool VersioningVfs::handle_non_versioned_command(const std::string &command, con
                                                  const std::string &pathname) {
     if (command == "deleteAll") {
         delete_all_versions(arg_path);
-        Logging::Info("Deleted all versions of file %s\n", arg_path.c_str());
+        Logging::Info("Deleted all versions of file %s", arg_path.c_str());
         return true;
 
     } else if (command == "list") {

@@ -50,6 +50,8 @@ bool perform_command(std::string command, const std::string& filename) {
         return false;
     }
 
+    std::remove(prefixed_file.c_str());
+
     return true;
 }
 
@@ -64,6 +66,8 @@ bool perform_command_arg(const std::string& command, const std::string& filename
         std::cerr << "Unable to perform command" << std::endl;
         return false;
     }
+
+    std::remove(prefixed_file.c_str());
 
     return true;
 }

@@ -36,11 +36,11 @@ private:
     /// Handles encryption hooks
     bool handle_hook(const std::string &path, const std::string &content);
 
-    bool encrypt_file(const std::string &filename, Encryptor &encryptor, bool with_related);
-    bool decrypt_file(const std::string &filename, Encryptor &encryptor, bool with_related);
+    bool encrypt_file(const std::string &filename, Encryptor &encryptor, bool with_related, bool using_key);
+    bool decrypt_file(const std::string &filename, Encryptor &encryptor, bool with_related, bool using_key);
 
-    void encrypt_directory(const std::string &directory, Encryptor &encryptor);
-    void decrypt_directory(const std::string &directory, Encryptor &encryptor);
+    void encrypt_directory(const std::string &directory, Encryptor &encryptor, bool using_key);
+    void decrypt_directory(const std::string &directory, Encryptor &encryptor, bool using_key);
 
     std::vector<std::string> prepare_files(const std::string &filename, bool with_related);
 

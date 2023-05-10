@@ -32,7 +32,6 @@ CustomVFS <mountpoint>
 
 ## Project TODO
 
-- [ ] Key tests
 - [ ] Default key path
 
 Current constraits

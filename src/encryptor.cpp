@@ -107,4 +107,12 @@ bool Encryptor::decrypt_stream(std::istream &input, std::ostream &output) {
     return true;
 }
 
+Encryptor Encryptor::from_file(const std::string &filePath) {
+    std::ifstream fileStream(filePath, std::ios::binary);
+    Encryptor encryptor(fileStream);
+    fileStream.close();
+
+    return encryptor;
+}
+
 #endif

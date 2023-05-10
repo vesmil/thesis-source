@@ -142,9 +142,15 @@ int CustomVfs::mkdir(const std::string &pathname, mode_t mode) {
 }
 
 int CustomVfs::rmdir(const std::string &pathname) {
+    // We don't want to start deleting files before we now that the directory is empty
     for (const auto &entry : subfiles(pathname)) {
-        if (entry[0] == '#') {
-            // TODO if (PrefixParser::is_prefixed(entry)) {
+        if (!PrefixParser::is_prefixed(entry)) {
+            return -ENOTEMPTY;
+        }
+    }
+
+    for (const auto &entry : subfiles(pathname)) {
+        if (PrefixParser::is_prefixed(entry)) {
             unlink(Path(pathname) / entry);
         }
     }

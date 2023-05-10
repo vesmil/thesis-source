@@ -7,8 +7,6 @@
 /// Logging isn't visible with normal usage - it should use file instead
 class Logging {
 public:
-    static void set_logging_file(const std::string &path);
-
     template <typename... Args>
     static void Info(const char *format, Args... args) {
         Log(Level::INFO, format, args...);
@@ -43,22 +41,9 @@ public:
     };
 
 private:
-    static std::string file;
-
     template <typename... Args>
     static void log_printf(const char *format, Args... args) {
-        if (file.empty()) {
-            printf(format, args...);
-        } else {
-            FILE *f = fopen(file.c_str(), "a");
-            if (f == nullptr) {
-                printf("Failed to open log file %s\n", file.c_str());
-                return;
-            }
-
-            fprintf(f, format, args...);
-            fclose(f);
-        }
+        printf(format, args...);
     }
 
     template <typename... Args>

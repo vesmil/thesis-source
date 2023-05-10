@@ -3,6 +3,7 @@
 #include <sodium.h>
 
 #include <iostream>
+#include <stack>
 
 #include "common/config.h"
 #include "common/logging.h"
@@ -21,15 +22,21 @@ EncryptionVfs::EncryptionVfs(CustomVfs &wrapped_vfs) : VfsDecorator(wrapped_vfs)
 int EncryptionVfs::write(const std::string &pathname, const char *buf, size_t count, off_t offset,
                          struct fuse_file_info *fi) {
     std::string content(buf, count);
-    if (handle_hook(pathname, content, fi)) {
-        Logging::Debug("Hook handled for %s", pathname.c_str());
-        return 0;
+
+    try {
+        if (handle_hook(pathname, content)) {
+            Logging::Debug("Hook handled for %s", pathname.c_str());
+            return 0;
+        }
+    } catch (...) {
+        Logging::Error("Exception on handle hook for %s", pathname.c_str());
+        return -1;
     }
 
     return get_wrapped().write(pathname, buf, count, offset, fi);
 }
 
-bool EncryptionVfs::handle_hook(const std::string &path, const std::string &content, fuse_file_info *fi) {
+bool EncryptionVfs::handle_hook(const std::string &path, const std::string &content) {
     if (!PrefixParser::contains_prefix(Path::string_basename(path), prefix)) {
         return false;
     }
@@ -44,19 +51,38 @@ bool EncryptionVfs::handle_hook(const std::string &path, const std::string &cont
             if (is_dir) {
                 encrypt_directory(non_prefixed, content);
             } else {
-                return encrypt_file(non_prefixed, content, true);
+                return encrypt_file_pass(non_prefixed, content, true);
             }
         } else if (args[0] == "unlock") {
             if (is_dir) {
                 decrypt_directory(non_prefixed, content);
             } else {
-                return decrypt_file(non_prefixed, content, true);
+                return decrypt_file_pass(non_prefixed, content, true);
             }
+        } else if (args[0] == "generate") {
+            Encryptor encryptor{};
+            encryptor.generate_file(*CustomVfs::get_ofstream(non_prefixed, std::ios::binary));
         }
 
         return false;
     } else if (args.size() == 2) {
-        // I have path to a key now...
+        if (args[0] == "lock") {
+            if (is_dir) {
+                // TODO rewrite those using key...
+                encrypt_directory(non_prefixed, content);
+            } else {
+                return encrypt_file_pass(non_prefixed, content, true);
+            }
+        } else if (args[0] == "unlock") {
+            if (is_dir) {
+                decrypt_directory(non_prefixed, content);
+            } else {
+                return decrypt_file_pass(non_prefixed, content, true);
+            }
+        } else if (args[0] == "setKeyPath") {
+            CustomVfs::get_ofstream(non_prefixed, std::ios::binary)
+                ->write(args[1].c_str(), static_cast<int>(args[1].size()));
+        }
     }
 
     return false;
@@ -107,23 +133,22 @@ std::pair<std::unique_ptr<std::ifstream>, std::unique_ptr<std::ofstream>> Encryp
     return std::make_pair(std::move(input), std::move(output));
 }
 
-bool EncryptionVfs::encrypt_file(const std::string &filename, const std::string &password, bool with_related) {
+bool EncryptionVfs::encrypt_file_pass(const std::string &filename, const std::string &password, bool with_related) {
     if (is_encrypted(filename)) {
         Logging::Error("File %s is already encrypted", filename.c_str());
         return false;
     }
 
     bool success = true;
-
     std::vector<std::string> encrypt_files = prepare_files(filename, with_related);
 
     for (const std::string &file : encrypt_files) {
         Logging::Debug("Encrypting file %s", file.c_str());
 
-        auto [input, output] = open_files(file, PrefixParser::apply_prefix(file, prefix),
+        auto [input, output] = open_files(file, PrefixParser::apply_prefix(file, prefix, {"pass"}),
                                           std::ios::binary | std::ios::in, std::ios::binary | std::ios::out);
 
-        Encryptor encryptor = Encryptor::from_password(password);
+        Encryptor encryptor{password};
         success &= encryptor.encrypt_stream(*input, *output);
 
         input->close();
@@ -137,9 +162,8 @@ bool EncryptionVfs::encrypt_file(const std::string &filename, const std::string 
     return success;
 }
 
-bool EncryptionVfs::decrypt_file(const std::string &filename, const std::string &password, bool with_related) {
+bool EncryptionVfs::decrypt_file_pass(const std::string &filename, const std::string &password, bool with_related) {
     bool success = true;
-
     std::vector<std::string> encrypt_files = prepare_files(filename, with_related);
 
     for (const std::string &file : encrypt_files) {
@@ -149,12 +173,10 @@ bool EncryptionVfs::decrypt_file(const std::string &filename, const std::string 
 
         Logging::Debug("Decrypting file %s", file.c_str());
 
-        std::string input_file = PrefixParser::apply_prefix(file, prefix);
-
+        std::string input_file = PrefixParser::apply_prefix(file, prefix, {"pass"});
         auto [input, output] = open_files(input_file, file, std::ios::binary, std::ios::binary);
 
-        Encryptor encryptor = Encryptor::from_password(password);
-
+        Encryptor encryptor{password};
         success = encryptor.decrypt_stream(*input, *output);
 
         input->close();
@@ -166,32 +188,52 @@ bool EncryptionVfs::decrypt_file(const std::string &filename, const std::string 
     return success;
 }
 
-void EncryptionVfs::encrypt_directory(const std::string &directory, const std::string &password) {
-    for (const auto &file : CustomVfs::subfiles(directory)) {
-        if (PrefixParser::contains_prefix(file, prefix)) {
-            continue;
+void EncryptionVfs::encrypt_directory(const std::string &root_directory, const std::string &password) {
+    std::stack<std::string> directories;
+    directories.push(root_directory);
+
+    while (!directories.empty()) {
+        std::string current_directory = directories.top();
+        directories.pop();
+
+        for (const auto &file : CustomVfs::subfiles(current_directory)) {
+            if (PrefixParser::contains_prefix(file, prefix)) {
+                continue;
+            }
+
+            std::string full_path = Path(current_directory) / file;
+            if (get_wrapped().is_directory(full_path)) {
+                directories.push(full_path);
+            } else {
+                encrypt_file_pass(full_path, password, false);
+            }
         }
 
-        if (get_wrapped().is_directory(file)) {
-            encrypt_directory(file, password);
-        } else {
-            encrypt_file(Path(directory) / file, password, false);
-        }
+        CustomVfs::mknod(PrefixParser::apply_prefix(current_directory, prefix), S_IFDIR | 0755, 0);
     }
-
-    // TODO encrypt directory name - mby recursive?
 }
 
-void EncryptionVfs::decrypt_directory(const std::string &directory, const std::string &password) {
-    for (const auto &file : CustomVfs::subfiles(directory)) {
-        if (PrefixParser::contains_prefix(file, prefix)) {
-            continue;
+void EncryptionVfs::decrypt_directory(const std::string &root_directory, const std::string &password) {
+    std::stack<std::string> directories;
+    directories.push(root_directory);
+
+    while (!directories.empty()) {
+        std::string current_directory = directories.top();
+        directories.pop();
+
+        for (const auto &file : CustomVfs::subfiles(current_directory)) {
+            if (PrefixParser::contains_prefix(file, prefix)) {
+                continue;
+            }
+
+            std::string full_path = Path(current_directory) / file;
+            if (get_wrapped().is_directory(full_path)) {
+                directories.push(full_path);
+            } else {
+                decrypt_file_pass(full_path, password, false);
+            }
         }
 
-        if (get_wrapped().is_directory(file)) {
-            decrypt_directory(file, password);
-        } else {
-            decrypt_file(Path(directory) / file, password, false);
-        }
+        CustomVfs::unlink(PrefixParser::apply_prefix(current_directory, prefix));
     }
 }

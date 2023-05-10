@@ -9,28 +9,20 @@
 
 #include "common/logging.h"
 
-Encryptor Encryptor::from_password(const std::string &password) {
-    return {password, true};
-}
-
-Encryptor Encryptor::from_filepath(const std::string &filePath) {
-    return {filePath, false};
-}
-
-Encryptor Encryptor::random() {
-    return {};
-}
-
-Encryptor::Encryptor(const std::string &str, bool isPassword) {
+Encryptor::Encryptor(const std::string &str) {
     if (sodium_init() == -1) {
         throw std::runtime_error("Sodium failed to initialize");
     }
 
-    if (isPassword) {
-        init_password(str);
-    } else {
-        init_file(str);
+    init_password(str);
+}
+
+Encryptor::Encryptor(std::istream &fileStream) {
+    if (sodium_init() == -1) {
+        throw std::runtime_error("Sodium failed to initialize");
     }
+
+    init_file(fileStream);
 }
 
 Encryptor::Encryptor() {
@@ -54,12 +46,7 @@ void Encryptor::init_password(const std::string &password) {
     memcpy(nonce, key, crypto_aead_xchacha20poly1305_ietf_NPUBBYTES);
 }
 
-void Encryptor::init_file(const std::string &filePath) {
-    std::ifstream file(filePath, std::ios::binary);
-    if (!file.is_open()) {
-        throw std::runtime_error("Failed to open file for reading.");
-    }
-
+void Encryptor::init_file(std::istream &file) {
     // Read key
     file.read(reinterpret_cast<char *>(key), crypto_aead_xchacha20poly1305_ietf_KEYBYTES);
     if (!file) {
@@ -71,27 +58,20 @@ void Encryptor::init_file(const std::string &filePath) {
     if (!file) {
         throw std::runtime_error("Failed to read nonce from file.");
     }
-
-    file.close();
 }
 
-void Encryptor::generate_file(const std::string &filePath) {
-    std::ofstream file(filePath, std::ios::binary);
-    if (!file.is_open()) {
-        Logging::Fatal("Failed to open file for writing.");
-    }
+void Encryptor::generate_file(std::ostream &fileStream) {
+    fileStream.write(reinterpret_cast<const char *>(key), crypto_aead_xchacha20poly1305_ietf_KEYBYTES);
 
-    file.write(reinterpret_cast<const char *>(key), crypto_aead_xchacha20poly1305_ietf_KEYBYTES);
-    if (!file) {
+    if (!fileStream) {
         throw std::runtime_error("Failed to write key to file.");
     }
 
-    file.write(reinterpret_cast<const char *>(nonce), crypto_aead_xchacha20poly1305_ietf_NPUBBYTES);
-    if (!file) {
+    fileStream.write(reinterpret_cast<const char *>(nonce), crypto_aead_xchacha20poly1305_ietf_NPUBBYTES);
+
+    if (!fileStream) {
         throw std::runtime_error("Failed to write nonce to file.");
     }
-
-    file.close();
 }
 
 bool Encryptor::encrypt_stream(std::istream &input, std::ostream &output) {

@@ -114,7 +114,7 @@ int main(int argc, char* argv[]) {
     bool test_mode = vm.count("test") > 0;
 
     if (test_mode) {
-        Logging::set_logging_file(Path(mountpoint).parent() / "test.log");
+        Logging::Debug("Sorry, test mode is no longer supported.");
     }
 
     if (vm.count("config")) {

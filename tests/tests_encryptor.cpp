@@ -6,7 +6,7 @@ TEST(Encryptor, password_encryptor) {
     std::string password = "test_password";
     std::string input = "Hello World!\n";
 
-    auto encryptor = Encryptor::from_password(password);
+    Encryptor encryptor{password};
 
     std::stringstream input_stream(input);
     std::stringstream output_stream;
@@ -27,7 +27,7 @@ TEST(Encryptor, invalid_password_encryptor) {
     std::string password = "test_password";
     std::string input = "sdajsdakjshxcz";
 
-    auto encryptor = Encryptor::from_password(password);
+    Encryptor encryptor{password};
 
     std::stringstream input_stream(input);
     std::stringstream output_stream;
@@ -36,10 +36,9 @@ TEST(Encryptor, invalid_password_encryptor) {
 }
 
 TEST(Encryptor, random_encryptor) {
-    std::string password = "test_password";
     std::string input = "Hello World!\n";
 
-    auto encryptor = Encryptor::random();
+    Encryptor encryptor{};
 
     std::stringstream input_stream(input);
     std::stringstream output_stream;
@@ -59,7 +58,7 @@ TEST(Encryptor, random_encryptor) {
 TEST(Encryptor, invalid_random_encryptor) {
     std::string input = "sdajsdakjshxcz";
 
-    auto encryptor = Encryptor::random();
+    Encryptor encryptor{};
 
     std::stringstream input_stream(input);
     std::stringstream output_stream;
@@ -68,10 +67,16 @@ TEST(Encryptor, invalid_random_encryptor) {
 }
 
 TEST(Encryptor, from_file) {
-    auto encryptor = Encryptor::random();
-    encryptor.generate_file("test_file");
+    Encryptor encryptor;
 
-    auto encryptor2 = Encryptor::from_filepath("test_file");
+    std::ofstream file("test_file");
+    encryptor.generate_file(file);
+    file.close();
+
+    std::ifstream file2("test_file");
+    auto encryptor2 = Encryptor(file2);
+    file2.close();
+
     std::string input = "Hello World!\n";
 
     std::stringstream input_stream(input);

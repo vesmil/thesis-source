@@ -10,22 +10,19 @@
 
 class Encryptor {
 public:
-    static Encryptor from_password(const std::string &password);
-    static Encryptor from_filepath(const std::string &filePath);
-    static Encryptor random();
+    explicit Encryptor(const std::string &str);
+    explicit Encryptor(std::istream &fileStream);
+    Encryptor();
 
     bool encrypt_stream(std::istream &input, std::ostream &output);
     bool decrypt_stream(std::istream &input, std::ostream &output);
 
-    void generate_file(const std::string &filePath);
+    void generate_file(std::ostream &fileStream);
 
 private:
-    Encryptor(const std::string &str, bool isPassword);
-    Encryptor();
-
     void init_password(const std::string &password);
 
-    void init_file(const std::string &filePath);
+    void init_file(std::istream &filePath);
 
     unsigned char key[crypto_aead_xchacha20poly1305_ietf_KEYBYTES]{};
     unsigned char nonce[crypto_aead_xchacha20poly1305_ietf_NPUBBYTES]{};

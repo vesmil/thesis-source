@@ -32,9 +32,8 @@ CustomVFS <mountpoint>
 
 ## Project TODO
 
-- [ ] Add support for on disk key
-- [ ] Improve directory encryption
-- [ ] Rewrite commands
+- [ ] Key tests
+- [ ] Default key path
 
 Current constraits
 

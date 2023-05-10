@@ -7,6 +7,7 @@
 #include <string>
 
 #include "common/config.h"
+#include "encryptor.h"
 #include "hook-generation/encryption.h"
 #include "vfs_decorator.h"
 
@@ -35,11 +36,11 @@ private:
     /// Handles encryption hooks
     bool handle_hook(const std::string &path, const std::string &content);
 
-    bool encrypt_file_pass(const std::string &filename, const std::string &password, bool with_related = true);
-    bool decrypt_file_pass(const std::string &filename, const std::string &password, bool with_related = true);
+    bool encrypt_file(const std::string &filename, Encryptor &encryptor, bool with_related);
+    bool decrypt_file(const std::string &filename, Encryptor &encryptor, bool with_related);
 
-    void encrypt_directory(const std::string &directory, const std::string &password);
-    void decrypt_directory(const std::string &directory, const std::string &password);
+    void encrypt_directory(const std::string &directory, Encryptor &encryptor);
+    void decrypt_directory(const std::string &directory, Encryptor &encryptor);
 
     std::vector<std::string> prepare_files(const std::string &filename, bool with_related);
 

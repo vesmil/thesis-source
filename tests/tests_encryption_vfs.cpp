@@ -114,8 +114,19 @@ TEST(EncryptionVfs, default_key) {
     std::string gen_command = EncryptionHookGenerator::generate_key_hook(key_path);
     Common::write_file(gen_command, " ");
 
-    std::string key = Common::read_file(key_path);
-    EXPECT_GE(key.size(), 32);
+    std::string def_key_command =
+        EncryptionHookGenerator::set_key_path_hook(TestConfig::inst().mountpoint / ".", key_path);
+    Common::write_file(def_key_command, " ");
 
-    // TODO
+    std::string test_folder = Path(TestConfig::inst().mountpoint) / "enc_folder_4";
+    std::filesystem::create_directory(test_folder);
+    std::string filepath = Path(test_folder) / "test.txt";
+    std::string content = "Hello World!\n";
+    Common::write_file(filepath, content);
+
+    std::string enc_command = EncryptionHookGenerator::lock_key_hook(filepath, key_path);
+    Common::write_file(enc_command, " ");
+
+    std::string file_content = Common::read_file(filepath);
+    EXPECT_EQ(file_content, content);
 }

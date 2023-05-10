@@ -25,6 +25,7 @@ struct Versioning {
 };
 struct Encryption {
     std::string prefix = "ENCRYPTION";
+    std::string path_to_key_path = "/#ENCRYPTION-keyPath#path";
 };
 
 static Base base;

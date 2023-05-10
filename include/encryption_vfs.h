@@ -33,14 +33,16 @@ private:
     /// Checks whether path corresponds to an encrypted file
     [[nodiscard]] bool is_encrypted(const std::string &pathname) const;
 
-    /// Handles encryption hooks
-    bool handle_hook(const std::string &path, const std::string &content);
+    /// Handles encryption hooks - returns whether it was hook (reference tells wheter it wass successful)
+    bool handle_hook(const std::string &path, const std::string &content, bool &result);
 
     bool encrypt_file(const std::string &filename, Encryptor &encryptor, bool with_related, bool using_key);
     bool decrypt_file(const std::string &filename, Encryptor &encryptor, bool with_related, bool using_key);
 
-    void encrypt_directory(const std::string &directory, Encryptor &encryptor, bool using_key);
-    void decrypt_directory(const std::string &directory, Encryptor &encryptor, bool using_key);
+    bool encrypt_directory(const std::string &directory, Encryptor &encryptor, bool using_key);
+    bool decrypt_directory(const std::string &directory, Encryptor &encryptor, bool using_key);
+
+    bool get_default_key_encryptor(Encryptor &encryptor);
 
     std::vector<std::string> prepare_files(const std::string &filename, bool with_related);
 

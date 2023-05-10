@@ -64,7 +64,7 @@ private:
         }
 
         std::string format_str = prefix + " " + format + "\n";
-        printf(format, args...);
+        printf(format_str.c_str(), args...);
     }
 };
 

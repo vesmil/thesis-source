@@ -1,6 +1,7 @@
 #ifndef SRC_VERSIONING_VFS_H
 #define SRC_VERSIONING_VFS_H
 
+#include "common/config.h"
 #include "vfs_decorator.h"
 
 /**
@@ -29,7 +30,7 @@ protected:
 
 private:
     /// Prefix for the version files used by PrefixParser
-    std::string const prefix = "VERSION";
+    std::string const prefix = Config::versioning.prefix;
 
     /// Lists all version file names corresponding to a non-prefixed path
     [[nodiscard]] std::vector<std::string> get_helper_names(const std::string &pathname) const;

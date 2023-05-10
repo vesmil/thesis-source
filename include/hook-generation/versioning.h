@@ -3,29 +3,28 @@
 
 #include <string>
 
+#include "common/config.h"
 #include "common/prefix_parser.h"
 
 /// Versioning tool for generating hooks
-namespace Versioning {
+namespace VersioningHookGenerator {
 
-std::string prefix = "VERSION";
-
-std::string list_hook(const std::string& filename) {
-    return PrefixParser::apply_prefix(filename, prefix, {"list"});
+inline std::string list_hook(const std::string& filename) {
+    return PrefixParser::apply_prefix(filename, Config::versioning.prefix, {"list"});
 }
 
-std::string restore_hook(const std::string& filename, const std::string& version) {
-    return PrefixParser::apply_prefix(filename, prefix, {"restore", version});
+inline std::string restore_hook(const std::string& filename, const std::string& version) {
+    return PrefixParser::apply_prefix(filename, Config::versioning.prefix, {"restore", version});
 }
 
-std::string delete_hook(const std::string& filename, const std::string& version) {
-    return PrefixParser::apply_prefix(filename, prefix, {"delete", version});
+inline std::string delete_hook(const std::string& filename, const std::string& version) {
+    return PrefixParser::apply_prefix(filename, Config::versioning.prefix, {"delete", version});
 }
 
-std::string delete_all_hook(const std::string& filename) {
-    return PrefixParser::apply_prefix(filename, prefix, {"deleteAll"});
+inline std::string delete_all_hook(const std::string& filename) {
+    return PrefixParser::apply_prefix(filename, Config::versioning.prefix, {"deleteAll"});
 }
 
-};  // namespace Versioning
+}  // namespace VersioningHookGenerator
 
 #endif  // SRC_VERSIONING_H

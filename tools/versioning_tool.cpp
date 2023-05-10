@@ -4,10 +4,11 @@
 #include <string>
 
 #include "common/prefix_parser.h"
+#include "hook-generation/versioning.h"
 
 namespace po = boost::program_options;
 
-static const std::string PREFIX = "VERSION";
+std::string const PREFIX = Config::versioning.prefix;
 
 /**
  * Creates a hook file and waits for the response from the filesystem.

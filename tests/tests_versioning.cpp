@@ -23,7 +23,7 @@ TEST(VersioningVfs, restore_version) {
     file_content = Common::read_file(filepath);
     EXPECT_EQ(file_content, content2);
 
-    std::string restore_file = Versioning::restore_hook(filepath, "1");
+    std::string restore_file = VersioningHookGenerator::restore_hook(filepath, "1");
     Common::write_file(restore_file, " ");
 
     std::string response = Common::read_file(restore_file);
@@ -52,12 +52,12 @@ TEST(VersioningVfs, delete_version) {
     file_content = Common::read_file(filepath);
     EXPECT_EQ(file_content, content2);
 
-    std::string delete_file = Versioning::delete_all_hook(filepath);
+    std::string delete_file = VersioningHookGenerator::delete_all_hook(filepath);
     Common::write_file(delete_file, " ");
 
     std::string response = Common::read_file(delete_file);
 
-    std::string restore_file = Versioning::restore_hook(filepath, "1");
+    std::string restore_file = VersioningHookGenerator::restore_hook(filepath, "1");
     Common::write_file(restore_file, " ");
 
     response = Common::read_file(restore_file);

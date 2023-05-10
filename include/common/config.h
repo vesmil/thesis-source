@@ -6,14 +6,10 @@
 
 #include "path.h"
 
-/**
- * Configuration for filesystems
- */
+/// Configuration for filesystems
 namespace Config {
 
-/**
- * Class to load configuration from a file
- */
+/// Class to load configuration from a file
 class Parser {
 public:
     static bool ParseFile(const std::string &path);
@@ -24,14 +20,17 @@ struct Base {
     std::string backing_prefix = "customvfs-";
 };
 
-struct Versioning {};
-struct Encryption {};
+struct Versioning {
+    std::string prefix = "VERSION";
+};
+struct Encryption {
+    std::string prefix = "ENCRYPTION";
+};
 
 static Base base;
 
-// static Versioning versioning;
-
-// static Encryption encryption;
+static Versioning versioning;
+static Encryption encryption;
 
 }  // namespace Config
 

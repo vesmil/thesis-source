@@ -1,10 +1,13 @@
 #ifndef SRC_ENCRYPTION_VFS_H
 #define SRC_ENCRYPTION_VFS_H
 
+#include <sodium.h>
+
 #include <fstream>
 #include <string>
 
-#include "sodium.h"
+#include "common/config.h"
+#include "hook-generation/encryption.h"
 #include "vfs_decorator.h"
 
 /**
@@ -24,7 +27,7 @@ public:
 
 private:
     /// Prefix for the encrypted files used by PrefixParser
-    std::string const prefix = "ENCRYPTION";
+    std::string const prefix = Config::encryption.prefix;
 
     /// Checks whether path corresponds to an encrypted file
     [[nodiscard]] bool is_encrypted(const std::string &pathname) const;

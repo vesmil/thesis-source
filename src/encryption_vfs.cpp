@@ -61,7 +61,11 @@ bool EncryptionVfs::handle_hook(const std::string &path, const std::string &cont
             }
         } else if (args[0] == "generate") {
             Encryptor encryptor{};
-            encryptor.generate_file(*CustomVfs::get_ofstream(non_prefixed, std::ios::binary));
+            auto file_stream = CustomVfs::get_ofstream(non_prefixed, std::ios::binary);
+            encryptor.generate_file(*file_stream);
+            file_stream->close();
+
+            return true;
         }
 
         return false;

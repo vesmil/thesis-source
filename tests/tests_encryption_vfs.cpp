@@ -20,14 +20,14 @@ TEST(EncryptionVfs, password_file_lock) {
     EXPECT_EQ(file_content, content);
 
     std::string pass = "test";
-    std::string passfile = Encryption::lock_pass_hook(filepath);
+    std::string passfile = EncryptionHookGenerator::lock_pass_hook(filepath);
     Common::write_file(passfile, pass);
 
     file_content = Common::read_file(filepath);
 
     EXPECT_NE(file_content, "Hello World!\n");
 
-    passfile = Encryption::unlock_pass_hook(filepath);
+    passfile = EncryptionHookGenerator::unlock_pass_hook(filepath);
     Common::write_file(passfile, pass);
 
     file_content = Common::read_file(filepath);
@@ -51,17 +51,51 @@ TEST(EncryptionVfs, password_folder_lock) {
     Common::write_file(filepath2, content2);
 
     std::string pass = "test";
-    std::string passfile = Encryption::lock_pass_hook(filepath);
+    std::string passfile = EncryptionHookGenerator::lock_pass_hook(filepath);
     Common::write_file(passfile, pass);
 
     std::string file_content = Common::read_file(filepath);
     EXPECT_NE(file_content, "Hello World!\n");
 
-    passfile = Encryption::unlock_pass_hook(filepath);
+    passfile = EncryptionHookGenerator::unlock_pass_hook(filepath);
     Common::write_file(passfile, pass);
 
     file_content = Common::read_file(filepath);
     EXPECT_EQ(file_content, content);
 }
 
-// TODO with key
+TEST(EncryptionVfs, key_gen) {
+    Common::clean_mountpoint();
+
+    std::string key_path = Path(TestConfig::inst().mountpoint) / "test_key";
+
+    std::string gen_command = EncryptionHookGenerator::generate_key_hook(key_path);
+    Common::write_file(gen_command, " ");
+
+    std::string key = Common::read_file(key_path);
+    EXPECT_GE(key.size(), 32);
+}
+
+TEST(EncryptionVfs, key_encryption) {
+    Common::clean_mountpoint();
+
+    std::string key_path = Path(TestConfig::inst().mountpoint) / "test_key";
+
+    std::string gen_command = EncryptionHookGenerator::generate_key_hook(key_path);
+    Common::write_file(gen_command, " ");
+
+    std::string key = Common::read_file(key_path);
+    EXPECT_GE(key.size(), 32);
+}
+
+TEST(EncryptionVfs, default_key) {
+    Common::clean_mountpoint();
+
+    std::string key_path = Path(TestConfig::inst().mountpoint) / "test_key";
+
+    std::string gen_command = EncryptionHookGenerator::generate_key_hook(key_path);
+    Common::write_file(gen_command, " ");
+
+    std::string key = Common::read_file(key_path);
+    EXPECT_GE(key.size(), 32);
+}

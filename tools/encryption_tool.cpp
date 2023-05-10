@@ -8,9 +8,10 @@
 #include <utility>
 
 #include "common/prefix_parser.h"
+#include "hook-generation/encryption.h"
 
 namespace po = boost::program_options;
-static const std::string PREFIX = "ENCRYPTION";
+std::string const PREFIX = Config::encryption.prefix;
 
 /**
  * Sets terminal echo - used to hide password input.

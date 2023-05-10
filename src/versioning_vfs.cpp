@@ -13,6 +13,10 @@ int VersioningVfs::write(const std::string &pathname, const char *buf, size_t co
         return 0;
     }
 
+    if (PrefixParser::is_prefixed(Path::string_basename(pathname))) {
+        return get_wrapped().write(pathname, buf, count, offset, fi);
+    }
+
     int max_version = get_max_version(pathname);
 
     std::string new_version_path = PrefixParser::apply_prefix(pathname, prefix, {std::to_string(max_version + 1)});
@@ -62,12 +66,12 @@ bool VersioningVfs::handle_versioned_command(const std::string &command, const s
                                              struct fuse_file_info *fi) {
     if (command == "restore") {
         restore_version(arg_path, std::stoi(subArg));
-        Logging::Info("Restored version %s of file %s\n", subArg.c_str(), arg_path.c_str());
+        Logging::Info("Restored version %s of file %s", subArg.c_str(), arg_path.c_str());
         return true;
 
     } else if (command == "delete") {
         delete_version(arg_path, std::stoi(subArg));
-        Logging::Info("Deleted version %s of file %s\n", subArg.c_str(), arg_path.c_str());
+        Logging::Info("Deleted version %s of file %s", subArg.c_str(), arg_path.c_str());
         return true;
     }
 

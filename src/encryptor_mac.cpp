@@ -4,6 +4,8 @@
 
 #include "encryptor.h"
 
+// This is just placeholder code for the ARM64 version of the encryptor.
+
 Encryptor::Encryptor(std::string password) : password_(std::move(password)) {}
 
 void Encryptor::derive_key_and_nonce(const std::string &password, unsigned char *key, unsigned char *nonce) {}

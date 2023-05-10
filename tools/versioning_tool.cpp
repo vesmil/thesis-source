@@ -71,6 +71,7 @@ int main(int argc, char* argv[]) {
         }
 
         std::string file = vm["file"].as<std::string>();
+        file = Path::to_absolute(file);
 
         if (vm.count("list")) {
             perform_command(VersioningHookGenerator::list_hook(file), true);

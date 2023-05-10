@@ -143,7 +143,8 @@ std::vector<std::string> VersioningVfs::get_helper_names(const std::string &path
 
     for (const std::string &filename : path_files) {
         if (is_version_file(filename)) {
-            if (Path::string_basename(PrefixParser::get_nonprefixed(filename)) == Path::string_basename(pathname)) {
+            if (Path::string_basename(Path::string_basename(PrefixParser::get_nonprefixed(filename))) ==
+                Path::string_basename(pathname)) {
                 version_files.push_back(filename);
             }
         }

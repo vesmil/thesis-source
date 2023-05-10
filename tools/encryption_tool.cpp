@@ -6,6 +6,7 @@
 #include <iostream>
 #include <string>
 
+#include "common/path.h"
 #include "common/prefix_parser.h"
 #include "hook-generation/encryption.h"
 
@@ -56,7 +57,7 @@ void password_command(const std::string& command, const std::string& password) {
         out << password;
         out.close();
     } else {
-        std::cerr << "Unable to unlock file" << std::endl;
+        std::cerr << "Unable to perform command" << std::endl;
     }
 
     std::remove(command.c_str());
@@ -142,8 +143,22 @@ int main(int argc, char* argv[]) {
 
         std::string password;
 
-        std::string key = vm["key"].as<std::string>();
-        bool use_key = vm.count("key");
+        std::string key;
+        bool use_key = false;
+
+        if (vm.count("key")) {
+            key = vm["key"].as<std::string>();
+            key = Path::to_absolute(key);
+
+            use_key = true;
+        }
+
+        if (vm.count("generate")) {
+            key = vm["generate"].as<std::string>();
+            key = Path::to_absolute(key);
+
+            use_key = true;
+        }
 
         // If no key is provided, ask for password.
         if (!use_key) {
@@ -156,7 +171,7 @@ int main(int argc, char* argv[]) {
                 return 2;
             }
 
-            key = file;
+            key = Path::to_absolute(file);
         }
 
         // Does the main operation.
@@ -168,25 +183,26 @@ int main(int argc, char* argv[]) {
                 return 1;
             }
 
-            perform_command(EncryptionHookGenerator::set_key_path_hook(paths[0], paths[1]));
+            perform_command(
+                EncryptionHookGenerator::set_key_path_hook(Path::to_absolute(paths[0]), Path::to_absolute(paths[0])));
 
         } else if (vm.count("unlock")) {
             std::string file = vm["unlock"].as<std::string>();
             if (use_key) {
-                perform_command(EncryptionHookGenerator::unlock_key_hook(file, key));
+                perform_command(EncryptionHookGenerator::unlock_key_hook(Path::to_absolute(file), key));
             } else {
-                password_command(EncryptionHookGenerator::unlock_pass_hook(file), password);
+                password_command(EncryptionHookGenerator::unlock_pass_hook(Path::to_absolute(file)), password);
             }
         } else if (vm.count("lock")) {
             std::string file = vm["lock"].as<std::string>();
             if (vm.count("key")) {
-                perform_command(EncryptionHookGenerator::lock_key_hook(file, key));
+                perform_command(EncryptionHookGenerator::lock_key_hook(Path::to_absolute(file), key));
             } else {
-                password_command(EncryptionHookGenerator::lock_pass_hook(file), password);
+                password_command(EncryptionHookGenerator::lock_pass_hook(Path::to_absolute(file)), password);
             }
         } else if (vm.count("default-lock")) {
             std::string file = vm["default-lock"].as<std::string>();
-            perform_command(EncryptionHookGenerator::default_lock_hook(file));
+            perform_command(EncryptionHookGenerator::default_lock_hook(Path::to_absolute(file)));
         }
 
     } catch (std::exception& e) {

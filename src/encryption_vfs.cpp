@@ -110,7 +110,8 @@ bool EncryptionVfs::handle_hook(const std::string &path, const std::string &cont
 
 int EncryptionVfs::open(const std::string &pathname, struct fuse_file_info *fi) {
     if (is_encrypted(pathname)) {
-        // TODO check key
+        auto args = PrefixParser::args_from_prefix(pathname, prefix);
+        // TODO
     }
 
     return get_wrapped().open(pathname, fi);

@@ -8,7 +8,7 @@
 
 int VersioningVfs::write(const std::string &pathname, const char *buf, size_t count, off_t offset,
                          struct fuse_file_info *fi) {
-    if (handle_hook(pathname, fi)) {
+    if (handle_hook(pathname)) {
         Logging::Debug("Hook handled for %s", pathname.c_str());
         return 0;
     }
@@ -43,7 +43,7 @@ int VersioningVfs::get_max_version(const std::string &pathname) {
     return max_version;
 }
 
-bool VersioningVfs::handle_hook(const std::string &pathname, struct fuse_file_info *fi) {
+bool VersioningVfs::handle_hook(const std::string &pathname) {
     if (!PrefixParser::contains_prefix(pathname, prefix)) {
         return false;
     }
@@ -52,9 +52,9 @@ bool VersioningVfs::handle_hook(const std::string &pathname, struct fuse_file_in
     auto args = PrefixParser::args_from_prefix(pathname, prefix);
 
     if (args.size() == 2) {
-        return handle_versioned_command(args[0], args[1], nonPrefixed, pathname, fi);
+        return handle_versioned_command(args[0], args[1], nonPrefixed);
     } else if (args.size() == 1) {
-        return handle_non_versioned_command(args[0], nonPrefixed, pathname);
+        return handle_non_versioned_command(args[0], nonPrefixed);
     } else {
         Logging::Error("Invalid number of arguments in versioning prefix: %s", pathname.c_str());
         return false;
@@ -62,8 +62,7 @@ bool VersioningVfs::handle_hook(const std::string &pathname, struct fuse_file_in
 }
 
 bool VersioningVfs::handle_versioned_command(const std::string &command, const std::string &subArg,
-                                             const std::string &arg_path, const std::string &pathname,
-                                             struct fuse_file_info *fi) {
+                                             const std::string &arg_path) {
     if (command == "restore") {
         restore_version(arg_path, std::stoi(subArg));
         Logging::Info("Restored version %s of file %s", subArg.c_str(), arg_path.c_str());
@@ -78,8 +77,7 @@ bool VersioningVfs::handle_versioned_command(const std::string &command, const s
     return false;
 }
 
-bool VersioningVfs::handle_non_versioned_command(const std::string &command, const std::string &arg_path,
-                                                 const std::string &pathname) {
+bool VersioningVfs::handle_non_versioned_command(const std::string &command, const std::string &arg_path) {
     if (command == "deleteAll") {
         delete_all_versions(arg_path);
         Logging::Info("Deleted all versions of file %s", arg_path.c_str());

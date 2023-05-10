@@ -42,7 +42,7 @@ private:
     [[nodiscard]] int get_max_version(const std::string &pathname);
 
     /// Handle versioning hooks
-    bool handle_hook(const std::string &pathname, struct fuse_file_info *fi);
+    bool handle_hook(const std::string &pathname);
 
     /// Sets previous version as the current
     void restore_version(const std::string &pathname, int version);
@@ -51,12 +51,10 @@ private:
     void delete_version(const std::string &pathname, int version);
 
     /// Handles hook with version number
-    bool handle_versioned_command(const std::string &command, const std::string &subArg, const std::string &arg_path,
-                                  const std::string &pathname, struct fuse_file_info *fi);
+    bool handle_versioned_command(const std::string &command, const std::string &subArg, const std::string &arg_path);
 
     /// Handles hook without version number
-    bool handle_non_versioned_command(const std::string &command, const std::string &arg_path,
-                                      const std::string &pathname);
+    bool handle_non_versioned_command(const std::string &command, const std::string &arg_path);
 
     /// Deletes all versions of a file
     void delete_all_versions(const std::string &base_name);

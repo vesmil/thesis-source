@@ -42,32 +42,29 @@ public:
 
 private:
     template <typename... Args>
-    static void log_printf(const char *format, Args... args) {
-        printf(format, args...);
-    }
-
-    template <typename... Args>
     static void Log(Level level, const char *format, Args... args) {
+        std::string prefix = "[UNKNOWN]";
+
         switch (level) {
             case Level::DEBUG:
-                log_printf("[DEBUG] ");
+                prefix = "[DEBUG]";
                 break;
             case Level::INFO:
-                log_printf("[INFO] ");
+                prefix = "[INFO]";
                 break;
             case Level::WARN:
-                log_printf("[WARN] ");
+                prefix = "[WARN]";
                 break;
             case Level::ERROR:
-                log_printf("[ERROR] ");
+                prefix = "[ERROR]";
                 break;
             case Level::FATAL:
-                log_printf("[FATAL] ");
+                prefix = "[FATAL]";
                 break;
         }
 
-        log_printf(format, args...);
-        log_printf("\n");
+        std::string format_str = prefix + " " + format + "\n";
+        printf(format, args...);
     }
 };
 

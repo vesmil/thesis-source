@@ -34,7 +34,7 @@ private:
     [[nodiscard]] bool is_encrypted(const std::string &pathname) const;
 
     /// Handles encryption hooks - returns whether it was hook (reference tells wheter it wass successful)
-    bool handle_hook(const std::string &path, const std::string &content, bool &result);
+    bool handle_hook(const std::string &path, const std::string &content);
 
     bool encrypt_file(const std::string &filename, Encryptor &encryptor, bool with_related, bool using_key);
     bool decrypt_file(const std::string &filename, Encryptor &encryptor, bool with_related, bool using_key);
@@ -49,6 +49,7 @@ private:
     std::pair<std::unique_ptr<std::ifstream>, std::unique_ptr<std::ofstream>> open_files(
         const std::string &input_file, const std::string &output_file, std::ios_base::openmode input_mode,
         std::ios_base::openmode output_mode);
+    bool is_hook(const std::string &basicString);
 };
 
 #endif  // SRC_ENCRYPTION_VFS_H

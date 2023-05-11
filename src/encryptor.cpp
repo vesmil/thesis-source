@@ -60,7 +60,7 @@ void Encryptor::init_file(std::istream &file) {
     }
 }
 
-void Encryptor::generate_file(std::ostream &fileStream) {
+void Encryptor::store_key(std::ostream &fileStream) {
     fileStream.write(reinterpret_cast<const char *>(key), crypto_aead_xchacha20poly1305_ietf_KEYBYTES);
 
     if (!fileStream) {

@@ -100,7 +100,7 @@ bool EncryptionVfs::handle_double_arg(const std::string &non_prefixed, const std
 bool EncryptionVfs::generate_encryption_file(const std::string &non_prefixed) {
     Encryptor encryptor{};
     auto file_stream = CustomVfs::get_ofstream(non_prefixed, std::ios::binary);
-    encryptor.generate_file(*file_stream);
+    encryptor.store_key(*file_stream);
     file_stream->close();
 
     return true;

@@ -6,7 +6,7 @@
 #include "common/config.h"
 #include "common/prefix_parser.h"
 
-/// Versioning tool for generating hooks
+/// @brief Versioning tool for generating hooks
 namespace VersioningHookGenerator {
 
 inline std::string list_hook(const std::string& filename) {

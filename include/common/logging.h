@@ -5,7 +5,7 @@
 #include <string>
 
 /**
- *  Placeholder class for logging
+ * @brief Placeholder class for logging
  * @note Should be replace with proper logging library in the future
  */
 class Logging {

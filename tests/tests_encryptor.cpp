@@ -70,7 +70,7 @@ TEST(Encryptor, from_file) {
     Encryptor encryptor;
 
     std::ofstream file("test_file");
-    encryptor.generate_file(file);
+    encryptor.store_key(file);
     file.close();
 
     std::ifstream file2("test_file");

@@ -60,6 +60,7 @@ private:
 
     /// @brief Deletes all versions of a file
     void delete_all_versions(const std::string &base_name);
+    void list_versions(const std::string &arg_path, const std::string &hook_file);
 };
 
 #endif  // SRC_VERSIONING_VFS_H

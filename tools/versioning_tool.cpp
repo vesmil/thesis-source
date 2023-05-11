@@ -8,7 +8,7 @@
 namespace po = boost::program_options;
 
 /// @brief Writes to a command file
-bool perform_command(const std::string& command, bool read = false) {
+bool perform_command(const std::string& command, bool read = true) {
     std::ofstream out(command);
 
     if (out.is_open()) {
@@ -21,12 +21,20 @@ bool perform_command(const std::string& command, bool read = false) {
 
     if (read) {
         std::ifstream in(command);
-        std::string response;
 
+        std::string response;
+        std::vector<std::string> responses;
         while (std::getline(in, response)) {
-            std::cout << response << std::endl;
+            responses.push_back(response);
         }
 
+        if (responses.empty() || responses[0] == " " || responses[0].empty()) {
+            std::cout << "Done" << std::endl;
+        } else {
+            for (const auto& resp : responses) {
+                std::cout << resp << std::endl;
+            }
+        }
         in.close();
     }
 
@@ -52,7 +60,7 @@ int main(int argc, char* argv[]) {
             ("list", "list all versions of a file")                                //
             ("restore", po::value<int>(), "restore a file to a specific version")  //
             ("delete", po::value<int>(), "delete a specific version of a file")    //
-            ("deleteAll", "delete all versions of a file")                         //
+            ("delete-all", "delete all versions of a file")                        //
             ("file", po::value<std::string>(), "file path (is also a positional argument)");
 
         po::positional_options_description p;
@@ -76,12 +84,12 @@ int main(int argc, char* argv[]) {
         file = Path::to_absolute(file);
 
         if (vm.count("list")) {
-            perform_command(VersioningHookGenerator::list_hook(file), true);
+            perform_command(VersioningHookGenerator::list_hook(file));
         }
 
         if (vm.count("restore")) {
             int version = vm["restore"].as<int>();
-            perform_command(VersioningHookGenerator::restore_hook(file, std::to_string(version)), true);
+            perform_command(VersioningHookGenerator::restore_hook(file, std::to_string(version)));
         }
 
         if (vm.count("delete")) {
@@ -89,7 +97,7 @@ int main(int argc, char* argv[]) {
             perform_command(VersioningHookGenerator::delete_hook(file, std::to_string(version)));
         }
 
-        if (vm.count("deleteAll")) {
+        if (vm.count("delete-all")) {
             perform_command(VersioningHookGenerator::delete_all_hook(file));
         }
     } catch (std::exception& e) {

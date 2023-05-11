@@ -256,6 +256,7 @@ std::vector<std::string> CustomVfs::get_related_files(const std::string &pathnam
 
 int CustomVfs::copy_file(const std::string &source, const std::string &destination) {
     std::filesystem::copy_file(to_backing(source), to_backing(destination));
+    std::ofstream(to_backing(destination), std::ios_base::app).close();
     return 0;
 }
 

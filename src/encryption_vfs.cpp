@@ -120,6 +120,7 @@ bool EncryptionVfs::set_default_key(const std::string &key_path_arg) {
 
 bool EncryptionVfs::handle_encryption_action(const std::string &non_prefixed, const std::string &arg,
                                              const Encryptor &encryptor, bool is_dir, bool use_key_file) {
+    // TODO automatic is dir
     if (arg == "lock" || arg == "defaultLock") {
         return is_dir ? encrypt_directory(non_prefixed, encryptor, use_key_file)
                       : encrypt_file(non_prefixed, encryptor, true, use_key_file);

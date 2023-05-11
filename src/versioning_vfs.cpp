@@ -11,9 +11,14 @@
 
 int VersioningVfs::write(const std::string &pathname, const char *buf, size_t count, off_t offset,
                          struct fuse_file_info *fi) {
-    if (handle_hook(pathname)) {
-        Logging::Debug("Hook handled for %s", pathname.c_str());
-        return 0;
+    try {
+        if (handle_hook(pathname)) {
+            Logging::Debug("Hook handled for %s", pathname.c_str());
+            return 0;
+        }
+    } catch (std::exception &e) {
+        Logging::Error("Failed to handle hook for %s: %s", pathname.c_str(), e.what());
+        return -1;
     }
 
     if (PrefixParser::is_prefixed(Path::string_basename(pathname))) {
@@ -50,7 +55,7 @@ bool VersioningVfs::handle_hook(const std::string &pathname) {
     if (!PrefixParser::contains_prefix(pathname, prefix)) {
         return false;
     }
-
+    
     auto nonPrefixed = PrefixParser::remove_specific_prefix(pathname, prefix);
     auto args = PrefixParser::args_from_prefix(pathname, prefix);
 
@@ -110,51 +115,54 @@ bool VersioningVfs::handle_non_versioned_command(const std::string &command, con
         return true;
 
     } else if (command == "list") {
-        if (!get_wrapped().exists(arg_path)) {
-            auto stream = CustomVfs::get_ofstream(hook_file, std::ios::binary);
-            *stream << "Requested file not available! Listing failed." << std::endl;
-            stream->close();
-            return true;
-        }
-
-        auto versions = get_related_names(arg_path);
-        auto stream = CustomVfs::get_ofstream(hook_file, std::ios::binary);
-
-        std::vector<int> version_numbers;
-        version_numbers.reserve(versions.size());
-
-        for (const auto &version : versions) {
-            version_numbers.push_back(std::stoi(PrefixParser::args_from_prefix(version, prefix)[0]));
-        }
-
-        std::vector<std::string> version_times;
-        version_times.reserve(versions.size());
-        Path parent = Path(arg_path).parent();
-
-        for (const auto &version : versions) {
-            auto stbuf = std::make_unique<struct stat>();
-            get_wrapped().getattr(parent / version, stbuf.get());
-
-            const auto rawtime = stbuf->st_mtime;
-            const auto timeinfo = localtime(&rawtime);
-
-            std::ostringstream oss;
-            oss << std::put_time(timeinfo, "%Y-%m-%d %H:%M:%S");
-
-            version_times.push_back(oss.str());
-        }
-
-        std::sort(version_numbers.begin(), version_numbers.end());
-        for (int i = 0; i < version_numbers.size(); i++) {
-            *stream << version_numbers[i] << " " << version_times[i] << "\n";
-        }
-
-        stream->close();
-
+        list_versions(arg_path, hook_file);
         return true;
     }
 
     return false;
+}
+
+void VersioningVfs::list_versions(const std::string &arg_path, const std::string &hook_file) {
+    if (!get_wrapped().exists(arg_path)) {
+        auto stream = CustomVfs::get_ofstream(hook_file, std::ios::binary);
+        *stream << "Requested file not available! Listing failed." << std::endl;
+        stream->close();
+        return;
+    }
+
+    auto versions = get_related_names(arg_path);
+    auto stream = CustomVfs::get_ofstream(hook_file, std::ios::binary);
+
+    std::vector<int> version_numbers;
+    version_numbers.reserve(versions.size());
+
+    for (const auto &version : versions) {
+        version_numbers.push_back(std::stoi(PrefixParser::args_from_prefix(version, prefix)[0]));
+    }
+
+    std::vector<std::string> version_times;
+    version_times.reserve(versions.size());
+    Path parent = Path(arg_path).parent();
+
+    for (const auto &version : versions) {
+        auto stbuf = std::make_unique<struct stat>();
+        get_wrapped().getattr(parent / version, stbuf.get());
+
+        const auto rawtime = stbuf->st_mtime;
+        const auto timeinfo = localtime(&rawtime);
+
+        std::ostringstream oss;
+        oss << std::put_time(timeinfo, "%Y-%m-%d %H:%M");
+
+        version_times.push_back(oss.str());
+    }
+
+    std::sort(version_numbers.begin(), version_numbers.end());
+    for (int i = 0; i < version_numbers.size(); i++) {
+        *stream << version_numbers[i] << " - " << version_times[i] << "\n";
+    }
+
+    stream->close();
 }
 
 void VersioningVfs::delete_version(const std::string &pathname, int version) {

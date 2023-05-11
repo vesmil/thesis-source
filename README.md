@@ -13,6 +13,7 @@ the [thesis repository](https://gitlab.mff.cuni.cz/teaching/theses/yaghob/vesely
 * Fuse - So far version 2.1 and higher was tested
 * Libsodium
 * Google test
+* Boost program options
 
 ### Build
 
@@ -30,10 +31,30 @@ Simply pass a Directory as a mountpoint to the executable.
 CustomVFS <mountpoint>
 ```
 
-## Project TODO
+### Usage
 
-- [ ] Default key path
+The VFS is controlled by tools from the `tools` directory.
 
-Current constraits
+The usage is as follows:
 
+```bash
+cvfs_encrypt --lock <file>
+cvfs_encrypt --lock <file> --key <key>
+cvfs_encrypt --default-lock <file>         # Requires set-key-path to be run first
+
+cvfs_encrypt --unlock <file>
+cvfs_encrypt --unlock <file> --key <key>
+
+cvfs_encrypt --generate <file>             # Generates a new key
+cvfs_encrypt --set-key-path <vfs> <file>   # Sets default key path for the VFS
+```
+
+And for the versioning
+
+```bash
+cvfs_version --list <file>
+cvfs_version --restore <version> <file> 
+cvfs_version --delete <version> <file>
+cvfs_version --delete-all <file>  
+```
 

@@ -49,19 +49,17 @@ bool EncryptionVfs::handle_hook(const std::string &path, const std::string &cont
     auto non_prefixed = PrefixParser::remove_specific_prefix(path, prefix);
     auto args = PrefixParser::args_from_prefix(path, prefix);
 
-    bool is_dir = get_wrapped().is_directory(path);
-
     if (args.size() == 1) {
-        return handle_single_arg(non_prefixed, args[0], content, is_dir);
+        return handle_single_arg(non_prefixed, args[0], content);
     } else if (args.size() == 2) {
-        return handle_double_arg(non_prefixed, args[0], args[1], is_dir);
+        return handle_double_arg(non_prefixed, args[0], args[1]);
     }
 
     return false;
 }
 
 bool EncryptionVfs::handle_single_arg(const std::string &non_prefixed, const std::string &arg,
-                                      const std::string &content, bool is_dir) {
+                                      const std::string &content) {
     Encryptor encryptor;
     bool is_key = false;
 
@@ -78,11 +76,11 @@ bool EncryptionVfs::handle_single_arg(const std::string &non_prefixed, const std
         return false;
     }
 
-    return handle_encryption_action(non_prefixed, arg, encryptor, is_dir, is_key);
+    return handle_encryption_action(non_prefixed, arg, encryptor, is_key);
 }
 
 bool EncryptionVfs::handle_double_arg(const std::string &non_prefixed, const std::string &arg,
-                                      const std::string &key_path_arg, bool is_dir) {
+                                      const std::string &key_path_arg) {
     if (arg != "lock" && arg != "unlock" && arg != "setDefault") {
         return false;
     }
@@ -95,7 +93,7 @@ bool EncryptionVfs::handle_double_arg(const std::string &non_prefixed, const std
     std::replace(key_path.begin(), key_path.end(), '|', '/');
     auto encryptor = Encryptor::from_file(key_path);
 
-    return handle_encryption_action(non_prefixed, arg, encryptor, is_dir, true);
+    return handle_encryption_action(non_prefixed, arg, encryptor, true);
 }
 
 bool EncryptionVfs::generate_encryption_file(const std::string &non_prefixed) {
@@ -119,8 +117,9 @@ bool EncryptionVfs::set_default_key(const std::string &key_path_arg) {
 }
 
 bool EncryptionVfs::handle_encryption_action(const std::string &non_prefixed, const std::string &arg,
-                                             const Encryptor &encryptor, bool is_dir, bool use_key_file) {
-    // TODO automatic is dir
+                                             const Encryptor &encryptor, bool use_key_file) {
+    bool is_dir = CustomVfs::is_directory(non_prefixed);
+
     if (arg == "lock" || arg == "defaultLock") {
         return is_dir ? encrypt_directory(non_prefixed, encryptor, use_key_file)
                       : encrypt_file(non_prefixed, encryptor, true, use_key_file);

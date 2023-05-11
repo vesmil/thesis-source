@@ -52,12 +52,10 @@ private:
     /// Checks whether the path is a hook
     [[nodiscard]] bool is_hook(const std::string &basicString);
 
-    bool handle_single_arg(const std::string &non_prefixed, const std::string &arg, const std::string &content,
-                           bool is_dir);
-    bool handle_double_arg(const std::string &non_prefixed, const std::string &arg, const std::string &key_path_arg,
-                           bool is_dir);
+    bool handle_single_arg(const std::string &non_prefixed, const std::string &arg, const std::string &content);
+    bool handle_double_arg(const std::string &non_prefixed, const std::string &arg, const std::string &key_path_arg);
     bool handle_encryption_action(const std::string &non_prefixed, const std::string &arg, const Encryptor &encryptor,
-                                  bool is_dir, bool use_key_file);
+                                  bool use_key_file);
 
     bool generate_encryption_file(const std::string &non_prefixed);
     bool set_default_key(const std::string &key_path_arg);

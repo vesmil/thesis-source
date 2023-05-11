@@ -22,6 +22,10 @@ CustomVfs::CustomVfs(const std::string &path, const std::string &backing) : moun
             Logging::Fatal("Mount path %s could not be created", path.c_str());
             throw std::runtime_error("Mount path could not be created");
         }
+    } else {
+        if (!std::filesystem::is_directory(path)) {
+            throw std::runtime_error("Mount point is not a directory");
+        }
     }
 
     std::string name = Path::string_basename(path);

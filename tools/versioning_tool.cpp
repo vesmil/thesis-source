@@ -22,8 +22,10 @@ bool perform_command(const std::string& command, bool read = false) {
     if (read) {
         std::ifstream in(command);
         std::string response;
-        std::getline(in, response);
-        std::cout << response << std::endl;
+
+        while (std::getline(in, response)) {
+            std::cout << response << std::endl;
+        }
 
         in.close();
     }
@@ -79,7 +81,7 @@ int main(int argc, char* argv[]) {
 
         if (vm.count("restore")) {
             int version = vm["restore"].as<int>();
-            perform_command(VersioningHookGenerator::restore_hook(file, std::to_string(version)));
+            perform_command(VersioningHookGenerator::restore_hook(file, std::to_string(version)), true);
         }
 
         if (vm.count("delete")) {

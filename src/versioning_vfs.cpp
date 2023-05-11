@@ -1,5 +1,7 @@
 #include "versioning_vfs.h"
 
+#include <time.h>
+
 #include <algorithm>
 #include <fstream>
 
@@ -36,7 +38,7 @@ int VersioningVfs::write(const std::string &pathname, const char *buf, size_t co
 int VersioningVfs::get_max_version(const std::string &pathname) {
     int max_version = 0;
 
-    for (const std::string &version_file : get_helper_names(pathname)) {
+    for (const std::string &version_file : get_related_names(pathname)) {
         std::string version_string = PrefixParser::args_from_prefix(version_file, prefix)[0];
         max_version = std::max(max_version, std::stoi(version_string));
     }
@@ -53,9 +55,9 @@ bool VersioningVfs::handle_hook(const std::string &pathname) {
     auto args = PrefixParser::args_from_prefix(pathname, prefix);
 
     if (args.size() == 2) {
-        return handle_versioned_command(args[0], args[1], nonPrefixed);
+        return handle_versioned_command(args[0], args[1], nonPrefixed, pathname);
     } else if (args.size() == 1) {
-        return handle_non_versioned_command(args[0], nonPrefixed);
+        return handle_non_versioned_command(args[0], nonPrefixed, pathname);
     } else {
         Logging::Error("Invalid number of arguments in versioning prefix: %s", pathname.c_str());
         return false;
@@ -63,13 +65,28 @@ bool VersioningVfs::handle_hook(const std::string &pathname) {
 }
 
 bool VersioningVfs::handle_versioned_command(const std::string &command, const std::string &subArg,
-                                             const std::string &arg_path) {
+                                             const std::string &arg_path,
+                                             [[maybe_unused]] const std::string &hook_file) {
     if (command == "restore") {
+        if (!get_wrapped().exists(PrefixParser::apply_prefix(arg_path, prefix, {subArg}))) {
+            auto stream = CustomVfs::get_ofstream(hook_file, std::ios::binary);
+            *stream << "Requested file or version not available!" << std::endl;
+            stream->close();
+            return true;
+        }
+
         restore_version(arg_path, std::stoi(subArg));
         Logging::Info("Restored version %s of file %s", subArg.c_str(), arg_path.c_str());
         return true;
 
     } else if (command == "delete") {
+        if (!get_wrapped().exists(PrefixParser::apply_prefix(arg_path, prefix, {subArg}))) {
+            auto stream = CustomVfs::get_ofstream(hook_file, std::ios::binary);
+            *stream << "Requested file or version not available!" << std::endl;
+            stream->close();
+            return true;
+        }
+
         delete_version(arg_path, std::stoi(subArg));
         Logging::Info("Deleted version %s of file %s", subArg.c_str(), arg_path.c_str());
         return true;
@@ -78,19 +95,60 @@ bool VersioningVfs::handle_versioned_command(const std::string &command, const s
     return false;
 }
 
-bool VersioningVfs::handle_non_versioned_command(const std::string &command, const std::string &arg_path) {
+bool VersioningVfs::handle_non_versioned_command(const std::string &command, const std::string &arg_path,
+                                                 const std::string &hook_file) {
     if (command == "deleteAll") {
+        if (!get_wrapped().exists(arg_path)) {
+            auto stream = CustomVfs::get_ofstream(hook_file, std::ios::binary);
+            *stream << "Requested file not available! Deleting all failed." << std::endl;
+            stream->close();
+            return true;
+        }
+
         delete_all_versions(arg_path);
         Logging::Info("Deleted all versions of file %s", arg_path.c_str());
         return true;
 
     } else if (command == "list") {
-        auto versions = get_helper_names(arg_path);
-
-        auto stream = CustomVfs::get_ofstream(arg_path, std::ios::binary);
-        for (const auto &version : versions) {
-            *stream << version << std::endl;
+        if (!get_wrapped().exists(arg_path)) {
+            auto stream = CustomVfs::get_ofstream(hook_file, std::ios::binary);
+            *stream << "Requested file not available! Listing failed." << std::endl;
+            stream->close();
+            return true;
         }
+
+        auto versions = get_related_names(arg_path);
+        auto stream = CustomVfs::get_ofstream(hook_file, std::ios::binary);
+
+        std::vector<int> version_numbers;
+        version_numbers.reserve(versions.size());
+
+        for (const auto &version : versions) {
+            version_numbers.push_back(std::stoi(PrefixParser::args_from_prefix(version, prefix)[0]));
+        }
+
+        std::vector<std::string> version_times;
+        version_times.reserve(versions.size());
+        Path parent = Path(arg_path).parent();
+
+        for (const auto &version : versions) {
+            auto stbuf = std::make_unique<struct stat>();
+            get_wrapped().getattr(parent / version, stbuf.get());
+
+            const auto rawtime = stbuf->st_mtime;
+            const auto timeinfo = localtime(&rawtime);
+
+            std::ostringstream oss;
+            oss << std::put_time(timeinfo, "%Y-%m-%d %H:%M:%S");
+
+            version_times.push_back(oss.str());
+        }
+
+        std::sort(version_numbers.begin(), version_numbers.end());
+        for (int i = 0; i < version_numbers.size(); i++) {
+            *stream << version_numbers[i] << " " << version_times[i] << "\n";
+        }
+
         stream->close();
 
         return true;
@@ -132,12 +190,17 @@ std::vector<std::string> VersioningVfs::subfiles(const std::string &pathname) co
 
 void VersioningVfs::restore_version(const std::string &pathname, int version) {
     std::string restored_path = PrefixParser::apply_prefix(pathname, prefix, {std::to_string(version)});
-    get_wrapped().rename(restored_path, pathname, 0);
+
+    if (get_wrapped().exists(pathname)) {
+        get_wrapped().unlink(pathname);
+    }
+
+    get_wrapped().copy_file(restored_path, pathname);
 
     Logging::Info("Restored version %d of file %s", version, pathname.c_str());
 }
 
-std::vector<std::string> VersioningVfs::get_helper_names(const std::string &pathname) const {
+std::vector<std::string> VersioningVfs::get_related_names(const std::string &pathname) const {
     std::vector<std::string> path_files = get_wrapped().subfiles(Path::string_parent(pathname));
     std::vector<std::string> version_files;
 
@@ -157,7 +220,7 @@ std::vector<std::string> VersioningVfs::get_related_files(const std::string &pat
     Path parent = Path(pathname).parent();
     std::vector<std::string> version_files;
 
-    for (auto &version_file : get_helper_names(pathname)) {
+    for (auto &version_file : get_related_names(pathname)) {
         version_files.push_back((parent / version_file).to_string());
     }
 

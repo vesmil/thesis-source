@@ -33,7 +33,7 @@ private:
     std::string const prefix = Config::versioning.prefix;
 
     /// @brief Lists all version file names corresponding to a non-prefixed path
-    [[nodiscard]] std::vector<std::string> get_helper_names(const std::string &pathname) const;
+    [[nodiscard]] std::vector<std::string> get_related_names(const std::string &pathname) const;
 
     /// @brief Checks whether path corresponds to a version file
     [[nodiscard]] bool is_version_file(const std::string &pathname) const;
@@ -51,10 +51,12 @@ private:
     void delete_version(const std::string &pathname, int version);
 
     /// @brief Handles hook with version number
-    bool handle_versioned_command(const std::string &command, const std::string &subArg, const std::string &arg_path);
+    bool handle_versioned_command(const std::string &command, const std::string &subArg, const std::string &arg_path,
+                                  [[maybe_unused]] const std::string &hook_file);
 
     /// @brief Handles hook without version number
-    bool handle_non_versioned_command(const std::string &command, const std::string &arg_path);
+    bool handle_non_versioned_command(const std::string &command, const std::string &arg_path,
+                                      const std::string &hook_file);
 
     /// @brief Deletes all versions of a file
     void delete_all_versions(const std::string &base_name);

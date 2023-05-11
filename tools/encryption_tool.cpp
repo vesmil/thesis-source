@@ -65,18 +65,14 @@ void password_command(const std::string& command, const std::string& password) {
 
 /// @brief Verifies that the arguments are valid.
 bool verify_args(const po::variables_map& vm) {
-    if (!vm.count("unlock") && !vm.count("lock") && !vm.count("generate")) {
+    if (!vm.count("unlock") && !vm.count("lock") && !vm.count("generate") && !vm.count("default-lock") &&
+        !vm.count("set-key-path")) {
         std::cout << "No action specified" << std::endl;
         return false;
     }
 
     if (vm.count("generate") && vm.count("key")) {
         std::cout << "Cannot generate key and use custom key at the same time" << std::endl;
-        return false;
-    }
-
-    if (vm.count("default-lock") && !vm.count("locks")) {
-        std::cout << "Cannot use a default lock without specifying locks" << std::endl;
         return false;
     }
 
@@ -113,12 +109,16 @@ bool verify_args(const po::variables_map& vm) {
  * @details Usage:                           \n
  *  ./encryption --help                      \n
  *  ./encryption --unlock <file>             \n
+ *
  *  ./encryption --lock <file>               \n
  *  ./encryption --lock <file> --key <key>   \n
+ *  ./encryption --default-lock <file>       \n
+ *
+ *  ./encryption --unlock <file>             \n
  *  ./encryption --unlock <file> --key <key> \n
  *                                           \n
  *  ./encryption --generate <file>           \n
- *  ./encryption --set-key-path <file>
+ *  ./encryption --set-key-path <vfs> <file>
  */
 int main(int argc, char* argv[]) {
     try {
@@ -126,9 +126,9 @@ int main(int argc, char* argv[]) {
         desc.add_options()("help", "produce help message")                                      //
             ("unlock,u", po::value<std::string>(), "unlock a file")                             //
             ("lock,l", po::value<std::string>(), "lock a file")                                 //
-            ("default-lock,d", "lock a file with default key")                                  //
+            ("default-lock,d", po::value<std::string>(), "lock a file with default key")        //
             ("key,k", po::value<std::string>(), "custom key to use for encryption/decryption")  //
-            ("set-key-path,s", po::value<std::vector<std::string>>(),
+            ("set-key-path,s", po::value<std::vector<std::string>>()->multitoken(),
              "requires two args - <vfs> and <key-path> - it sets a default path for key")  //
             ("generate,g", po::value<std::string>(), "generate a key into chosen file");
 
@@ -142,36 +142,37 @@ int main(int argc, char* argv[]) {
         }
 
         std::string password;
-
         std::string key;
+
+        // NOTE The following could be improved a lot
+        // But is serves as demonstration rather than proper CLI tool
+
         bool use_key = false;
 
         if (vm.count("key")) {
             key = vm["key"].as<std::string>();
             key = Path::to_absolute(key);
-
             use_key = true;
         }
 
         if (vm.count("generate")) {
             key = vm["generate"].as<std::string>();
             key = Path::to_absolute(key);
-
             use_key = true;
         }
 
-        // If no key is provided, ask for password.
-        if (!use_key) {
+        bool need_password = !use_key && !vm.count("set-key-path") && !vm.count("default-lock");
+
+        if (need_password) {
             std::cout << "Enter password (or leave empty for key): ";
             password = get_password();
-        } else if (vm.count("generate")) {
-            std::string file = vm["generate"].as<std::string>();
 
-            if (!perform_command(EncryptionHookGenerator::generate_key_hook(file))) {
+        } else if (vm.count("generate")) {
+            if (!perform_command(EncryptionHookGenerator::generate_key_hook(key))) {
                 return 2;
             }
 
-            key = Path::to_absolute(file);
+            key = Path::to_absolute(key);
         }
 
         // Does the main operation.
@@ -184,10 +185,11 @@ int main(int argc, char* argv[]) {
             }
 
             perform_command(
-                EncryptionHookGenerator::set_key_path_hook(Path::to_absolute(paths[0]), Path::to_absolute(paths[0])));
+                EncryptionHookGenerator::set_key_path_hook(Path::to_absolute(paths[0]), Path::to_absolute(paths[1])));
 
         } else if (vm.count("unlock")) {
             std::string file = vm["unlock"].as<std::string>();
+
             if (use_key) {
                 perform_command(EncryptionHookGenerator::unlock_key_hook(Path::to_absolute(file), key));
             } else {
@@ -195,7 +197,8 @@ int main(int argc, char* argv[]) {
             }
         } else if (vm.count("lock")) {
             std::string file = vm["lock"].as<std::string>();
-            if (vm.count("key")) {
+
+            if (use_key) {
                 perform_command(EncryptionHookGenerator::lock_key_hook(Path::to_absolute(file), key));
             } else {
                 password_command(EncryptionHookGenerator::lock_pass_hook(Path::to_absolute(file)), password);

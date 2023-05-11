@@ -34,6 +34,7 @@ int EncryptionVfs::write(const std::string &pathname, const char *buf, size_t co
             return 0;
         }
     } catch (const std::exception &e) {
+        // NOTE - improvement would be to have a way to return an error to the user
         Logging::Error("Exception on handle hook for %s - %s", pathname.c_str(), e.what());
         return -1;
     }
@@ -154,16 +155,22 @@ int EncryptionVfs::open(const std::string &pathname, struct fuse_file_info *fi) 
 }
 
 int EncryptionVfs::release(const std::string &pathname, struct fuse_file_info *fi) {
-    std::string temp_unlocked_indicator = PrefixParser::apply_prefix(pathname, prefix, {"tmp"});
-    if (get_wrapped().exists(temp_unlocked_indicator) && get_wrapped().exists(Config::encryption.path_to_key_path)) {
-        get_wrapped().release(pathname, fi);
-        get_wrapped().unlink(temp_unlocked_indicator);
+    try {
+        std::string temp_unlocked_indicator = PrefixParser::apply_prefix(pathname, prefix, {"tmp"});
+        if (get_wrapped().exists(temp_unlocked_indicator) &&
+            get_wrapped().exists(Config::encryption.path_to_key_path)) {
+            get_wrapped().release(pathname, fi);
+            get_wrapped().unlink(temp_unlocked_indicator);
 
-        Encryptor encryptor;
-        if (get_default_key_encryptor(encryptor)) {
-            encrypt_file(pathname, encryptor, true, true);
-            return 0;
+            Encryptor encryptor;
+            if (get_default_key_encryptor(encryptor)) {
+                encrypt_file(pathname, encryptor, true, true);
+                return 0;
+            }
         }
+    } catch (const std::exception &e) {
+        Logging::Error("Exception on release for %s - %s", pathname.c_str(), e.what());
+        return -1;
     }
 
     return get_wrapped().release(pathname, fi);

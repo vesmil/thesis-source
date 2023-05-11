@@ -1,8 +1,7 @@
 #include "versioning_vfs.h"
 
-#include <time.h>
-
 #include <algorithm>
+#include <ctime>
 #include <fstream>
 
 #include "common/config.h"
@@ -55,7 +54,7 @@ bool VersioningVfs::handle_hook(const std::string &pathname) {
     if (!PrefixParser::contains_prefix(pathname, prefix)) {
         return false;
     }
-    
+
     auto nonPrefixed = PrefixParser::remove_specific_prefix(pathname, prefix);
     auto args = PrefixParser::args_from_prefix(pathname, prefix);
 

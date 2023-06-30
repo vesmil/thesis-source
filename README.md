@@ -1,10 +1,10 @@
 # Custom VFS - source code
 
 This is a source code for my bachelor thesis.  
-The goal of this project is to create a custom VFS with added versioning and encryption features.
+The goal of this project is to create a modular VFS with added versioning and encryption features as prototypes.
 
-For more information about the project, see
-the [thesis repository](https://gitlab.mff.cuni.cz/teaching/theses/yaghob/vesely-milan/thesis).
+For documentation and more information about the project, see
+the generated pdf artifact in the [thesis repository]([https://gitlab.mff.cuni.cz/teaching/theses/yaghob/vesely-milan/thesis](https://github.com/vesmil/thesis)).
 
 ### Requirements
 
@@ -14,6 +14,8 @@ the [thesis repository](https://gitlab.mff.cuni.cz/teaching/theses/yaghob/vesely
 * Libsodium
 * Google test
 * Boost program options
+
+## Simplified guide
 
 ### Build
 
@@ -25,7 +27,7 @@ cmake ..
 
 ### Run
 
-Simply pass a Directory as a mountpoint to the executable.
+Simply pass a directory as a mountpoint to the executable.
 
 ```bash
 CustomVFS <mountpoint>

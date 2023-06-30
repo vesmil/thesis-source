@@ -4,7 +4,7 @@ This is a source code for my bachelor thesis.
 The goal of this project is to create a modular VFS with added versioning and encryption features as prototypes.
 
 For documentation and more information about the project, see
-the generated pdf artifact in the [thesis repository]([https://gitlab.mff.cuni.cz/teaching/theses/yaghob/vesely-milan/thesis](https://github.com/vesmil/thesis)).
+the generated pdf artifact in the [thesis repository](https://github.com/vesmil/thesis).
 
 ### Requirements
 
